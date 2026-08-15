@@ -10,7 +10,7 @@ BTC の OHLCV / 約定・出来高 / Funding Rate / Open Interest を取得で�
 
 | API | データ | Historical 遡及(実測含む) | REST/WS | API Key | Rate Limit | 日本からの利用 | 再配布・公開 |
 |---|---|---|---|---|---|---|---|
-| **OKX v5** (global) | OHLCV, 約定, Funding, OI, Order Book, Long/Short 比 | OHLCV: 上場以来(2020年以前の5分足を実測確認)。Funding: **約3ヶ月**(実測)。OI(5m): **約5日=1440点**(実測) | REST + WS | 公開データは不要 | history-candles 20req/2s 程度(公式Docs参照) | 口座開設は日本居住者不可(OKX Japan誘導)。公開APIへの日本IPアクセス可否は**要確認** | ToS上のデータ再利用規定は**要確認** |
+| **OKX v5** (global) | OHLCV, 約定, Funding, OI, Order Book, Long/Short 比 | OHLCV: 上場以来(2020年以前の5分足を実測確認)。Funding: **約3ヶ月**(実測)。OI(5m): **約5日=1440点**(実測) | REST + WS | 公開データは不要 | history-candles 20req/2s 程度(公式Docs参照) | 口座開設は日本居住者不可(OKX Japan誘導)。公開APIは**日本IPから疎通確認済み(2026-08-15実測)**。ToS上の利用可否は別途要確認 | ToS上のデータ再利用規定は**要確認** |
 | **Binance** (global REST) | OHLCV, 約定, Funding, OI, 清算, Long/Short 比 | OHLCV: 2017〜(spot)/2019-09〜(futures) | REST + WS | 公開データは不要 | weight制 (~6000/min) | 日本居住者はBinance Japanへ誘導。**本実行環境からは HTTP 451 でブロック(実測)**。日本IPからの可否は**要確認** | 要確認 |
 | **Binance Vision** (data.binance.vision 一括ダンプ) | klines, trades, aggTrades, fundingRate(月次), metrics(OI・Long/Short比, 5分粒度) | ほぼ全履歴。**本実行環境から取得成功(実測)** | HTTPS 静的ファイル | 不要 | 実質なし | 静的配信のため技術的には広く到達可能だが、日本居住者の利用可否・規約は**要確認** | 要確認 |
 | **Bybit v5** | OHLCV, 約定, Funding, OI, 清算 | OHLCV: 2020頃〜 | REST + WS | 公開データは不要 | IP毎 600req/5s 程度 | 日本からのアクセスは一般に可能とされるが、FSA警告履歴あり・**要確認**。**本実行環境からは 403 でブロック(実測)** | 要確認 |
@@ -36,7 +36,7 @@ BTC の OHLCV / 約定・出来高 / Funding Rate / Open Interest を取得で�
 
 制約・注意:
 - Funding(約3ヶ月)/ OI(約5日)の遡及が浅い → **定期実行で自前蓄積する**前提の設計にした
-- 日本居住者の口座開設は不可。**公開マーケットデータ API への日本 IP アクセス可否とToS上の扱いは要確認**。ローカルPCで `curl https://www.okx.com/api/v5/market/candles?instId=BTC-USDT-SWAP&bar=5m&limit=1` を実行して確認すること
+- 日本居住者の口座開設は不可。公開マーケットデータ API は**日本 IP からの疎通を実測確認済み(2026-08-15)**。ただし技術的に届くことと ToS 上許可されていることは別であり、規約上の扱いは引き続き要確認
 
 **代替候補:**
 - 日本のローカルPCから Bybit に到達できるなら、Bybit v5 は同等機能を持つ(コードは `sources` 層の差し替えで対応する設計)
