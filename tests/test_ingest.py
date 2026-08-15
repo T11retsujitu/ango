@@ -42,6 +42,22 @@ def test_incremental_stops_at_existing_max():
     assert min(collected_ts(rows)) >= 70 * MIN_MS  # 79分に達した最初のページで停止
 
 
+def fake_page_inclusive(after):
+    """OI の end パラメータを模倣: 境界を「含む」ため、保持期間の下限
+    (ALL_TS の最小値)に達すると同じ行を返し続ける。"""
+    ts_desc = sorted((t for t in ALL_TS if after is None or t <= after), reverse=True)
+    rows = [[str(t)] for t in ts_desc[:PAGE_SIZE]]
+    return {"data": rows}, {"end": after}
+
+
+def test_inclusive_pagination_terminates_at_api_depth_limit():
+    # 開始指定(-100分)は API が持つ最古(0分)より古い → 下限で停止しなければ無限ループ
+    rows = _fetch_backward(
+        fake_page_inclusive, "test", start_ms=-100 * MIN_MS, existing_range=(None, None)
+    )
+    assert min(collected_ts(rows)) == 0  # 取れる分は全部取れている
+
+
 def test_backfill_goes_past_existing_data():
     # 既存: 60〜99分。開始指定(10分)は既存より古い → 10分まで遡る
     rows = _fetch_backward(

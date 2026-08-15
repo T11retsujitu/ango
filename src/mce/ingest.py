@@ -46,6 +46,7 @@ def _fetch_backward(fetch_page, dataset: str, start_ms: int, existing_range: tup
     run_id = store.new_run_id()
     collected: list = []
     after: int | None = None
+    prev_oldest: int | None = None
     while True:
         body, params = fetch_page(after)
         store.append_raw(
@@ -61,6 +62,12 @@ def _fetch_backward(fetch_page, dataset: str, start_ms: int, existing_range: tup
         oldest = min(int(r[0] if isinstance(r, list) else r["fundingTime"]) for r in rows)
         if oldest <= floor_ms:
             break
+        if prev_oldest is not None and oldest >= prev_oldest:
+            # ページングが進まなくなった = API の保持期間の下限に到達
+            # (OI の end パラメータは境界を含むため、下限では同じ行が返り続ける)
+            print(f"{dataset}: API の保持期間下限 {_iso(oldest)} に到達")
+            break
+        prev_oldest = oldest
         after = oldest
     return collected
 
