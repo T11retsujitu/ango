@@ -41,6 +41,9 @@ uv run python -m mce.ingest oi --days 30
 # サマリ表示(件数・期間・欠損数・5分リターン統計)
 uv run python -m mce.report
 
+# features 生成(normalized から全再生成・冪等)
+uv run python -m mce.features
+
 # テスト
 uv run pytest
 ```
@@ -73,10 +76,41 @@ GROUP BY d ORDER BY d;
 - **raw 保持**: API レスポンスは原形のまま gzip JSONL で残す(正規化のバグはやり直せる)
 - **欠損は補間しない**: report が 5 分グリッドとの突き合わせで欠損を検出・表示する
 
+## features スキーマ
+
+`data/features/okx_BTC-USDT-SWAP_5m.parquet`。OHLCV 全列に加えて:
+
+| 列 | 意味 |
+|---|---|
+| `return_5m`, `return_1h` | 過去リターン(基準バーが欠損なら null) |
+| `volume_ratio_20` | 出来高 / 直近20本平均(窓に20本揃わなければ null) |
+| `fwd_return_5m`, `fwd_return_1h`, `fwd_return_4h` | **先読みリターン**(条件検索の「その後どうなった」用) |
+| `funding_rate` | その時点で確定している直近 Funding(as-of join, 9時間超は null) |
+| `oi`, `oi_usd` | 同時刻の Open Interest(なければ null) |
+
+リターン計算は行シフトではなく ts の完全一致 join なので、欠損バーを
+またいで誤った期間のリターンが混入することはない。
+
+## Historical Condition Search(SQL 1本で可能)
+
+「この市場状態は過去に何回あり、その後どうなった?」は DuckDB で直接引ける:
+
+```sql
+SELECT count(*)                          AS n,
+       avg(fwd_return_1h)                AS mean_1h,
+       median(fwd_return_1h)             AS median_1h,
+       avg((fwd_return_1h > 0)::INT)     AS win_rate_1h,
+       quantile_cont(fwd_return_1h, 0.1) AS p10_1h,
+       quantile_cont(fwd_return_1h, 0.9) AS p90_1h
+FROM read_parquet('data/features/okx_BTC-USDT-SWAP_5m.parquet')
+WHERE volume_ratio_20 >= 2.0
+  AND return_1h >= 0.005
+  AND funding_rate >= 0.00001
+  AND fwd_return_1h IS NOT NULL;
+```
+
 ## 今後(未実装)
 
-最重要は Historical Condition Search:
-`volume_ratio_20 >= 2.0 AND return_1h >= 0.015 AND funding_rate >= 0.0001`
-のような条件の該当件数と、その 5分後 / 1時間後 / 4時間後のリターン分布
-(平均・中央値・勝率・分位点)を返す機能。features 層に特徴量 Parquet を
-生成し、DuckDB の SQL 一発で答えられる形を想定している。
+- 条件検索の CLI / 関数化(上記 SQL のテンプレート化)
+- 特徴量の追加(`rolling_volatility`, `high_breakout_1h`, `open_interest_change` など)
+- Funding / OI の定期取得による長期蓄積(API の遡及制限が浅いため)
