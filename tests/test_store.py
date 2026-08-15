@@ -1,7 +1,7 @@
 import polars as pl
 
 from mce.normalize import normalize_candles
-from mce.store import max_ts_ms, merge_parquet
+from mce.store import merge_parquet, ts_range_ms
 
 
 def make_df(ts_list):
@@ -30,8 +30,8 @@ def test_merge_dedups_overlap(tmp_path):
     assert out["ts"].is_sorted()
 
 
-def test_max_ts_ms(tmp_path):
+def test_ts_range_ms(tmp_path):
     path = tmp_path / "t.parquet"
-    assert max_ts_ms(path) is None
+    assert ts_range_ms(path) == (None, None)
     merge_parquet(path, make_df([1000, 60_000]), KEYS)
-    assert max_ts_ms(path) == 60_000
+    assert ts_range_ms(path) == (1000, 60_000)

@@ -48,11 +48,12 @@ def merge_parquet(path: Path, df: pl.DataFrame, key_cols: list[str]) -> int:
     return merged.height - before
 
 
-def max_ts_ms(path: Path, ts_col: str = "ts") -> int | None:
-    """既存 Parquet の最大タイムスタンプ(ms)。差分取得の再開位置に使う。"""
+def ts_range_ms(path: Path, ts_col: str = "ts") -> tuple[int | None, int | None]:
+    """既存 Parquet の (最小, 最大) タイムスタンプ(ms)。取得の再開判定に使う。"""
     if not path.exists():
-        return None
-    ts = pl.read_parquet(path, columns=[ts_col])[ts_col].max()
-    if ts is None:
-        return None
-    return int(ts.timestamp() * 1000)
+        return (None, None)
+    col = pl.read_parquet(path, columns=[ts_col])[ts_col]
+    lo, hi = col.min(), col.max()
+    if lo is None:
+        return (None, None)
+    return (int(lo.timestamp() * 1000), int(hi.timestamp() * 1000))
