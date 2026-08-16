@@ -163,3 +163,118 @@ FROZEN_BASELINES が正)、同一パイプラインで評価する。探索で�
 
 research 通過 0〜1 / 10(lowvol_momentum か momentum_1h_hold12 が僅かに可能性)、
 生存 0。momentum 系は Phase 0 実測(gross 負)どおり大敗する。
+
+→ **結果(2026-08-16 確定)**: Arm B は draw 102 / duplicate 64 / research通過 **0** / 生存 0。
+Baselines は 10 評価すべて research 不通過。
+[findings](../findings/2026-08-16-phase3-armB-genetic-baselines-v1.md) 参照。両 arm とも凍結済み。
+
+---
+
+## 10. Arm C — LLM Semantic Search(追記凍結 2026-08-16。Arm C 実行前)
+
+役割: 研究の主質問 — **semantic prior を持つ LLM は Random / Genetic より効率よく
+OOS 生存戦略を発見するか**。共通規則(§1–§3)は不変。budget 30。
+
+### 10.1 LLM は何を出力するか(ROADMAP Arm C 準拠)
+
+**LLM は Python も AST も書かない。** 出力は semantic schema の仮説レコード +
+`dsl_plan`(構造化された意味レベルの計画)のみで、**deterministic translator**
+(`mce/search/plan.py`)が AST へ変換し、既存 validator/compiler/Evaluator を通す。
+JSON Schema による structured output で語彙・windowを列挙拘束する。
+
+```json
+{
+  "hypothesis_id": "H007", "event": "...", "context": ["..."], "quality": ["..."],
+  "direction": "...", "action": "...", "hypothesis": "...", "expected_failure_mode": "...",
+  "dsl_plan": {
+    "signal_family": "clock_conditioned_momentum", "side": "long|short|both",
+    "entry": {"feature": "return", "window": 12, "op": "greater", "threshold": 0.002},
+    "filters": [{"feature": "volatility", "window": 48, "op": "less", "threshold": 0.002}],
+    "clock": {"period": 15, "phase": 0}, "persistence_bars": 3, "holding_bars": 12
+  }
+}
+```
+
+翻訳規則(凍結): entry を比較ノード化 → `persistence_bars` があれば `holds_for` で包む
+→ filters と clock を AND → `side="both"` なら short 側は **entry のみ反転**
+(op 反転・閾値符号反転)し filters/clock は共通 → `holding_bars` は
+`max_holding_bars` へ。制約違反は validator が rejected(budget 非消費)。
+
+**`side="both"` のコスト(凍結 validator の性質)**: 凍結 validator はパラメータを
+**出現ごと**に数えるため、`both` は条件木を長短へ複製してコストが倍になる
+(entry + filter 1つ + both = 8 params → 棄却)。Arm A/B の grammar も両側を独立に
+サンプルするので規則は同一。この性質は LLM プロンプトに明記して無駄な提案を防ぐ。
+
+**探索空間の同一性(重要)**: LLM の閾値は translator が **凍結メニュー
+(`grammar.THRESHOLD_MENUS`)の最近傍へ量子化**する。window/holding/persistence/phase は
+JSON Schema の enum でメニューに拘束。これにより Arm A/B と**同一の探索空間**を保つ
+(LLM だけが連続値を使える不公平を排除)。生値と量子化後の両方を記録する。
+
+### 10.2 Masking(HindsightBench / Profit Mirage / Temporal Leakage 対応)
+
+LLM の parametric hindsight を抑制するため、プロンプトから以下を除去する:
+
+| 実体 | プロンプト上の表現 |
+|---|---|
+| BTC-USDT-SWAP | `ASSET_X`(a perpetual futures contract on a major digital asset) |
+| OKX | 記載しない |
+| 暦日付・期間 | bar index のみ(`bars 0..N`)。年・月・イベント名を一切書かない |
+| 価格水準 | 記載しない |
+
+マスキング仕様は artifact に記録する。これは
+「cutoff より後だから安全」に依存しない設計(R15)であり、LLM が
+「2024年のBTCは上昇相場」といった記憶を使えないようにする構造的措置。
+
+### 10.3 Feedback loop(firewall 維持)
+
+各ラウンドで、**research primary metrics のみ**を匿名化して LLM に返す:
+`hypothesis_id / signal_family / trades / net_bps_per_trade / sharpe / turnover / 判定`。
+**validation の値・final_oos の一切を返さない**(freeze_v1 §運用規則、ROADMAP §4.2)。
+棄却理由は機械的ラベル(`below_min_trades` / `net_negative` / `rejected_by_validator` /
+`duplicate`)のみ。
+
+### 10.4 決定性についての正直な扱い(重要)
+
+**LLM 呼び出しは決定的ではない。** temperature は Claude Opus 5 以降で
+**API から削除されており**(送ると 400)、seed も存在しない。したがって Arm C は
+Arm A/B のような bit 再現性を持たない。代わりに:
+
+- 全リクエスト/レスポンスを `llm_transcript.jsonl` へ記録(model ID・prompt sha256 込み)
+- **replay mode**(`--replay <dir>`)で記録済み plan を再評価 → 評価側は完全決定的
+- artifact に `deterministic: false` と `replayable: true` を明記
+
+この非決定性は結果解釈時の留保事項として findings に必ず記載する。
+
+### 10.5 実行パラメータ(凍結)
+
+| 項目 | 値 |
+|---|---|
+| model | `claude-opus-5`(artifact に記録。変更時は別 run として記録) |
+| budget | 30 evaluations(共通規則どおり rejected/duplicate は非消費) |
+| 1リクエストあたり提案数 | 6 |
+| 最大API呼び出し回数 | 12(暴走ガード) |
+| max_tokens | 16000 |
+| temperature | **設定しない**(API から削除済み) |
+| structured output | `output_config.format`(json_schema) |
+| refusal | `stop_reason == "refusal"` を content 読み取り前に検査し、記録して次ラウンドへ |
+
+### 10.6 Arm C 事前予想(2026-08-16 記録)
+
+1. LLM の valid candidate rate は Random より高い(制約を理解するため)。
+   rejected は 30〜60% ではなく 10〜30% 程度
+2. duplicate は Genetic(64)より少なく、Random(0)より多い(5〜20)。
+   semantic family の再訪が起きる
+3. **research 通過は 0〜4**。Random(4)と同程度で、統計的に区別できない
+4. **validation 生存は 0 が最頻**(コスト支配の地形は semantic prior では変わらない)
+5. 総合: **survivors/evaluations で Random/Genetic と有意差なし → ROADMAP §9.3 により
+   「LLM を alpha searcher として使う仮説」は棄却または保留**が最有力
+6. ただし diversity(semantic family 数)と valid rate では LLM が優位に立つ可能性が高く、
+   それは「探索効率」ではなく「探索の意味的整理」の価値として別途記録する
+
+### 10.7 実行手順
+
+```sh
+export ANTHROPIC_API_KEY=...   # または ant auth login
+uv run python -m mce.search.llm_search              # 公式run(1回)
+uv run python -m mce.search.llm_search --replay experiments/phase3/llm_<model>  # 再評価
+```

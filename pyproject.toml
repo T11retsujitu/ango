@@ -9,6 +9,7 @@ dependencies = [
     "duckdb>=1.0",
     "websockets>=14",
     "numpy>=1.26",
+    "anthropic>=0.69",
 ]
 
 [dependency-groups]
