@@ -14,9 +14,10 @@
 
 | ID | 項目 | 状態 | 備考 |
 |---|---|---|---|
-| I1 | Tier 0-A 集約 aggressive flow(taker buy share・約定件数・平均約定サイズ)の incremental information test | **active** | 最も安価(~13 KB/日)・履歴が深い。[protocol](phase7/information_space_expansion_v1.md) §4 |
-| I2 | Tier 0-B derivatives state(OI・ΔOI・OI z・long/short ratio) | active | Binance metrics 5m(2021〜)。OKX は遡及5日で不可 |
-| I3 | Tier 0-C basis / funding(perp−index premium、funding) | active | premiumIndexKlines 6 KB/日 |
+| I0 | Tier 0 データ取り込み・observable 化・品質確認 | **完了(2026-08-16)** | [tier0_ingest_v1](phase7/tier0_ingest_v1.md)。ラベル未閲覧 |
+| I1 | Tier 0-A 集約 aggressive flow(taker buy share・約定件数・平均約定サイズ)の incremental information test | **active(次は事前登録)** | データは取得済み。[protocol](phase7/information_space_expansion_v1.md) §6 |
+| I2 | Tier 0-B derivatives state(OI・ΔOI・OI z・long/short ratio) | active(同上) | Binance metrics 5m。**2020-09 以前は未公開**なので共通期間に注意 |
+| I3 | Tier 0-C basis(perp−index premium) | active(同上) | premiumIndexKlines。funding は Tier 0 では未使用 |
 | I4 | Tier 1-A aggTrades event-level(signed volume・large-trade imbalance・burst・flow persistence・単位フローあたり価格応答) | hold | **再開条件**: I1 で incremental information が確認され、機序を event 水準で詰める必要が生じたとき |
 | I5 | Tier 1-B bookDepth スナップショット(距離別 depth) | hold | **再開条件**: I1/I2 通過後、liquidity state による条件付けが必要になったとき。先に公式仕様の確認 |
 | I6 | Tier 2 OKX prospective microstructure(M1 L1 OFI / M2 板枯れ / M3 吸収) | active(収集中) | 事前凍結済み。`T0` から Calibration 60日 + Validation 60日。**定義変更禁止** |

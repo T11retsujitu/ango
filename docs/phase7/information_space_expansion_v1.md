@@ -144,6 +144,11 @@ OHLCV と同じ 5分粒度・同じ桁のデータ量で、深い履歴として
 
 ### Tier 0 — bar 集約済み・深い履歴・OHLCV と同コスト(最優先)
 
+> **状態(2026-08-16 追記)**: Tier 0 の3系列は**取り込み・正規化・observable 化・
+> 品質確認まで完了**した(ラベル未閲覧・仮説未登録)。契約と実測値は
+> [tier0_ingest_v1](tier0_ingest_v1.md)、機械可読レポートは
+> `experiments/phase7/tier0_quality_v1.json`。次は §6 に従った**事前登録**。
+
 | set | observable | 想定 mechanism | 状態 |
 |---|---|---|---|
 | **T0-A 集約 aggressive flow** | taker_buy_volume / volume(= aggressor buy share)、taker_buy_quote、`count`(約定件数)、平均約定サイズ | aggressive-flow continuation、absorption(価格が動かない大量 taker 買い)、参加者数と方向の乖離 | 未実装・即取得可 |
