@@ -1,0 +1,66 @@
+{
+  "cost": {
+    "fee_bps": 5.0,
+    "funding": "excluded_phase0",
+    "scenario": "stress",
+    "slippage_bps": 3.0,
+    "spread_bps": 2.0
+  },
+  "counts": {
+    "bars": 169708,
+    "cancelled_fills": 0,
+    "fills": 23816,
+    "trades_closed": 23763
+  },
+  "created_at": "2026-08-16T09:49:56.912732+00:00",
+  "data": {
+    "manifest_sha256": {
+      "features": "f759f5eddc82ee38eb867ca8cffc0d559baf2d73bdf969e4c103389ff9d1ec9d"
+    },
+    "market_type": "perp_linear",
+    "source": "okx",
+    "split": "research",
+    "symbol": "BTC-USDT-SWAP",
+    "timeframe": "5m",
+    "timezone": "UTC"
+  },
+  "execution": {
+    "bar_ms": 300000,
+    "cancel_after_ms": 1800000,
+    "max_holding_bars": null
+  },
+  "experiment_id": "EXP-0006",
+  "metrics": {
+    "annualized_return": -29.820591838010557,
+    "bars": 169708,
+    "break_even_cost_bps": -0.1296122177901818,
+    "cancelled_fills": 0,
+    "cost_per_side_bps": 10.0,
+    "cost_scenario": "stress",
+    "cost_total": 47.527,
+    "exposure": 0.9996169891814175,
+    "gross_total_return": -0.6160079874913971,
+    "hit_rate": 0.12346925893195304,
+    "max_drawdown": 48.147808639783875,
+    "profit_factor": 0.2381960445293287,
+    "sharpe": -52.66173626225902,
+    "sortino": -67.49277723438082,
+    "total_return": -48.1430079874914,
+    "trade_count": 23763,
+    "turnover_total": 47527.0
+  },
+  "notes": null,
+  "replication_class": "original",
+  "signal": {
+    "execution": "open_t_plus_1",
+    "feature_cutoff": "close_t"
+  },
+  "source_commit": "a4cedc12dd0207cb44ea651f80cc95abe52504f3",
+  "strategy": {
+    "name": "naive_momentum",
+    "params": {
+      "feature": "return_1h"
+    },
+    "seed": null
+  }
+}
