@@ -1,0 +1,84 @@
+{
+  "arm_meta": {
+    "api_calls": 6,
+    "arm": "llm",
+    "deterministic": false,
+    "feedback_scope": "research_primary_only",
+    "masking": {
+      "calendar": "dates replaced by bar indices",
+      "price_level": "price levels withheld",
+      "symbol": "BTC-USDT-SWAP -> ASSET_X",
+      "venue": "exchange name withheld"
+    },
+    "mode": "live",
+    "model": "claude-opus-5",
+    "plan_errors": 0,
+    "proposals_per_call": 6,
+    "refusals": 0,
+    "replayable": true,
+    "semantic_families": [
+      "bear_regime_squeeze_fade",
+      "clock_boundary_momentum",
+      "cross_horizon_trend_confirmation",
+      "deep_pullback_liquidity_vacuum_reversion",
+      "execution_footprint_impact_decay_fade",
+      "high_vol_regime_short_drift",
+      "hour_boundary_overshoot_fade",
+      "hour_close_boundary_momentum",
+      "impulse_overshoot_fade",
+      "liquidation_cascade_continuation",
+      "long_horizon_capitulation_reversion",
+      "long_horizon_overextension_reversion",
+      "low_participation_drift",
+      "low_vol_dislocation_inventory_reversion",
+      "low_vol_regime_carry",
+      "low_vol_stop_run_reversal",
+      "participation_collapse_reversion",
+      "positioning_exhaustion_fade",
+      "post_capitulation_calm_reversion",
+      "range_expansion_breakout",
+      "slow_trend_drift",
+      "stressed_bear_regime_drift",
+      "stressed_capitulation_reversion",
+      "trend_persistence",
+      "trend_pullback_continuation",
+      "unstable_rally_vol_divergence_fade",
+      "value_area_inventory_reversion",
+      "vol_compression_expansion",
+      "volume_confirmed_trend_accumulation",
+      "volume_divergence_fade",
+      "volume_shock_reversal"
+    ]
+  },
+  "config": {
+    "budget": 30,
+    "primary_cost": "base_taker",
+    "research_rule": {
+      "min_trades": 30
+    },
+    "secondary_cost": "maker_low",
+    "seed": 0,
+    "validation_rule": {
+      "min_trades": 10
+    }
+  },
+  "counters": {
+    "candidate_count": 32,
+    "duplicate_count": 0,
+    "evaluated_count": 30,
+    "rejected_candidate_count": 2,
+    "research_pass_count": 0,
+    "runtime_failure_count": 0,
+    "survivor_count": 0,
+    "unique_candidate_count": 30,
+    "validation_count": 0
+  },
+  "created_at": "2026-08-16T21:52:19.702627+09:00",
+  "manifest_sha256": {
+    "features": "f759f5eddc82ee38eb867ca8cffc0d559baf2d73bdf969e4c103389ff9d1ec9d"
+  },
+  "method": "llm",
+  "protocol": "phase3_bakeoff_v1",
+  "source_commit": "6b288a00767d9e2f9ca5af2dabbb4a44e732b282",
+  "survivors": []
+}
