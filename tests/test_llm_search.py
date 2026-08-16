@@ -254,5 +254,39 @@ def test_schema_enums_match_frozen_menus():
 
     plan = HYPOTHESIS_SCHEMA["properties"]["hypotheses"]["items"]["properties"]["dsl_plan"]["properties"]
     assert plan["entry"]["properties"]["window"]["enum"] == list(grammar.WINDOW_MENU)
-    assert plan["holding_bars"]["enum"] == list(grammar.HOLDING_MENU) + [None]
+    assert plan["holding_bars"]["anyOf"][0]["enum"] == list(grammar.HOLDING_MENU)
+    assert plan["persistence_bars"]["anyOf"][0]["enum"] == list(grammar.HOLDS_MENU)
     assert set(plan["entry"]["properties"]["feature"]["enum"]) == set(grammar.FEATURE_OPS)
+
+
+def _walk_schema(node, path="$"):
+    if isinstance(node, dict):
+        yield path, node
+        for k, v in node.items():
+            yield from _walk_schema(v, f"{path}.{k}")
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            yield from _walk_schema(v, f"{path}[{i}]")
+
+
+def test_schema_is_accepted_by_structured_output_rules():
+    """structured output のスキーマ制約に適合しているか(API を呼ばずに検査)。
+
+    実測した拒否例: union type("type": ["integer","null"])と enum の併用は
+    'Enum value 2 does not match declared type' で 400 になる。nullable は anyOf で表す。
+    """
+    from mce.search.plan import HYPOTHESIS_SCHEMA
+
+    for path, node in _walk_schema(HYPOTHESIS_SCHEMA):
+        t = node.get("type")
+        assert not isinstance(t, list), f"{path}: union type は使えない(anyOf を使う): {t}"
+        if "enum" in node:
+            assert None not in node["enum"], f"{path}: enum に null を混ぜない(anyOf を使う)"
+        if node.get("type") == "object":
+            assert node.get("additionalProperties") is False, f"{path}: additionalProperties: false が必須"
+            assert set(node.get("required", [])) == set(node.get("properties", {})), (
+                f"{path}: 全プロパティを required にすること"
+            )
+        # 非対応の数値・文字列制約を使っていない
+        for unsupported in ("minimum", "maximum", "multipleOf", "minLength", "maxLength", "minItems", "maxItems"):
+            assert unsupported not in node, f"{path}: {unsupported} は structured output で非対応"

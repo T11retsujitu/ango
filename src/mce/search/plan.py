@@ -144,17 +144,28 @@ HYPOTHESIS_SCHEMA = {
                             "side": {"type": "string", "enum": list(SIDES)},
                             "entry": _CONDITION_SCHEMA,
                             "filters": {"type": "array", "items": _CONDITION_SCHEMA},
+                            # nullable は anyOf で表現する。union type("type": [...])と enum の
+                            # 併用は structured output のスキーマ検証が拒否する。
                             "clock": {
-                                "type": ["object", "null"],
-                                "properties": {
-                                    "period": {"type": "integer", "enum": [15, 60]},
-                                    "phase": {"type": "integer", "enum": list(range(0, 60, 5))},
-                                },
-                                "required": ["period", "phase"],
-                                "additionalProperties": False,
+                                "anyOf": [
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "period": {"type": "integer", "enum": [15, 60]},
+                                            "phase": {"type": "integer", "enum": list(range(0, 60, 5))},
+                                        },
+                                        "required": ["period", "phase"],
+                                        "additionalProperties": False,
+                                    },
+                                    {"type": "null"},
+                                ]
                             },
-                            "persistence_bars": {"type": ["integer", "null"], "enum": list(grammar.HOLDS_MENU) + [None]},
-                            "holding_bars": {"type": ["integer", "null"], "enum": list(grammar.HOLDING_MENU) + [None]},
+                            "persistence_bars": {
+                                "anyOf": [{"type": "integer", "enum": list(grammar.HOLDS_MENU)}, {"type": "null"}]
+                            },
+                            "holding_bars": {
+                                "anyOf": [{"type": "integer", "enum": list(grammar.HOLDING_MENU)}, {"type": "null"}]
+                            },
                         },
                         "required": ["signal_family", "side", "entry", "filters", "clock", "persistence_bars", "holding_bars"],
                         "additionalProperties": False,
