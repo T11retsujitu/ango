@@ -1,7 +1,9 @@
-# Phase 7 Tier 0 — Incremental Information Test 事前登録 v1
+# Phase 7 Tier 0 — Incremental Information Test 事前登録 v1.1
 
-- 登録日: 2026-08-16
+- 登録日: 2026-08-16(v1) / 改訂: 2026-08-16(v1.1)
 - 状態: **凍結(ラベル未閲覧の状態で確定)**
+- protocol id は v1 と同一(`phase7_tier0_screening_v1`)。**本文書が唯一の凍結文書**であり、
+  v1 の文面は git 履歴にのみ残す(凍結文書を2つ並存させない = protocol shopping の防止)
 - 上位設計: [information_space_expansion_v1](information_space_expansion_v1.md) §6
 - データ契約: [tier0_ingest_v1](tier0_ingest_v1.md)(取り込み・品質確認は完了済み)
 - 恒久ルール: [docs/findings/README.md](../findings/README.md)
@@ -18,6 +20,29 @@
 > **改訂規則**: ラベルを1つも計算していない間の改訂は許される(査読で欠陥が見つかった場合など)。
 > ただし改訂は必ず git 履歴に残し、**最初のラベル生成コマンドを実行した時点で凍結が確定**する。
 > 以後の変更は v2 扱いとする。凍結確定時刻は screening artifact に記録する。
+
+---
+
+## 0. v1 → v1.1 の差分(独立監査の指摘による。ラベル未生成)
+
+3レンズ(leakage / 統計妥当性 / 実現可能性)の独立監査で fatal 3件・major 多数が出たので、
+**ラベルを1つも計算していない段階で**改訂した。family(27)・target の3本立て・窓・Holm・
+コスト基準・封印は変更していない。
+
+| # | 項目 | v1 | v1.1 | 理由 |
+|---|---|---|---|---|
+| 1 | 主帰無 | X 全体の巡回シフト | **A-projection placebo `Bp`**(§12.1) | 素朴シフトは `corr(X, A)` まで壊す。ridge では A と相関した列を足すだけで正則化の幾何が変わり当てはまりが改善しうる |
+| 2 | baseline A | 19 列 | **27 列**(§3) | 交互作用の**二次項**・曜日構造・価格水準 z が A に無く、B だけが表現できた(strict nesting の穴) |
+| 3 | flow の列 | `avg_trade_notional` | **`avg_trade_size`** + A に `z20d_log_close` | `log(avg_trade_notional) = log(VWAP) + log(avg_trade_size)`。z-score が価格水準を密輸し OHLCV 情報が flow の手柄になる |
+| 4 | fold 初期学習 | 12ヶ月 | **6ヶ月** | T0-B2 の OOS が 2024 暦年のみになり「2暦年以上で正」が**原理的に満たせなかった** |
+| 5 | placebo 最小シフト | 7 日 | **30 日** | 20日 z-score の記憶長より短いシフトは帰無が本物と部分整列する |
+| 6 | placebo の alpha | 未規定 | **replicate ごとに内側 CV を再実行** | 観測 B の alpha を流用すると帰無だけ罰則不足になり反保守的 |
+| 7 | 入力の裾 | クリップ禁止 | **標準化後に全列 ±10 対称クリップ**(A・X・placebo 同一) | z-score の極端な裾1本が二乗誤差の判定を支配しうる |
+| 8 | test block の端 | purge 無し | **各 block 末尾 h+1 バーを purge** | block 間で target 窓が重なり leave-one-block-out が汚染される |
+| 9 | 公開遅延 | 報告のみ | **+1バー遅延での頑健性を T0-B1/B2 の昇格必要条件**(§17) | metrics の公開遅延は未実測。5分バッファは仮定であって計測ではない |
+| 10 | 変換由来の疑陽性 | 対策なし | **OHLCV-only sham 集合 `S0`**(§12.4)を T0-A の昇格条件に | 「新しいデータ」か「新しい変換」かを分離する対照が無かった |
+| 11 | 機序の符号 | ridge 係数の符号 | **A 残差化した偏相関の符号**(§15) | 共線性下で多変量 ridge 係数の符号は同定されない |
+| 12 | Y2 の区間 | close 基準 | **open 基準**(§5) | 保有区間から1バーずれていた |
 
 ---
 
@@ -64,30 +89,41 @@ A は **stationary な派生 observable のみ**とする。生の価格水準�
 
 | A の列 | 由来 | availability |
 |---|---|---|
-| `return_5m` | 既存 features | close_of_bar |
-| `return_1h` | 既存 features | close_of_bar |
-| `volume_ratio_20` | 既存 features | close_of_bar |
-| `drift_20d` | 既存 features | close_of_bar |
-| `realized_vol_20d` | 既存 features | start_of_bar |
-| `rv_12` | 窓 `[t-12, t)` の5分対数リターン二乗和の平方根(**現在バーを含まない**) | start_of_bar |
-| `rv_48` | 同 `[t-48, t)` | start_of_bar |
-| `hl_range_z20d` | `(high-low)/close` の 20日 z-score | close_of_bar |
-| `log_volume_z20d` | `log(volume+1)` の 20日 z-score(下記 Z 変換) | close_of_bar |
-| `norm_move_1` | `clip(return_5m / rv_12, -10, +10)` | close_of_bar |
-| `z20d_return_1h` | `Z20d(return_1h)` | close_of_bar |
-| `tod_sin_k`, `tod_cos_k`(k=1,2,3) | `sin/cos(2*pi*k*(60*hour_utc + minute_mod_60)/1440)` | start_of_bar |
-| `is_weekend` | `weekday_utc >= 5` | start_of_bar |
-| `is_quarter_hour` | `minute_mod_15 == 0` | start_of_bar |
+| `return_5m`, `return_1h`, `volume_ratio_20`, `drift_20d`, `realized_vol_20d` | 既存 features のまま(5列) | close/start |
+| `rv_12`, `rv_48` | 窓 `[t-12, t)` / `[t-48, t)` の5分対数リターン二乗和の平方根(**現在バーを含まない**) | start_of_bar |
+| `hl_range_z20d` | `Z20d( (high-low)/close )` | close_of_bar |
+| `log_volume_z20d` | `Z20d( log(volume+1) )`(**base 建て**。quote は使わない) | close_of_bar |
+| `z20d_log_close` | `Z20d( log(close) )` — 価格水準ガード | close_of_bar |
+| `norm_move_1` | `clip( return_5m / rv_12, -10, +10 )`(`rv_12` が 0/null なら null) | close_of_bar |
+| `norm_move_1_sq` | `norm_move_1 ^ 2` | close_of_bar |
+| `z20d_return_1h` | `Z20d( return_1h )` | close_of_bar |
+| `z20d_return_1h_sq` | `z20d_return_1h ^ 2` | close_of_bar |
+| `tod_sin_k`, `tod_cos_k`(k=1,2,3) | `sin/cos( 2*pi*k*(60*hour_utc + minute_mod_60)/1440 )` | start_of_bar |
+| `dow_sin_k`, `dow_cos_k`(k=1,2) | `sin/cos( 2*pi*k*weekday_utc/7 )` | start_of_bar |
+| `is_weekend`, `is_quarter_hour`, `is_hour_boundary` | `weekday_utc>=5` / `minute_mod_15==0` / `minute_mod_60==0` | start_of_bar |
 
-A は 19 列。**A の定義は全 test で共通**であり、X ごとに変えない。
+A は 27 列。**A の定義は全 test で共通**であり、X ごとに変えない。
 
-**`norm_move_1` と `z20d_return_1h` を A に入れる理由(strict nesting の担保)**:
-これらは §4 で X 側に置く交互作用項 `signed_imb * norm_move_1` /
-`dlog_oi_12 * Z20d(return_1h)` の **baseline 側の因子**である。A に入れておかないと、
-B だけが「baseline データの非線形関数」を表現できてしまい、
-`dR2 > 0` が X の情報ではなく **A の非線形性**で説明できる余地が残る
-(交互作用項の平均成分 `E[signed_imb] * norm_move_1` は baseline のスケール変換に等しい)。
-両因子を A に入れることで、**B の増分は純粋な交差項だけ**になる。
+**交互作用の因子と*その二乗*を A に入れる理由(strict nesting の担保)**:
+X 側の交互作用 `signed_imb * norm_move_1` は、`signed_imb` が同一バーの `return_5m` と
+機械的に相関するため、A への線形射影が
+
+```text
+E[signed_imb | A] * norm_move_1  ~  a * norm_move_1 + b * norm_move_1^2 + ...
+```
+
+を含む。**`norm_move_1^2` が A に無いと、この二次成分は A-projection placebo でも消えない**
+(線形射影の残差 E 側に落ちてシフトで壊れる一方、観測 B は保持する)。しかも
+`norm_move_1^2` はボラ系 target の素直な予測子なので、そのまま偽陽性になる。
+`norm_move_1` / `z20d_return_1h` とその**二乗**を A に入れることで、
+B の増分は純粋な交差項だけになる。
+
+**曜日ハーモニクスを入れる理由**: placebo は日単位シフトなので曜日整列は壊れる。
+A が曜日構造を持たないと、X の活動量 z-score が曜日プロファイルの代理として
+`dR2 > 0` を作れてしまう。
+
+**`z20d_log_close` を入れる理由**: 価格水準の 20日 z-score(平均回帰の代理)を
+X 側の列だけが単独で運ぶ状態を作らない。
 
 `rv_12` / `rv_48` の窓が**現在バーを含まない**のは意図的である。含めてしまうと
 `norm_move_1 = return_5m / rv_12` の分母に分子が入り、値が構造的に `[-1, +1]` へ
@@ -128,7 +164,9 @@ Z20d(x)_t = (x_t - mean(x over [t-20d, t))) / std(x over [t-20d, t))
 | `rv_12` / `rv_48` | 窓が完全(12本 / 48本)でなければ null |
 | ラグ・差分 | 行シフトではなく **ts 完全一致 join**(欠損バーを跨がない) |
 | 0除算 | 分母が 0 または null なら null(無限大を作らない) |
-| clip | `norm_move_1` の ±10 のみ。他の列はクリップしない |
+| clip(生成時) | `norm_move_1` の ±10 のみ |
+| clip(標準化後) | **全列を ±10 で対称クリップ**(A・X・placebo に同一適用)。z-score の極端な裾1本が二乗誤差の判定を支配するのを防ぐ |
+| 有限性 | モデル行列に `isfinite` でない値があれば **quality failure**(実行を止める。黙って落とさない) |
 
 **これらの床は X 側の Z20d(`z20d_signed_imb` など12列)にも同じく効く。**
 床を A 側だけに書くと、X の有効行が過大評価される(実現可能性監査の指摘)。
@@ -141,7 +179,7 @@ X は4つ。**まとめて1つの巨大モデルへ投入しない**(protocol §
 
 | id | 列(変換後) | 元列 | mechanism |
 |---|---|---|---|
-| **T0-A** flow | `signed_imb`, `Z20d(signed_imb)`, `Z20d(log(trade_count))`, `Z20d(log(avg_trade_notional))`, `signed_imb * norm_move_1` | taker_buy_ratio / trade_count / avg_trade_notional | aggressive-flow continuation vs absorption、参加者数と平均約定サイズの構造 |
+| **T0-A** flow | `signed_imb`, `Z20d(signed_imb)`, `Z20d(log(trade_count))`, `Z20d(log(avg_trade_size))`, `signed_imb * norm_move_1` | taker_buy_ratio / trade_count / avg_trade_size | aggressive-flow continuation vs absorption、参加者数と平均約定サイズの構造 |
 | **T0-B1** OI | `dlog_oi_12`, `Z20d(dlog_oi_12)`, `Z20d(log(open_interest))`, `dlog_oi_12 * Z20d(return_1h)` | open_interest | 建玉の積み上がりと解消(crowded unwind) |
 | **T0-B2** positioning | `Z20d(log(top_trader_position_ls_ratio))`, `Z20d(log(global_account_ls_ratio))`, `Z20d(log(taker_ls_vol_ratio))` | long/short ratio 3種 | 群衆ポジションの偏りと taker 方向 |
 | **T0-C** basis | `premium_close`, `Z20d(premium_close)`, `dprem_12` | premium_close | perp/index premium = レバレッジ需要・squeeze 前兆 |
@@ -151,6 +189,7 @@ signed_imb(t)   = 2 * taker_buy_ratio(t) - 1          # -1(全 sell)〜 +1(全 b
 norm_move_1(t)  = return_5m(t) / rv_12(t)             # ボラ正規化した当該バーの値動き
 dlog_oi_12(t)   = log(open_interest_t) - log(open_interest_{t-12})   # 1時間差分・ts完全一致join
 dprem_12(t)     = premium_close_t - premium_close_{t-12}
+avg_trade_size  = volume / trades                     # 価格を含まない(base 建て)
 ```
 
 ### 交互作用項を事前登録する理由(重要)
@@ -170,11 +209,15 @@ aggressive flow があったのに価格がほとんど動かない」= 吸収�
 二重の防御である。
 
 - 差分は行シフトではなく **ts 完全一致 join**(欠損バーを跨いだ差分を作らない)。
-- `taker_buy_quote_ratio` は `taker_buy_ratio` と、`open_interest_value` は
-  `open_interest × price` とほぼ共線なので **除外**(共線列を足して "情報が増えた" ように
-  見せない)。`avg_trade_size` も `avg_trade_notional` と共線のため除外。
-- `top_trader_account_ls_ratio` は `top_trader_position_ls_ratio` と同族なので
-  positioning 側は position 版を採る(account 版は除外)。
+- **除外列と理由**(実行時に「やっぱり入れる」ことを禁止):
+
+| 列 | 理由 |
+|---|---|
+| `taker_buy_quote_ratio` | `taker_buy_ratio` と実質同一 |
+| `avg_trade_notional` | `log(avg_trade_notional) = log(VWAP) + log(avg_trade_size)`。20日 z-score が**価格水準を密輸**し、OHLCV 情報が flow の手柄になる。価格を含まない `avg_trade_size = volume / trades` を採る |
+| `open_interest_value` | `open_interest × price` とほぼ共線 |
+| `top_trader_account_ls_ratio` | `top_trader_position_ls_ratio` と同族(position 版を採用) |
+| `premium_open` | `premium_close` と同一系列の start_of_bar 版(片方のみ使う) |
 - 各 X の列数は **3〜5**(T0-A 5 / T0-B1 4 / T0-B2 3 / T0-C 3)。
   集合間で自由度が揃っていないが、**各集合は自分の placebo 帰無に対してのみ判定される**ので
   比較の公平性は損なわれない(集合間の `dR2` 比較は §7 で禁止済み)。
@@ -296,34 +339,32 @@ valid(t) = A の全列が非 null
 
 ### 実測サンプル(**変換後の列**で計測。ラベル非依存)
 
-生の列の被覆ではなく、**§3–§4 の変換を実装して**(Z20d の 90% 窓完全性、
-`rv_12`/`rv_48` の完全窓、1時間ラグの ts 完全一致 join を含む)数えた値。
-生の被覆から見積もると Z20d の下限規則の分だけ過大評価になるため、
-事前登録には measured 値を載せる。
+生の列の被覆ではなく、**§3–§4 の変換を実装して**(Z20d の 90% 窓完全性、`rv` の完全窓、
+1時間ラグの ts 完全一致 join を含む)数えた値。生の被覆から見積もると過大評価になる。
+**判定に効くのは pooled OOS 行数**(expanding fold なので最初の6ヶ月は学習専用)。
 
-| 窓 | 全バー | T0-A | T0-B1 | T0-B2 | T0-C |
+| pooled OOS 窓 | 全バー | T0-A | T0-B1 | T0-B2 | T0-C |
 |---|---:|---:|---:|---:|---:|
-| dev 2021-2024(学習+テスト) | 420,768 | 420,707 | 418,858 | (317,140) | 413,515 |
-| dev 2023-2024(学習+テスト) | 210,528 | 210,490 | 209,522 | **210,036** | 210,226 |
-| **pooled OOS** dev21(2022Q1–2024Q4) | 315,648 | 315,598 | **314,512** | — | **315,031** |
-| **pooled OOS** dev23(2024Q1–Q4) | 105,408 | — | — | **105,119** | — |
-| conf 2025(2025Q1–Q4) | 105,120 | 105,115 | 105,064 | 105,097 | 105,120 |
+| dev21 = 2021Q3〜2024Q4(1,280 日) | 368,640 | 368,590 | 367,308 | (265,408) | 361,387 |
+| dev23 = 2023Q3〜2024Q4(550 日) | 158,400 | — | — | **158,096** | — |
+| conf = 2025Q1〜Q4(365 日) | 105,120 | 105,115 | 105,064 | 105,097 | 105,120 |
 
-括弧つきの `dev 2021-2024 / T0-B2 = 317,140` は「窓を 2021 開始にした場合に
-2022 の欠測でどれだけ落ちるか」の参考値であり、**T0-B2 の検定窓は 2023 開始**である。
+括弧つきの値は「T0-B2 を 2021 開始にした場合」の参考(925 日しか残らない)。
+**T0-B2 の検定窓は 2023 開始**である。
 
-n_eff(= pooled OOS 行数 / h)の実測値:
+実測 `n_eff`(= pooled OOS 行数 / h):
 
 | cell | h=1 | h=3 | h=12 | h=48 |
 |---|---:|---:|---:|---:|
-| T0-A | 315,598 | 105,199 | 26,299 | — |
-| T0-B1 | — | — | 26,209 | 6,552 |
-| T0-B2 | — | — | 8,759 | **2,189** |
-| T0-C | — | — | 26,252 | 6,563 |
-| conf(全 set 共通の目安) | 105,115 | 35,038 | 8,758 | 2,189 |
+| T0-A(dev) | 368,590 | 122,863 | 30,715 | — |
+| T0-B1(dev) | — | — | 30,609 | 7,652 |
+| T0-B2(dev) | — | — | 13,174 | **3,293** |
+| T0-C(dev) | — | — | 30,115 | 7,528 |
+| confirmation | 105,115 | 35,038 | 8,759 | 2,189 |
 
-**最小 cell は T0-B2 h=48 の 2,189**(閾値 2,000 に対して余裕 9%)。
-この cell が最も検出力が低いことを、結果と一緒に必ず明示する。
+**最小 cell は T0-B2 h=48 の 3,293**(dev)/ **2,189**(confirmation)。
+どちらも閾値(dev 2,000 / conf 500)を満たす。初期学習を 6ヶ月にしたことで
+v1 の 2,196 から 50% 改善した。
 
 ---
 
@@ -345,8 +386,7 @@ h バー分重複するため、素の行数を有意性の分母にしない。
 **評価行は fold のテストブロックだけ**である点に注意する(expanding fold なので
 最初の12ヶ月は学習専用)。変換後の列で計測した実測 n_eff は §7 の表を参照。
 
-**最小 cell は T0-B2 h=48 の n_eff = 2,189**。閾値 2,000 はこの cell が通るように
-置いた値であり、「小さい cell を落とさない代わりに、検出力の差を必ず報告する」
+**最小 cell は T0-B2 h=48 の n_eff = 3,293(dev)**。閾値 2,000 は「小さい cell を落とさない代わりに、検出力の差を必ず報告する」
 という設計である(§22-4)。閾値を結果を見てから動かさない。
 
 ---
@@ -366,9 +406,13 @@ confirmation を見てから dev の設定を変えない。
 
 ### 9.2 fold(expanding window)
 
-- 初期学習期間 = 12ヶ月、テストブロック = 3ヶ月、expanding(学習は窓の先頭から)。
-- dev 2021-2024 → テストブロックは 2022Q1 〜 2024Q4 の **12 ブロック**。
-- dev 2023-2024 → テストブロックは 2024Q1 〜 2024Q4 の **4 ブロック**。
+- 初期学習期間 = **6ヶ月**、テストブロック = 3ヶ月、expanding(学習は窓の先頭から)。
+- dev 2021-2024 → テストブロックは 2021Q3 〜 2024Q4 の **14 ブロック**。
+- dev 2023-2024 → テストブロックは 2023Q3 〜 2024Q4 の **6 ブロック**。
+
+初期学習を 12ヶ月から 6ヶ月へ縮めたのは、**12ヶ月だと T0-B2 の OOS が 2024 暦年だけになり、
+§15-4「2 暦年以上で `dR2 > 0`」が原理的に満たせなくなる**ため(監査指摘)。
+6ヶ月なら T0-B2 の OOS は 2023H2 + 2024 の2暦年にまたがる。
 - confirmation も **同一の fold 機構**を使う(2025Q1〜Q4 の 4 ブロック、学習は
   dev 開始からの expanding)。dev と confirmation で手順を変えないことで、
   「窓が変わったのか手順が変わったのか分からない」交絡を作らない。
@@ -377,6 +421,9 @@ confirmation を見てから dev の設定を変えない。
 
 - 学習集合から、target 窓 `[t+1, t+1+h]` がテストブロック開始時刻以降に及ぶ行を **purge**。
 - さらに **embargo = 288 バー(1日)** をテストブロック開始前から除外する。
+- **各テストブロックの末尾 `h+1` バーも評価から外す**。外さないと、そのブロックの
+  最後の行の target が次ブロックへ食い込み、fold 間が重なって
+  leave-one-block-out(§15-3)が汚染される(監査指摘)。
 - 標準化・z-score・ハイパーパラメータ選択は **学習集合のみ**で決める(テスト期間の
   統計量を一切使わない)。Z20d は元々左閉右開の因果変換なので、これに加えて
   モデル入力の標準化(平均・分散)を学習集合で固定する。
@@ -392,6 +439,8 @@ confirmation を見てから dev の設定を変えない。
 | 正則化 | `alpha ∈ {0.1, 1, 10, 100, 1000}`(標準化後)。**A と B で同一グリッド** |
 | alpha 選択 | 各 fold の**学習集合内**で、purge 付きの内側 walk-forward CV(3分割)により選択 |
 | 標準化の異常 | 学習集合で `std == 0` の列があれば、その fold は **quality failure**(黙って列を落とさない) |
+| 標準化後のクリップ | 全列 ±10 で対称クリップ(A・B・placebo に同一適用) |
+| placebo の alpha | **replicate ごとに内側 CV をやり直す**。観測 B の alpha を流用すると帰無だけ罰則不足になり反保守的(監査指摘) |
 | 乱数 | 使用しない(閉形式)。fold・purge・placebo の乱数種は §12 |
 | 非線形モデル | **v1 では使わない**(capacity 差を information value と誤認しないため) |
 
@@ -444,7 +493,7 @@ X を丸ごとシフトすると、**`corr(X, A)` まで壊れてしまう**。�
 各 outer fold について、学習行のみで  Gamma_hat = argmin_G || X - A * G ||_F^2
 残差            E = X - A * Gamma_hat        (学習で得た Gamma_hat を fold 全行へ適用)
 placebo_d の X  X_p(d) = A * Gamma_hat + shift_d(E)
-許容シフト集合  S = { 7, 8, ..., W_days - 7 }   (W_days = その段階の窓の暦日数)
+許容シフト集合  S = { 30, 31, ..., W_days - 30 }   (W_days = その段階の窓の暦日数)
 ```
 
 - `A * Gamma_hat`(A で説明できる成分)は**そのまま残す** → `corr(X_p, A)` は本物と同じ。
@@ -470,13 +519,15 @@ X ブロックをそのままシフトしたもの。`corr(X, A)` を壊すの�
   **その `S_d` の上で A と B を両方とも再評価**して `dR2_placebo` を作る。
   欠測を中央値などで埋めない(埋めると placebo だけ情報が薄まり、検定が甘くなる)。
   `S_d` の行数も記録する。
-- **シフト群は有限**である。`|S| = W_days - 13` を超える独立な placebo は作れないので、
+- **最小シフトは 30 日**。20日 z-score の記憶長より短いシフトでは、帰無側の残差が
+  本物と部分的に整列してしまう(監査指摘)。30 日 > 20日窓 + 最長 horizon(4時間)。
+- **シフト群は有限**である。`|S| = W_days - 59` を超える独立な placebo は作れないので、
   「K を好きなだけ増やす」ことはできない。したがって次の2段階とする。
 
 | 段階 | 使うシフト | K | 最小 p |
 |---|---|---:|---:|
 | 第1段階(全 27 test) | `S` を決定的に等間隔サンプルした 200 個 | 200 | 4.98e-3 |
-| 第2段階(昇格候補のみ) | **`S` を全数**(exhaustive randomization) | dev A/B1/C: 1,448 / dev B2: 718 / conf: 352 | 6.90e-4 / 1.39e-3 / 2.83e-3 |
+| 第2段階(昇格候補のみ) | **`S` を全数**(exhaustive randomization) | dev A/B1/C: 1,402 / dev B2: 672 / conf: 306 | 7.13e-4 / 1.49e-3 / 3.26e-3 |
 
 - 第2段階へ進む条件は **第1段階の順位のみ**: `#{placebo >= obs} <= 5`
   (= 第1段階 p `<= 6/201 = 0.0299`)。効果量の大きさを見て決めない。
@@ -500,13 +551,31 @@ p = (1 + #{d in 使用したシフト集合 : dR2_placebo(d) >= dR2_obs}) / (1 +
 
 ```text
 Holm の最小閾値 = 0.05 / 27 = 1.852e-3
-dev A/B1/C  最小 p = 1 / 1,449 = 6.90e-4   <= 1.852e-3   OK
-dev B2      最小 p = 1 /   719 = 1.391e-3  <= 1.852e-3   OK(余裕は小さい)
+dev A/B1/C  最小 p = 1 / 1,403 = 7.13e-4   <= 1.852e-3   OK
+dev B2      最小 p = 1 /   673 = 1.486e-3  <= 1.852e-3   OK(余裕は小さい)
 ```
 
 第1段階だけでは最小閾値に届かないので、**第2段階は Holm 判定に到達するための必須手順**である。
 confirmation の p は報告するが、昇格判定は §17-4(符号一致と大きさ)で行うので、
 confirmation 側の p 解像度は判定を左右しない。
+
+### 12.4 OHLCV-only sham 集合 S0(T0-A の対照・凍結)
+
+「**新しいデータ**が効いたのか、**新しい変換の形**が効いたのか」を分離するため、
+T0-A と同じ 5 列構成の OHLCV 由来 sham を事前登録する(いずれも因果・A には含まれない):
+
+```text
+s01 = clip( rv_12 / rv_48 - 1, -10, +10 )                       # ボラ比(水準ではなく比)
+s02 = Z20d( 窓 [t-12, t) の (high-low)/close の平均 )
+s03 = norm_move_1 の 1 バーラグ(ts 完全一致 join)
+s04 = norm_move_1 の 2 バーラグ(ts 完全一致 join)
+s05 = ( volume_ratio_20 の 20日窓内パーセンタイル順位 ) - 0.5
+```
+
+- S0 は **family の一員ではなく p 値を持たない**(placebo と同じく対照)。
+- **T0-A の昇格条件**として、同一行集合・同一 pipeline で `dR2(T0-A) > dR2(S0)` を要求する。
+- 他の集合では報告のみ。S0 が有意な `dR2` を出したら、それは pipeline が
+  「もっともらしい列を足すだけで改善する」ことの証拠であり、**全結果の解釈をやり直す**。
 
 ---
 
@@ -557,8 +626,10 @@ family は **(information set, horizon) 9 × target 3 = 27 test**。
 
 統計的に有意でも、機序と整合しない結果は昇格させない。各 test について:
 
-1. **符号の安定性**: 主要 X 列(その集合の第1列)の係数符号が、dev の fold の
-   **75% 以上**で一致すること。
+1. **符号の安定性**: 主要 X 列の符号が dev の fold の **75% 以上**で一致すること。
+   符号は **ridge 係数ではなく、A 残差化した偏相関**で測る:
+   `corr( x_j - proj_A(x_j) , y - yhat_A )`(いずれも fold の学習行で作った射影・モデルを
+   OOS 行へ適用)。共線性の下で多変量 ridge 係数の符号は同定されないため(監査指摘)。
 2. **効果の安定性**: fold 別 `dR2 > 0` が dev の **75% 以上**の fold で成立すること
    (12 fold なら 9 以上、4 fold なら 3 以上)。
 3. **単一ブロック依存でないこと**: fold を1つずつ除いた **leave-one-block-out の
@@ -621,7 +692,15 @@ test 単位で判定する。
 3. §15 の mechanism validation 1–6 を全て満たす
 4. confirmation 窓で **`dR2` の符号が dev と一致**し、かつ
    `dR2_conf >= 0.5 * dR2_dev`
-5. Y1 の場合は追加で `edge_bps` と break-even を報告(GO の条件にはしない。
+5. **T0-A のみ**: 同一行集合・同一 pipeline で `dR2(T0-A) > dR2(S0)`(§12.4 の
+   OHLCV-only sham を上回ること)。「新しい変換の形」だけで出た改善を昇格させない。
+6. **T0-B1 / T0-B2 のみ**: X 列を**さらに1バー(5分)遅らせても** `dR2 > 0` が保たれること。
+   metrics スナップショットの公開遅延は未実測であり、start_of_bar 割当ての5分バッファは
+   **仮定であって計測ではない**(data_contract §8)。1バー遅延は「スナップショットが
+   1バー遅れて届いていた場合」に相当する最小限の耐性試験である。
+   さらに +12バー(1時間)遅延の感度も**報告**する(こちらは条件にしない。
+   4時間 horizon に対して1時間の遅延を要求するのは過剰なため)。
+7. Y1 の場合は追加で `edge_bps` と break-even を報告(GO の条件にはしない。
    コスト未満でも「情報は存在する」という結論自体は成立するため)
 
 **CONDITIONAL HOLD(監視リスト)**:
@@ -684,7 +763,9 @@ report に必ず含めるもの(選別なし):
    存在しないと実行できない(順序の構造的強制)。
 4. 27 test 全ての結果を1つの artifact に機械的に出力する。手で表から行を消せない形にする。
 5. placebo・bootstrap の再現手順(K・シフト量・種)を artifact に含める。
-6. artifact に **`src/mce/tier0_prereg.py` の sha256** と **凍結確定時刻**
+6. モデル行列に `isfinite` でない値が入っていないことを毎 fold で assert する
+   (0除算・inf が null 判定を素通りするのを止める)。
+7. artifact に **`src/mce/tier0_prereg.py` の sha256** と **凍結確定時刻**
    (= 最初のラベル生成コマンドを実行した時刻)を記録する。
    `tests/test_tier0_prereg.py` は artifact が存在する場合、記録された sha256 が
    現在の `tier0_prereg.py` と一致することを検査する
@@ -692,12 +773,19 @@ report に必ず含めるもの(選別なし):
 
 ### 実行時間の見積り(実測ベース)
 
-Ridge 閉形式の 1 fit(400,000 行 × 25 列)= 実測 **38 ms**。
-27 test × 12 fold × K=200 placebo ≈ **41 分**(単純積算の上限。実際の学習集合は
-expanding なのでこれより小さい)。第2段階は全数シフトなので、昇格候補1件あたり
-dev A/B1/C 窓で約 **11 分**(1,448 シフト × 12 fold)、dev B2 窓で約 **2 分**
-(718 シフト × 4 fold)。昇格候補が 5 件でも1時間以内に収まる。
-**特別な計算資源は不要**(numpy の閉形式 ridge のみ)。
+Ridge 閉形式の 1 fit(400,000 行 × 25 列)= 実測 **38 ms**(numpy + BLAS)。
+支配的なのは Gram 行列 `X'X` の計算で、alpha グリッド 5 点は同じ Gram から
+追加コストほぼ0で解ける。placebo ごとに内側 CV(3分割)をやり直すため、
+1 replicate あたり **Gram 計算 ≈ 3 回**を見込む。
+
+```text
+第1段階: 27 test × 14 fold × 200 replicate × 3 Gram × 38ms ≈ 2.4 時間
+第2段階: 昇格候補1件あたり 14 fold × 1,402 × 3 × 38ms ≈ 2.2 時間
+         (T0-B2 は 6 fold × 672 なので ≈ 0.5 時間)
+```
+
+一晩で終わる規模であり、**特別な計算資源は不要**(numpy の閉形式 ridge のみ、
+新規依存を追加しない)。実測値と乖離したら artifact に記録する。
 
 ---
 
@@ -777,3 +865,9 @@ GO が 0 件だった場合に **言えること**:
 9. **dev 窓が上げ相場に偏る**。2021-2024 は 2022 の下落を含むが、T0-B2 の窓(2023-2024)は
    ほぼ上昇局面である。regime 依存の検出力は集合間で揃っていない(§15-4 で部分的に対処)。
 10. **交互作用は2本だけ**事前登録した。3項以上の相互作用・閾値効果・状態遷移は検定していない。
+11. **metrics の公開遅延は未実測**。+1バー遅延の耐性を T0-B1/B2 の昇格条件にしたが、
+    これは「1バー遅れていた場合」の最小限の試験であり、遅延の**計測ではない**。
+12. **A を 27 列まで厚くした副作用**として、真の増分が小さい場合の検出力は下がる。
+    これは「偽陽性を出さないこと」を優先した意図的な選択である。
+13. **T0-B2 の placebo 解像度は余裕が小さい**(全数 672 シフトで最小 p 1.486e-3 に対し
+    Holm 閾値 1.852e-3)。窓を伸ばせない限りこれが上限である。

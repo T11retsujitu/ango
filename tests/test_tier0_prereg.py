@@ -186,3 +186,43 @@ def test_frozen_spec_was_not_edited_after_the_run():
         "screening 実行後に tier0_prereg.py が変更されている(凍結違反)。"
         "変更が必要なら v2 として別 module を作ること。"
     )
+
+
+def test_dev_window_gives_at_least_two_calendar_years_of_oos():
+    """§15-4「2 暦年以上で dR2 > 0」が原理的に満たせること。
+
+    初期学習が長すぎると最短 dev 窓の OOS が1暦年に潰れ、ゲートが
+    達成不能になる(統計監査の指摘で 12ヶ月 -> 6ヶ月へ変更した経緯)。
+    """
+    from datetime import timedelta
+
+    init = prereg.FOLD["initial_train_months"]
+    for info_set in prereg.INFORMATION_SETS:
+        first_test = info_set.dev_start + timedelta(days=int(init * 30.5))
+        years = {first_test.year, (prereg.DEV_END - timedelta(days=1)).year}
+        assert len(years) >= prereg.STABILITY["positive_calendar_years_min"], (
+            f"{info_set.id} の OOS が {years} 暦年しか跨がず、安定性ゲートが達成不能"
+        )
+
+
+def test_flow_set_excludes_the_price_carrying_column():
+    """avg_trade_notional は log(VWAP) を含むので flow の列に使わない。"""
+    flow = next(s for s in prereg.INFORMATION_SETS if s.id == "T0-A")
+    assert "avg_trade_size" in flow.source_columns
+    assert "avg_trade_notional" not in flow.source_columns
+    assert "avg_trade_notional" in prereg.EXCLUDED_COLUMNS
+    # 価格水準ガードが baseline 側にあること
+    assert "z20d_log_close" in prereg.A_COLUMNS
+
+
+def test_interaction_second_order_terms_are_in_the_baseline():
+    """交互作用の A 射影に現れる二次成分が A に無いと placebo でも消えない(§3)。"""
+    for factor in ("norm_move_1", "z20d_return_1h"):
+        assert factor in prereg.A_COLUMNS
+        assert f"{factor}_sq" in prereg.A_COLUMNS
+
+
+def test_placebo_min_shift_exceeds_the_zscore_memory():
+    """最小シフトが 20日 z-score の記憶長 + 最長 horizon を超えること。"""
+    longest_horizon_days = max(h for s in prereg.INFORMATION_SETS for h in s.horizons_bars) * 5 / 1440
+    assert prereg.PLACEBO["min_shift_days"] > 20 + longest_horizon_days

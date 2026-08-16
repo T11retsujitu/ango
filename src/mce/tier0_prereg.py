@@ -37,16 +37,24 @@ A_DERIVED_COLUMNS = (
     "rv_48",
     "hl_range_z20d",
     "log_volume_z20d",
+    "z20d_log_close",  # 価格水準ガード
     "norm_move_1",
+    "norm_move_1_sq",  # 交互作用の A 射影に現れる二次成分(§3)
     "z20d_return_1h",
+    "z20d_return_1h_sq",
     "tod_sin_1",
     "tod_cos_1",
     "tod_sin_2",
     "tod_cos_2",
     "tod_sin_3",
     "tod_cos_3",
+    "dow_sin_1",
+    "dow_cos_1",
+    "dow_sin_2",
+    "dow_cos_2",
     "is_weekend",
     "is_quarter_hour",
+    "is_hour_boundary",
 )
 A_COLUMNS = A_BASE_COLUMNS + A_DERIVED_COLUMNS
 
@@ -76,12 +84,12 @@ CONFIRMATION_END = datetime(2026, 1, 1, tzinfo=UTC)  # = splits.FINAL_OOS_START(
 INFORMATION_SETS: tuple[InformationSet, ...] = (
     InformationSet(
         id="T0-A",
-        source_columns=("taker_buy_ratio", "trade_count", "avg_trade_notional"),
+        source_columns=("taker_buy_ratio", "trade_count", "avg_trade_size"),
         model_columns=(
             "signed_imb",  # 2 * taker_buy_ratio - 1
             "z20d_signed_imb",
             "z20d_log_trade_count",
-            "z20d_log_avg_trade_notional",
+            "z20d_log_avg_trade_size",
             "signed_imb_x_norm_move_1",  # 吸収 vs 継続は交互作用でしか表現できない
         ),
         horizons_bars=(1, 3, 12),
@@ -131,7 +139,7 @@ INFORMATION_SETS: tuple[InformationSet, ...] = (
 EXCLUDED_COLUMNS = {
     "taker_buy_quote_ratio": "taker_buy_ratio とほぼ共線",
     "open_interest_value": "open_interest x price とほぼ共線",
-    "avg_trade_size": "avg_trade_notional とほぼ共線",
+    "avg_trade_notional": "log = log(VWAP) + log(avg_trade_size)。z-score が価格水準を密輸する",
     "top_trader_account_ls_ratio": "top_trader_position_ls_ratio と同族(position 版を採用)",
     "premium_open": "premium_close と同一系列の start_of_bar 版(片方のみ使う)",
 }
@@ -156,17 +164,33 @@ MONTHLY_COVERAGE_MIN = 0.95  # 月次被覆がこれ未満の暦月はブロッ�
 
 FOLD = {
     "scheme": "expanding",
-    "initial_train_months": 12,
+    # 12ヶ月だと T0-B2 の OOS が 2024 暦年だけになり「2暦年以上で正」が満たせない
+    "initial_train_months": 6,
     "test_block_months": 3,
     "embargo_bars": 288,  # 1 日。purge(target 窓の重なり)に追加で適用
+    "purge_block_tail_bars": "h + 1",  # block 末尾。fold 間の target 重なりを断つ
 }
 
 ESTIMATOR = {
     "model": "ridge",
     "alpha_grid": (0.1, 1.0, 10.0, 100.0, 1000.0),
-    "alpha_selection": "inner purged walk-forward CV (3 splits) on the training set only",
-    "standardization": "training-set mean/std applied to test",
+    "alpha_selection": "inner purged walk-forward CV (3 splits) on the training set only; "
+    "re-selected independently for every placebo replicate",
+    "standardization": "training-set mean/std applied to test, then symmetric clip at +-10",
+    "post_standardization_clip": 10.0,
 }
+
+# OHLCV-only sham(§12.4)。family ではなく対照。T0-A の昇格条件に使う。
+SHAM_SET_S0 = (
+    "clip(rv_12 / rv_48 - 1, -10, +10)",
+    "Z20d(mean over [t-12, t) of (high-low)/close)",
+    "norm_move_1 lag 1 bar (exact-ts join)",
+    "norm_move_1 lag 2 bars (exact-ts join)",
+    "percentile rank of volume_ratio_20 within 20d window - 0.5",
+)
+
+# 公開遅延の未実測に対する耐性(§17)。gate は +1 バー、+12 バーは報告のみ。
+PUBLICATION_DELAY_ROBUSTNESS = {"gate_extra_lag_bars": 1, "reported_extra_lag_bars": 12}
 
 PLACEBO = {
     # 主帰無: A で説明できる成分を残し、残差の時刻対応だけを壊す。
@@ -175,10 +199,11 @@ PLACEBO = {
     "Gamma_hat fitted on TRAIN rows only",
     "secondary_reported": "Bt: circular day-shift of the whole X block (anti-conservative; report only)",
     "scheme": "circular day-shift (A is never shifted)",
-    "min_shift_days": 7,
+    # 20日 z-score の記憶長より短いシフトは帰無が本物と部分整列する
+    "min_shift_days": 30,
     # シフト群は有限: S = {7 .. W_days-7}。K を無限に増やすことはできない。
     "k_stage1": 200,
-    "k_stage2": "exhaustive over S (|S| = window_days - 13)",
+    "k_stage2": "exhaustive over S (|S| = window_days - 2*min_shift_days + 1)",
     "stage2_rule": "stage-1 rank only: #{placebo >= observed} <= 5 (never the effect size)",
     "p_rule": "(1 + #{placebo >= observed}) / (1 + K)",
     # シフト後 null になった行は埋めない。placebo ごとに有効行を取り直し、
@@ -189,7 +214,7 @@ PLACEBO = {
 
 
 def placebo_shift_count(window_days: int) -> int:
-    """その窓で作れる独立な巡回シフトの総数 |S| = window_days - 13。"""
+    """その窓で作れる独立な巡回シフトの総数 |S| = window_days - 2*min_shift + 1。"""
     return window_days - 2 * PLACEBO["min_shift_days"] + 1
 
 BOOTSTRAP = {"scheme": "day-cluster", "reps": 20000}
@@ -209,6 +234,8 @@ MULTIPLE_TESTING = {
 }
 
 STABILITY = {
+    # 符号は ridge 係数ではなく A 残差化した偏相関で測る(共線下で係数符号は非同定)
+    "sign_statistic": "partial correlation of (x_j - proj_A(x_j)) with (y - yhat_A)",
     "coefficient_sign_agreement_min": 0.75,  # fold の 75% 以上で符号一致
     "positive_fold_fraction_min": 0.75,
     "positive_calendar_years_min": 2,
