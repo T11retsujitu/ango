@@ -1,6 +1,9 @@
-# Phase 2 — Semantic Schema + DSL + AST 仕様 v0(実装対象。凍結は Phase 3 開始前)
+# Phase 2 — Semantic Schema + DSL + AST 仕様 v1(**凍結**)
 
-- 作成日: 2026-08-16
+- 作成日: 2026-08-16 / **凍結日: 2026-08-16**(Phase 3 bakeoff 開始前凍結)
+- 凍結規則: op の追加・削除・意味変更、制約値の変更は bakeoff 実行中は行わない。
+  変更する場合は v2 として再凍結し、v1 下の探索結果と比較不能として扱う
+  (freeze_v1 の運用規則に従う)。searcher が生成できるのは本仕様の AST のみ。
 - 実装: `src/mce/dsl/`
 - 参照: ROADMAP §Phase 2、[freeze_v1](../phase1/freeze_v1.md)(Judge は凍結済み・変更不可)、
   Hubble(DSL/AST/deterministic evaluation)、AlphaSchema(semantic space)
@@ -134,7 +137,8 @@ hypothesis → AST の変換は Phase 3(searcher 側)の責務。Phase 2 は
 - funding / OI 系 feature(データ蓄積後)
 - `abstain_unless` の連続量版(confidence gating)
 
-## 9. 凍結計画
+## 9. 凍結状態
 
-Phase 3(search bakeoff)開始前に本仕様を v1 として凍結する。凍結後は
-op の追加・制約変更を searcher 実行中に行わない(行う場合は bakeoff やり直し)。
+**本仕様は v1 として 2026-08-16 に凍結された。** bakeoff(Phase 3)の全 arm は
+この仕様の AST のみを生成できる。sampling grammar(パラメータメニュー・出現確率)は
+DSL とは別に `docs/phase3/bakeoff_protocol.md` §4 で凍結する。
