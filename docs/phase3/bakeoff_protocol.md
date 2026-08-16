@@ -94,9 +94,72 @@ rejected として記録(budget 非消費)。
 3. validation 生存は **0 が最頻**(1 出たら Phase 5 監査行きの暫定生存)
 4. maker_low 参考値では research 通過が 3〜8 に増える(コストの壁の実測)
 
+→ **結果(2026-08-16 確定)**: draw 46 / rejected 16 / research通過 4 / 生存 **0**。
+[findings](../findings/2026-08-16-phase3-armA-random-v1.md) 参照。Arm A は凍結済み。
+
 ## 7. 実行手順
 
 ```sh
-uv run python -m mce.search.random_search          # budget 30, seed 20260818(凍結値)
+uv run python -m mce.search.random_search          # Arm A(実行済み・凍結)
+uv run python -m mce.search.genetic                # Arm B(budget 30, seed 20260819)
+uv run python -m mce.search.baselines_arm          # Baselines(10固定AST)
 git add experiments/phase3 && git commit
 ```
+
+---
+
+## 8. Arm B — Genetic Search(追記凍結 2026-08-16。Arm B 実行前)
+
+役割: 進化的探索が Random に対して budget 効率で優るかの検証(ROADMAP Arm B)。
+QuantaAlpha の trajectory-level 操作は採用せず、初期版は **AST-level operation**。
+
+- **seed = 20260819 / budget 30**(research 評価 30 回。共通規則 §1–§3 は不変)
+- 初期集団: 凍結 grammar(§4)から population = **6** 個体をサンプル
+- 世代ループ(budget 尽きるまで): 子を1個体ずつ生成・評価し、
+  親∪子から fitness 上位 6(hash 重複は除く)を次集団とする(steady-state + elitism)
+- 選択: tournament size **3**
+- 遺伝操作: crossover 確率 **0.4**(親2の条件スロット移植:
+  child[slot_A] ← parent_B[slot_B])、それ以外は mutation(1箇所):
+  param 摂動 0.5(凍結メニュー内の隣接値。符号付き閾値は 0.2 で符号反転)/
+  比較演算子反転 0.15 / bool 部分木の再サンプル 0.25 / max_holding 付替え 0.1
+- 無効・重複の子は budget を消費しない(会計は共通 ledger)。有効な子が
+  20 回試して得られない場合は grammar から新規サンプルで代替(多様性注入)
+- **fitness(凍結・research primary のみ使用)**:
+  `fitness = sharpe(None→−99) − 0.02 × ノード数 − (2.0 if trade_count < 30)`
+  complexity penalty と実効N penalty を含む。
+  **validation の値は fitness・選択に一切使わない**(記録のみ。§2 の防火壁維持)
+- duplicate の子は評価済み record の fitness を再利用(budget 非消費)
+
+### Arm B 事前予想(2026-08-16 記録)
+
+1. GA は Arm A が示した long-only drift-fit を選択圧で増幅し、research 通過は
+   **4〜10 / 30** に増える(research 適合は Random より上手くなる)
+2. しかし validation 生存は **0 が最頻**(防火壁は選択圧では破れない)
+3. duplicate は 3〜15(収束による)。世代後半は同族 AST が支配的
+4. survivors/evaluations で Random(0/30)と差がつかない可能性が最も高い
+
+## 9. Baselines arm(追記凍結 2026-08-16)
+
+固定 10 戦略を **DSL AST として凍結**し(`search/baselines_arm.py` の
+FROZEN_BASELINES が正)、同一パイプラインで評価する。探索ではなく参照点:
+
+1. always_long(return(1) > −1)
+2. always_short(return(1) < 1)
+3. momentum_1h(return(12) の符号で long/short)
+4. momentum_4h(return(48))
+5. momentum_1d(return(288))
+6. reversal_1h(momentum_1h の逆)
+7. momentum_1h_persist(holds_for 3 本)
+8. momentum_1h_hold12(max_holding_bars 12)
+9. lowvol_momentum_long(long側のみ: return(12)>0 ∧ volatility(48)<0.002。
+   両側条件は max_parameters 6 を超えるため long 側に限定)
+10. volume_shock_fade(volume_z(24) > 3 で short)
+
+注意: always_long/short は決済がほぼ発生せず trade_count < 30 のため、
+共通規則上 research を通過できない(buy&hold の参照値は EXP-0001 が既に保持)。
+これは規則の歪みではなく「規則が hold 戦略を審査対象外とする」ことの明示的記録。
+
+### Baselines 事前予想
+
+research 通過 0〜1 / 10(lowvol_momentum か momentum_1h_hold12 が僅かに可能性)、
+生存 0。momentum 系は Phase 0 実測(gross 負)どおり大敗する。
