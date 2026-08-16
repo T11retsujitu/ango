@@ -1,0 +1,902 @@
+{
+  "config": {
+    "cost_scenario": "base_taker",
+    "embargo_minutes": 70,
+    "end": "2025-07-01T00:00:00+00:00",
+    "horizon_bars": 12,
+    "l2": 0.001,
+    "label": "fwd_open_return_1h",
+    "model_features": [
+      "return_5m",
+      "return_1h",
+      "volume_ratio_20",
+      "drift_20d",
+      "realized_vol_20d"
+    ],
+    "seed": 20260816,
+    "start": "2023-11-19T00:00:00+00:00",
+    "test_days": 30,
+    "threshold_bps": 10.0,
+    "train_days": 120
+  },
+  "created_at": "2026-08-16T19:06:00.825669+09:00",
+  "folds": [
+    {
+      "arms": {
+        "abstention": {
+          "break_even_cost_bps": -9.612543437940445,
+          "exposure": 0.005902777777777778,
+          "gross_total_return": -0.04806271718970223,
+          "hit_rate": 0.32,
+          "sharpe": -4.448866092853945,
+          "total_return": -0.07306271718970225,
+          "trade_count": 25,
+          "turnover_total": 50.0
+        },
+        "buy_and_hold": {
+          "break_even_cost_bps": -531.995386705737,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": -0.0531995386705737,
+          "hit_rate": null,
+          "sharpe": -1.008059649654646,
+          "total_return": -0.0536995386705737,
+          "trade_count": 0,
+          "turnover_total": 1.0
+        },
+        "model_sign": {
+          "break_even_cost_bps": 0.23449646140226912,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.10413987850874773,
+          "hit_rate": 0.3504504504504504,
+          "sharpe": -38.91179881982693,
+          "total_return": -2.1163601214912524,
+          "trade_count": 2220,
+          "turnover_total": 4441.0
+        },
+        "random_abstention": {
+          "break_even_cost_bps": -1.2496248928319862,
+          "exposure": 0.006481481481481481,
+          "gross_total_return": -0.004248724635628753,
+          "hit_rate": 0.29411764705882354,
+          "sharpe": -4.082515767738092,
+          "total_return": -0.021248724635628755,
+          "trade_count": 17,
+          "turnover_total": 34.0
+        }
+      },
+      "fold": 0,
+      "keep_prob": 0.0059,
+      "mean_abs_move_bps": 35.523,
+      "n_train": 28574,
+      "share_up": 0.5123,
+      "test": [
+        "2024-03-18T00:00:00+00:00",
+        "2024-04-17T00:00:00+00:00"
+      ],
+      "train": [
+        "2023-11-19T00:00:00+00:00",
+        "2024-03-18T00:00:00+00:00"
+      ]
+    },
+    {
+      "arms": {
+        "abstention": {
+          "break_even_cost_bps": -5.698515219824577,
+          "exposure": 0.005902777777777778,
+          "gross_total_return": -0.026213170011193054,
+          "hit_rate": 0.34782608695652173,
+          "sharpe": -5.687486935799568,
+          "total_return": -0.04921317001119307,
+          "trade_count": 23,
+          "turnover_total": 46.0
+        },
+        "buy_and_hold": {
+          "break_even_cost_bps": 349.79046180935615,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.03497904618093561,
+          "hit_rate": null,
+          "sharpe": 0.796641338665809,
+          "total_return": 0.03447904618093561,
+          "trade_count": 0,
+          "turnover_total": 1.0
+        },
+        "model_sign": {
+          "break_even_cost_bps": -0.3550366592901261,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": -0.10967082405471995,
+          "hit_rate": 0.33743523316062174,
+          "sharpe": -36.992416984106775,
+          "total_return": -1.6541708240547202,
+          "trade_count": 1544,
+          "turnover_total": 3089.0
+        },
+        "random_abstention": {
+          "break_even_cost_bps": -3.7441640010661414,
+          "exposure": 0.005555555555555556,
+          "gross_total_return": -0.007488328002132283,
+          "hit_rate": 0.1,
+          "sharpe": -6.8812944365043425,
+          "total_return": -0.017488328002132285,
+          "trade_count": 10,
+          "turnover_total": 20.0
+        }
+      },
+      "fold": 1,
+      "keep_prob": 0.0059,
+      "mean_abs_move_bps": 38.333,
+      "n_train": 34546,
+      "share_up": 0.5133,
+      "test": [
+        "2024-04-17T00:00:00+00:00",
+        "2024-05-17T00:00:00+00:00"
+      ],
+      "train": [
+        "2023-12-19T00:00:00+00:00",
+        "2024-04-17T00:00:00+00:00"
+      ]
+    },
+    {
+      "arms": {
+        "abstention": {
+          "break_even_cost_bps": 5.981910677629639,
+          "exposure": 0.0008101851851851852,
+          "gross_total_return": 0.008374674948681493,
+          "hit_rate": 0.42857142857142855,
+          "sharpe": 0.8027480193787121,
+          "total_return": 0.001374674948681492,
+          "trade_count": 7,
+          "turnover_total": 14.0
+        },
+        "buy_and_hold": {
+          "break_even_cost_bps": 202.166600072482,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.0202166600072482,
+          "hit_rate": null,
+          "sharpe": 0.6192871925552556,
+          "total_return": 0.0197166600072482,
+          "trade_count": 0,
+          "turnover_total": 1.0
+        },
+        "model_sign": {
+          "break_even_cost_bps": 0.22515076223877697,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.030462898130906524,
+          "hit_rate": 0.38461538461538464,
+          "sharpe": -19.777592424170194,
+          "total_return": -0.6460371018690934,
+          "trade_count": 676,
+          "turnover_total": 1353.0
+        },
+        "random_abstention": {
+          "break_even_cost_bps": null,
+          "exposure": 0.0,
+          "gross_total_return": 0.0,
+          "hit_rate": null,
+          "sharpe": null,
+          "total_return": 0.0,
+          "trade_count": 0,
+          "turnover_total": 0.0
+        }
+      },
+      "fold": 2,
+      "keep_prob": 0.0008,
+      "mean_abs_move_bps": 39.036,
+      "n_train": 34546,
+      "share_up": 0.5111,
+      "test": [
+        "2024-05-17T00:00:00+00:00",
+        "2024-06-16T00:00:00+00:00"
+      ],
+      "train": [
+        "2024-01-18T00:00:00+00:00",
+        "2024-05-17T00:00:00+00:00"
+      ]
+    },
+    {
+      "arms": {
+        "abstention": {
+          "break_even_cost_bps": 5.43170764869004,
+          "exposure": 0.0038194444444444443,
+          "gross_total_return": 0.017381464475808128,
+          "hit_rate": 0.75,
+          "sharpe": 0.21955737897330405,
+          "total_return": 0.0013814644758081253,
+          "trade_count": 16,
+          "turnover_total": 32.0
+        },
+        "buy_and_hold": {
+          "break_even_cost_bps": -120.33222889109463,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": -0.012033222889109463,
+          "hit_rate": null,
+          "sharpe": -0.3220181654293217,
+          "total_return": -0.012533222889109463,
+          "trade_count": 0,
+          "turnover_total": 1.0
+        },
+        "model_sign": {
+          "break_even_cost_bps": 0.133972796405524,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.03969613957495677,
+          "hit_rate": 0.3241053342336259,
+          "sharpe": -35.71235033824708,
+          "total_return": -1.4418038604250436,
+          "trade_count": 1481,
+          "turnover_total": 2963.0
+        },
+        "random_abstention": {
+          "break_even_cost_bps": -2.891600645794079,
+          "exposure": 0.0042824074074074075,
+          "gross_total_return": -0.0011566402583176316,
+          "hit_rate": 0.0,
+          "sharpe": -1.6722997619703415,
+          "total_return": -0.0031566402583176325,
+          "trade_count": 2,
+          "turnover_total": 4.0
+        }
+      },
+      "fold": 3,
+      "keep_prob": 0.0038,
+      "mean_abs_move_bps": 38.143,
+      "n_train": 34546,
+      "share_up": 0.5088,
+      "test": [
+        "2024-06-16T00:00:00+00:00",
+        "2024-07-16T00:00:00+00:00"
+      ],
+      "train": [
+        "2024-02-17T00:00:00+00:00",
+        "2024-06-16T00:00:00+00:00"
+      ]
+    },
+    {
+      "arms": {
+        "abstention": {
+          "break_even_cost_bps": -2.061553866331672,
+          "exposure": 0.014004629629629629,
+          "gross_total_return": -0.01772936325045238,
+          "hit_rate": 0.5116279069767442,
+          "sharpe": -2.475285773189498,
+          "total_return": -0.06072936325045242,
+          "trade_count": 43,
+          "turnover_total": 86.0
+        },
+        "buy_and_hold": {
+          "break_even_cost_bps": -804.9429699829714,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": -0.08049429699829713,
+          "hit_rate": null,
+          "sharpe": -1.435876774609394,
+          "total_return": -0.08099429699829713,
+          "trade_count": 0,
+          "turnover_total": 1.0
+        },
+        "model_sign": {
+          "break_even_cost_bps": 0.15747171631823023,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.0356358494028155,
+          "hit_rate": 0.42793987621573826,
+          "sharpe": -19.16073755425079,
+          "total_return": -1.0958641505971847,
+          "trade_count": 1131,
+          "turnover_total": 2263.0
+        },
+        "random_abstention": {
+          "break_even_cost_bps": 7.7112215015288195,
+          "exposure": 0.009143518518518518,
+          "gross_total_return": 0.03238713030642104,
+          "hit_rate": 0.5238095238095238,
+          "sharpe": 2.21892965103404,
+          "total_return": 0.01138713030642104,
+          "trade_count": 21,
+          "turnover_total": 42.0
+        }
+      },
+      "fold": 4,
+      "keep_prob": 0.014,
+      "mean_abs_move_bps": 35.336,
+      "n_train": 34546,
+      "share_up": 0.5039,
+      "test": [
+        "2024-07-16T00:00:00+00:00",
+        "2024-08-15T00:00:00+00:00"
+      ],
+      "train": [
+        "2024-03-18T00:00:00+00:00",
+        "2024-07-16T00:00:00+00:00"
+      ]
+    },
+    {
+      "arms": {
+        "abstention": {
+          "break_even_cost_bps": 9.908152305833879,
+          "exposure": 0.0011574074074074073,
+          "gross_total_return": 0.013871413228167428,
+          "hit_rate": 0.5714285714285714,
+          "sharpe": 0.9657186693944928,
+          "total_return": 0.006871413228167424,
+          "trade_count": 7,
+          "turnover_total": 14.0
+        },
+        "buy_and_hold": {
+          "break_even_cost_bps": 415.2031523482336,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.04152031523482336,
+          "hit_rate": null,
+          "sharpe": 0.9917873858867043,
+          "total_return": 0.04102031523482336,
+          "trade_count": 0,
+          "turnover_total": 1.0
+        },
+        "model_sign": {
+          "break_even_cost_bps": 0.4499244074677208,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.16399744652198422,
+          "hit_rate": 0.3232711306256861,
+          "sharpe": -38.76360786897725,
+          "total_return": -1.6585025534780158,
+          "trade_count": 1822,
+          "turnover_total": 3645.0
+        },
+        "random_abstention": {
+          "break_even_cost_bps": -5.552825968558328,
+          "exposure": 0.000462962962962963,
+          "gross_total_return": -0.0011105651937116656,
+          "hit_rate": 0.0,
+          "sharpe": -2.765212699630798,
+          "total_return": -0.0021105651937116656,
+          "trade_count": 1,
+          "turnover_total": 2.0
+        }
+      },
+      "fold": 5,
+      "keep_prob": 0.0012,
+      "mean_abs_move_bps": 35.026,
+      "n_train": 34546,
+      "share_up": 0.5004,
+      "test": [
+        "2024-08-15T00:00:00+00:00",
+        "2024-09-14T00:00:00+00:00"
+      ],
+      "train": [
+        "2024-04-17T00:00:00+00:00",
+        "2024-08-15T00:00:00+00:00"
+      ]
+    },
+    {
+      "arms": {
+        "abstention": {
+          "break_even_cost_bps": null,
+          "exposure": 0.0,
+          "gross_total_return": 0.0,
+          "hit_rate": null,
+          "sharpe": null,
+          "total_return": 0.0,
+          "trade_count": 0,
+          "turnover_total": 0.0
+        },
+        "buy_and_hold": {
+          "break_even_cost_bps": 438.9482999145289,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.04389482999145289,
+          "hit_rate": null,
+          "sharpe": 1.3377047698938334,
+          "total_return": 0.04339482999145289,
+          "trade_count": 0,
+          "turnover_total": 1.0
+        },
+        "model_sign": {
+          "break_even_cost_bps": 0.6956486792615152,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.20472940630666392,
+          "hit_rate": 0.29979605710401086,
+          "sharpe": -37.25503007879547,
+          "total_return": -1.2667705936933362,
+          "trade_count": 1471,
+          "turnover_total": 2943.0
+        },
+        "random_abstention": {
+          "break_even_cost_bps": null,
+          "exposure": 0.0,
+          "gross_total_return": 0.0,
+          "hit_rate": null,
+          "sharpe": null,
+          "total_return": 0.0,
+          "trade_count": 0,
+          "turnover_total": 0.0
+        }
+      },
+      "fold": 6,
+      "keep_prob": 0.0,
+      "mean_abs_move_bps": 34.391,
+      "n_train": 34546,
+      "share_up": 0.5044,
+      "test": [
+        "2024-09-14T00:00:00+00:00",
+        "2024-10-14T00:00:00+00:00"
+      ],
+      "train": [
+        "2024-05-17T00:00:00+00:00",
+        "2024-09-14T00:00:00+00:00"
+      ]
+    },
+    {
+      "arms": {
+        "abstention": {
+          "break_even_cost_bps": 8.485338728340563,
+          "exposure": 0.0006944444444444445,
+          "gross_total_return": 0.008485338728340563,
+          "hit_rate": 0.8,
+          "sharpe": 1.3889696651485257,
+          "total_return": 0.0034853387283405616,
+          "trade_count": 5,
+          "turnover_total": 10.0
+        },
+        "buy_and_hold": {
+          "break_even_cost_bps": 3480.524175665546,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.3480524175665546,
+          "hit_rate": null,
+          "sharpe": 8.862573423713355,
+          "total_return": 0.3475524175665546,
+          "trade_count": 0,
+          "turnover_total": 1.0
+        },
+        "model_sign": {
+          "break_even_cost_bps": -1.2410335167299436,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": -0.21854600229614307,
+          "hit_rate": 0.3443181818181818,
+          "sharpe": -27.408061884115618,
+          "total_return": -1.0990460022961432,
+          "trade_count": 880,
+          "turnover_total": 1761.0
+        },
+        "random_abstention": {
+          "break_even_cost_bps": null,
+          "exposure": 0.0,
+          "gross_total_return": 0.0,
+          "hit_rate": null,
+          "sharpe": null,
+          "total_return": 0.0,
+          "trade_count": 0,
+          "turnover_total": 0.0
+        }
+      },
+      "fold": 7,
+      "keep_prob": 0.0007,
+      "mean_abs_move_bps": 34.874,
+      "n_train": 34546,
+      "share_up": 0.5044,
+      "test": [
+        "2024-10-14T00:00:00+00:00",
+        "2024-11-13T00:00:00+00:00"
+      ],
+      "train": [
+        "2024-06-16T00:00:00+00:00",
+        "2024-10-14T00:00:00+00:00"
+      ]
+    },
+    {
+      "arms": {
+        "abstention": {
+          "break_even_cost_bps": 11.894264505008314,
+          "exposure": 0.001388888888888889,
+          "gross_total_return": 0.019030823208013303,
+          "hit_rate": 0.5,
+          "sharpe": 1.6835070547524693,
+          "total_return": 0.011030823208013303,
+          "trade_count": 8,
+          "turnover_total": 16.0
+        },
+        "buy_and_hold": {
+          "break_even_cost_bps": 1402.4710970162546,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.14024710970162546,
+          "hit_rate": null,
+          "sharpe": 2.931787754790312,
+          "total_return": 0.13974710970162546,
+          "trade_count": 0,
+          "turnover_total": 1.0
+        },
+        "model_sign": {
+          "break_even_cost_bps": 0.6921232330466253,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.11593064153530974,
+          "hit_rate": 0.44563918757467147,
+          "sharpe": -14.953786982508138,
+          "total_return": -0.7215693584646903,
+          "trade_count": 837,
+          "turnover_total": 1675.0
+        },
+        "random_abstention": {
+          "break_even_cost_bps": 19.81374165895,
+          "exposure": 0.007638888888888889,
+          "gross_total_return": 0.00792549666358,
+          "hit_rate": 1.0,
+          "sharpe": 1.3049940906583959,
+          "total_return": 0.0059254966635800006,
+          "trade_count": 2,
+          "turnover_total": 4.0
+        }
+      },
+      "fold": 8,
+      "keep_prob": 0.0014,
+      "mean_abs_move_bps": 35.272,
+      "n_train": 34546,
+      "share_up": 0.5103,
+      "test": [
+        "2024-11-13T00:00:00+00:00",
+        "2024-12-13T00:00:00+00:00"
+      ],
+      "train": [
+        "2024-07-16T00:00:00+00:00",
+        "2024-11-13T00:00:00+00:00"
+      ]
+    },
+    {
+      "arms": {
+        "abstention": {
+          "break_even_cost_bps": 18.099708736330488,
+          "exposure": 0.002199074074074074,
+          "gross_total_return": 0.03619941747266098,
+          "hit_rate": 0.8,
+          "sharpe": 3.9145546678406538,
+          "total_return": 0.02619941747266097,
+          "trade_count": 10,
+          "turnover_total": 20.0
+        },
+        "buy_and_hold": {
+          "break_even_cost_bps": -462.8593040901607,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": -0.046285930409016074,
+          "hit_rate": null,
+          "sharpe": -1.1508765644436152,
+          "total_return": -0.046785930409016074,
+          "trade_count": 0,
+          "turnover_total": 1.0
+        },
+        "model_sign": {
+          "break_even_cost_bps": -1.2458990717366243,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": -0.11524566413563775,
+          "hit_rate": 0.4458874458874459,
+          "sharpe": -14.014833884335467,
+          "total_return": -0.577745664135638,
+          "trade_count": 462,
+          "turnover_total": 925.0
+        },
+        "random_abstention": {
+          "break_even_cost_bps": 5.261688027894673,
+          "exposure": 0.0005787037037037037,
+          "gross_total_return": 0.0021046752111578693,
+          "hit_rate": 0.5,
+          "sharpe": 0.06525247893109958,
+          "total_return": 0.00010467521115786922,
+          "trade_count": 2,
+          "turnover_total": 4.0
+        }
+      },
+      "fold": 9,
+      "keep_prob": 0.0022,
+      "mean_abs_move_bps": 33.981,
+      "n_train": 34546,
+      "share_up": 0.5175,
+      "test": [
+        "2024-12-13T00:00:00+00:00",
+        "2025-01-12T00:00:00+00:00"
+      ],
+      "train": [
+        "2024-08-15T00:00:00+00:00",
+        "2024-12-13T00:00:00+00:00"
+      ]
+    },
+    {
+      "arms": {
+        "abstention": {
+          "break_even_cost_bps": 10.400005587901257,
+          "exposure": 0.006828703703703704,
+          "gross_total_return": 0.05408002905708653,
+          "hit_rate": 0.5,
+          "sharpe": 1.693022911406024,
+          "total_return": 0.028080029057086512,
+          "trade_count": 26,
+          "turnover_total": 52.0
+        },
+        "buy_and_hold": {
+          "break_even_cost_bps": 432.6240146233218,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.04326240146233218,
+          "hit_rate": null,
+          "sharpe": 0.8609465925078433,
+          "total_return": 0.04276240146233218,
+          "trade_count": 0,
+          "turnover_total": 1.0
+        },
+        "model_sign": {
+          "break_even_cost_bps": -0.21935289493334897,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": -0.04863053680672347,
+          "hit_rate": 0.41787003610108303,
+          "sharpe": -22.875791946830326,
+          "total_return": -1.1571305368067237,
+          "trade_count": 1108,
+          "turnover_total": 2217.0
+        },
+        "random_abstention": {
+          "break_even_cost_bps": 2.956497583734039,
+          "exposure": 0.009027777777777777,
+          "gross_total_return": 0.00532169565072127,
+          "hit_rate": 0.5555555555555556,
+          "sharpe": -1.2173163973614562,
+          "total_return": -0.0036783043492787312,
+          "trade_count": 9,
+          "turnover_total": 18.0
+        }
+      },
+      "fold": 10,
+      "keep_prob": 0.0068,
+      "mean_abs_move_bps": 34.015,
+      "n_train": 34546,
+      "share_up": 0.5136,
+      "test": [
+        "2025-01-12T00:00:00+00:00",
+        "2025-02-11T00:00:00+00:00"
+      ],
+      "train": [
+        "2024-09-14T00:00:00+00:00",
+        "2025-01-12T00:00:00+00:00"
+      ]
+    },
+    {
+      "arms": {
+        "abstention": {
+          "break_even_cost_bps": 3.381202850691145,
+          "exposure": 0.01875,
+          "gross_total_return": 0.03381202850691145,
+          "hit_rate": 0.56,
+          "sharpe": -0.893110893911185,
+          "total_return": -0.016187971493088583,
+          "trade_count": 50,
+          "turnover_total": 100.0
+        },
+        "buy_and_hold": {
+          "break_even_cost_bps": -1320.5689833691981,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": -0.1320568983369198,
+          "hit_rate": null,
+          "sharpe": -2.444734445887036,
+          "total_return": -0.1325568983369198,
+          "trade_count": 0,
+          "turnover_total": 1.0
+        },
+        "model_sign": {
+          "break_even_cost_bps": -0.9221675253503483,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": -0.18102148522627337,
+          "hit_rate": 0.4566768603465851,
+          "sharpe": -21.165885727225064,
+          "total_return": -1.1625214852262735,
+          "trade_count": 981,
+          "turnover_total": 1963.0
+        },
+        "random_abstention": {
+          "break_even_cost_bps": 6.341071823603656,
+          "exposure": 0.01087962962962963,
+          "gross_total_return": 0.02916893038857682,
+          "hit_rate": 0.6086956521739131,
+          "sharpe": 1.1015557452579923,
+          "total_return": 0.006168930388576816,
+          "trade_count": 23,
+          "turnover_total": 46.0
+        }
+      },
+      "fold": 11,
+      "keep_prob": 0.0187,
+      "mean_abs_move_bps": 37.01,
+      "n_train": 34546,
+      "share_up": 0.5128,
+      "test": [
+        "2025-02-11T00:00:00+00:00",
+        "2025-03-13T00:00:00+00:00"
+      ],
+      "train": [
+        "2024-10-14T00:00:00+00:00",
+        "2025-02-11T00:00:00+00:00"
+      ]
+    },
+    {
+      "arms": {
+        "abstention": {
+          "break_even_cost_bps": 7.946187456737974,
+          "exposure": 0.001388888888888889,
+          "gross_total_return": 0.012713899930780759,
+          "hit_rate": 0.5,
+          "sharpe": 0.6130030301375716,
+          "total_return": 0.004713899930780756,
+          "trade_count": 8,
+          "turnover_total": 16.0
+        },
+        "buy_and_hold": {
+          "break_even_cost_bps": 80.63210135600852,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.008063210135600851,
+          "hit_rate": null,
+          "sharpe": 0.17905386086098873,
+          "total_return": 0.007563210135600851,
+          "trade_count": 0,
+          "turnover_total": 1.0
+        },
+        "model_sign": {
+          "break_even_cost_bps": 0.17122621030530907,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.046350935129647164,
+          "hit_rate": 0.3540280857354028,
+          "sharpe": -30.15922188840438,
+          "total_return": -1.307149064870353,
+          "trade_count": 1353,
+          "turnover_total": 2707.0
+        },
+        "random_abstention": {
+          "break_even_cost_bps": 11.970598289051114,
+          "exposure": 0.00034722222222222224,
+          "gross_total_return": 0.004788239315620446,
+          "hit_rate": 1.0,
+          "sharpe": 1.9751951909549048,
+          "total_return": 0.002788239315620446,
+          "trade_count": 2,
+          "turnover_total": 4.0
+        }
+      },
+      "fold": 12,
+      "keep_prob": 0.0014,
+      "mean_abs_move_bps": 39.564,
+      "n_train": 34546,
+      "share_up": 0.5069,
+      "test": [
+        "2025-03-13T00:00:00+00:00",
+        "2025-04-12T00:00:00+00:00"
+      ],
+      "train": [
+        "2024-11-13T00:00:00+00:00",
+        "2025-03-13T00:00:00+00:00"
+      ]
+    },
+    {
+      "arms": {
+        "abstention": {
+          "break_even_cost_bps": -6.110801737453542,
+          "exposure": 0.001388888888888889,
+          "gross_total_return": -0.012221603474907083,
+          "hit_rate": 0.1,
+          "sharpe": -6.115627215741974,
+          "total_return": -0.022221603474907085,
+          "trade_count": 10,
+          "turnover_total": 20.0
+        },
+        "buy_and_hold": {
+          "break_even_cost_bps": 2261.48969002113,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.226148969002113,
+          "hit_rate": null,
+          "sharpe": 7.472708984141982,
+          "total_return": 0.225648969002113,
+          "trade_count": 0,
+          "turnover_total": 1.0
+        },
+        "model_sign": {
+          "break_even_cost_bps": -1.215680620299142,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": -0.13311702792275604,
+          "hit_rate": 0.25045703839122485,
+          "sharpe": -22.004441340256466,
+          "total_return": -0.6806170279227559,
+          "trade_count": 547,
+          "turnover_total": 1095.0
+        },
+        "random_abstention": {
+          "break_even_cost_bps": 4.616631958069828,
+          "exposure": 0.006944444444444444,
+          "gross_total_return": 0.0009233263916139656,
+          "hit_rate": 0.0,
+          "sharpe": -0.06893089149898542,
+          "total_return": -7.667360838603445e-05,
+          "trade_count": 1,
+          "turnover_total": 2.0
+        }
+      },
+      "fold": 13,
+      "keep_prob": 0.0014,
+      "mean_abs_move_bps": 38.614,
+      "n_train": 34546,
+      "share_up": 0.4997,
+      "test": [
+        "2025-04-12T00:00:00+00:00",
+        "2025-05-12T00:00:00+00:00"
+      ],
+      "train": [
+        "2024-12-13T00:00:00+00:00",
+        "2025-04-12T00:00:00+00:00"
+      ]
+    },
+    {
+      "arms": {
+        "abstention": {
+          "break_even_cost_bps": 15.783294514192248,
+          "exposure": 0.00011574074074074075,
+          "gross_total_return": 0.0031566589028384495,
+          "hit_rate": 1.0,
+          "sharpe": 2.7826828920394133,
+          "total_return": 0.0021566589028384495,
+          "trade_count": 1,
+          "turnover_total": 2.0
+        },
+        "buy_and_hold": {
+          "break_even_cost_bps": 619.0393105776737,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": 0.06190393105776737,
+          "hit_rate": null,
+          "sharpe": 2.0464141789424315,
+          "total_return": 0.06140393105776737,
+          "trade_count": 0,
+          "turnover_total": 1.0
+        },
+        "model_sign": {
+          "break_even_cost_bps": -0.09910657851997715,
+          "exposure": 0.9998842592592593,
+          "gross_total_return": -0.04020753890555473,
+          "hit_rate": 0.22978303747534518,
+          "sharpe": -64.15017612972399,
+          "total_return": -2.068707538905555,
+          "trade_count": 2028,
+          "turnover_total": 4057.0
+        },
+        "random_abstention": {
+          "break_even_cost_bps": null,
+          "exposure": 0.0,
+          "gross_total_return": 0.0,
+          "hit_rate": null,
+          "sharpe": null,
+          "total_return": 0.0,
+          "trade_count": 0,
+          "turnover_total": 0.0
+        }
+      },
+      "fold": 14,
+      "keep_prob": 0.0001,
+      "mean_abs_move_bps": 36.252,
+      "n_train": 34546,
+      "share_up": 0.5061,
+      "test": [
+        "2025-05-12T00:00:00+00:00",
+        "2025-06-11T00:00:00+00:00"
+      ],
+      "train": [
+        "2025-01-12T00:00:00+00:00",
+        "2025-05-12T00:00:00+00:00"
+      ]
+    }
+  ],
+  "judgment": {
+    "J1_median_turnover_ratio": 0.0108,
+    "J1_pass": true,
+    "J1_turnover_reduced_frac": 1.0,
+    "J2_median_net_improvement": 1.1852105658638104,
+    "J2_net_improved_frac": 1.0,
+    "J2_pass": true,
+    "J3_beats_random_frac": 0.6,
+    "J3_pass": false,
+    "abstention_net_positive_frac": 0.6,
+    "abstention_total_trades": 239,
+    "folds_used": 15,
+    "verdict": "abstention_rejected"
+  },
+  "manifest_sha256": {
+    "features": "f759f5eddc82ee38eb867ca8cffc0d559baf2d73bdf969e4c103389ff9d1ec9d",
+    "labels": "2f874fe153e653787bc7d388b2c0a5d5e00efdd9f8a0ea931c2e7e1bd6a66ac4"
+  },
+  "protocol": "phase1a_v1",
+  "reference": "Machine Learning-Based Bitcoin Trading Under Transaction Costs (arXiv:2606.00060; 原論文は1時間足)",
+  "replication_class": "method_transfer",
+  "source_commit": "6bff1a34c24184359a59d3dd1ca542439f5bb68b"
+}
