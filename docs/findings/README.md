@@ -29,8 +29,29 @@
    - レジームは月ラベルでなく**バー時点のローリング量**で定義する
      (月単位は N=34 しかなく、表示用と割り切る)
 
+## 現在の研究軸(2026-08-16 更新)
+
+Phase 3 Alpha Search Bakeoff は **validation survivor 0/30 × 3 arm** で完了した。
+主軸を「OHLCV 空間で search algorithm を改善する」から
+**「OHLCV を超える incremental information を持つ情報集合はどれか」**へ移す。
+
+- 総括: [Phase 3 bakeoff summary](2026-08-16-phase3-bakeoff-summary-v1.md)
+- 次の設計: [Phase 7 — Information-Space Expansion](../phase7/information_space_expansion_v1.md)
+- 既存 microstructure 資産の棚卸し: [microstructure v1 review](../phase7/microstructure_v1_review.md)
+- 保留項目(削除しない): [research backlog](../research_backlog.md)
+
 ## 台帳
 
+- [2026-08-16 Phase 3 bakeoff 総括](2026-08-16-phase3-bakeoff-summary-v1.md)
+  — **主指標 validation survivors / evaluations = 0/30・0/30・0/30**(Random / Genetic / LLM)。
+  探索手法間に survival の差は観測されず。ただし 0/30 の片側95%上限は 9.5% で
+  **同等性の証明ではない**。コストの壁が地形を支配(100評価中 net>0 は8件)。
+  research 通過は探索性能の指標として欺瞞的。→ information-space へ軸を移す判断。
+- [2026-08-16 Phase 3 Arm C LLM semantic search](2026-08-16-phase3-armC-llm-v1.md)
+  — **生存者0/30**。valid rate 0.938・duplicate 0・semantic family 31 と提案の質は3 arm 最良、
+  exposure 中央値 0.038 の低 turnover 型を選好したが research gate 通過は0。
+  提案36件中34件が板・約定フロー・OI 等 **OHLCV 集約前の実体**に言及していた(事後スキャン)。
+  非決定的(replayable)。
 - [2026-08-16 5分足の傾向調査と33ヶ月追試](2026-08-16-5m-tendencies-33mo-retest.md)
   — 生存4(ボラ・流動性構造)/ 棄却1 / レジーム依存1 / 判定不能1 / ヌル生存2。
   Funding キャリーの33ヶ月定量化。
