@@ -4,6 +4,7 @@
 「after=ts より古いレコードを新しい順に返す」方式。
 """
 
+import asyncio
 import time
 
 import httpx
@@ -65,9 +66,57 @@ class OkxClient:
             params["after"] = after_ms
         return self._get("/api/v5/public/funding-rate-history", params)
 
+    def instruments(self, inst_type: str, inst_id: str | None = None) -> dict:
+        """契約価値・tick/lotなど、約定数量の解釈に必要なinstrument metadata。"""
+
+        params: dict = {"instType": inst_type}
+        if inst_id is not None:
+            params["instId"] = inst_id
+        return self._get("/api/v5/public/instruments", params)
+
     def open_interest_history(self, inst_id: str, period: str = "5m", end_ms: int | None = None, limit: int = 100) -> dict:
         """Open Interest 履歴。実測で遡れるのは直近数週間〜数ヶ月程度。"""
         params: dict = {"instId": inst_id, "period": period, "limit": limit}
         if end_ms is not None:
             params["end"] = end_ms
         return self._get("/api/v5/rubik/stat/contracts/open-interest-history", params)
+
+
+class AsyncOkxClient:
+    """live collectorとevent loopをblockしない最小限のpublic REST client。"""
+
+    def __init__(self, base_url: str = BASE_URL):
+        self._http = httpx.AsyncClient(base_url=base_url, timeout=20.0)
+        self._last_request_at = 0.0
+
+    async def close(self) -> None:
+        await self._http.aclose()
+
+    async def _get(self, path: str, params: dict) -> dict:
+        for attempt in range(MAX_RETRIES):
+            wait = MIN_INTERVAL_SEC - (time.monotonic() - self._last_request_at)
+            if wait > 0:
+                await asyncio.sleep(wait)
+            self._last_request_at = time.monotonic()
+            try:
+                resp = await self._http.get(path, params=params)
+            except httpx.TransportError:
+                await asyncio.sleep(2**attempt)
+                continue
+            if resp.status_code in RETRY_STATUS:
+                await asyncio.sleep(2**attempt)
+                continue
+            resp.raise_for_status()
+            body = resp.json()
+            if body.get("code") != "0":
+                raise OkxError(
+                    f"OKX API error {body.get('code')}: {body.get('msg')} ({path} {params})"
+                )
+            return body
+        raise OkxError(f"max retries exceeded: {path} {params}")
+
+    async def instruments(self, inst_type: str, inst_id: str | None = None) -> dict:
+        params: dict = {"instType": inst_type}
+        if inst_id is not None:
+            params["instId"] = inst_id
+        return await self._get("/api/v5/public/instruments", params)

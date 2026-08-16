@@ -16,6 +16,14 @@ data/normalized/           … Parquet(粒度ごとに別テーブル)
     ↓  DuckDB
 src/mce/report.py          … 集計・欠損検出レポート
 data/features/             … (将来) return_5m, volume_ratio_20 など
+
+OKX WebSocket (public + business)
+    ↓  src/mce/collect_microstructure.py … trades / BBO / 400段板 / instruments
+data/raw/okx/ws/           … 接続到着順のimmutable gzip JSONL
+data/raw/okx/rest/         … contract / tick / lotの初期・日次snapshot
+data/raw/host/clock_quality/ … Linux adjtimexの起動時・60秒周期sample
+    ↓  src/mce/normalize_microstructure.py
+data/normalized/okx/microstructure/v3/ … schema/到着UTC日/hour partitionのParquet shard
 ```
 
 データソース比較と選定理由は [docs/data_sources.md](docs/data_sources.md) を参照。
@@ -43,6 +51,16 @@ uv run python -m mce.report
 
 # features 生成(normalized から全再生成・冪等)
 uv run python -m mce.features
+
+# 約定・BBO・400段板を60秒だけ疎通確認（省略時はSIGINT/SIGTERMまで継続）
+uv run python -m mce.collect_microstructure --duration 60
+
+# closed rawの品質確認とimmutable Parquet化
+uv run python -m mce.microstructure_quality data/raw/okx/ws
+uv run python -m mce.normalize_microstructure \
+  data/raw/okx/ws/public/YYYY/MM/DD/*.jsonl.gz \
+  data/raw/okx/ws/business/YYYY/MM/DD/*.jsonl.gz \
+  data/raw/okx/rest/instruments/YYYY/MM/DD/*.jsonl.gz
 
 # テスト
 uv run pytest
@@ -116,3 +134,6 @@ WHERE volume_ratio_20 >= 2.0
 - 条件検索の CLI / 関数化(上記 SQL のテンプレート化)
 - 特徴量の追加(`rolling_volatility`, `high_breakout_1h`, `open_interest_change` など)
 - Funding / OI の定期取得による長期蓄積(API の遡及制限が浅いため)
+
+OHLCV方向探索の検証済み結論と、prospectiveなOFI・板枯れ・吸収v1の事前仕様は
+[docs/findings/README.md](docs/findings/README.md) を参照。

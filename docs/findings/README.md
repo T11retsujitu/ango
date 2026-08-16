@@ -36,4 +36,16 @@
   Funding キャリーの33ヶ月定量化。
 - [2026-08-16 レジーム分類器 v1](2026-08-16-regime-classifier-v1-spec.md)
   — 分類器は機能(C2で回収率71%、C4は2024-11を完全回避)だがオラクル上限が
-  +4.07bps/件・t=+0.95 と薄く、**H6 は監視リスト入り**。次はイベント定義側の再設計。
+  +4.07bps/件・t=+0.95 と薄く、**H6 は監視リスト入り**。
+- [2026-08-16 深いイベント定義 v1](2026-08-16-deep-events-v1-protocol.md)
+  — ボラ正規化した5族952候補を探索。15〜25bpsの見かけ上の効果は出たが、最大でも
+  t=1.03でG3通過0件。**凍結候補なし・候補別ホールドアウト追試なしで終了**。方向条件の
+  深掘りを止め、ボラ・流動性の予測と運用へ移る根拠。
+- [2026-08-16 First-touch v1](2026-08-16-first-touch-v1-protocol.md)
+  — H6の途中経路を次足open・固定barrierで一度だけ確認。Validation B3はgross
+  +0.24bps、15bps後 −14.76bps、全6設定が赤字。独立再実装も792件すべて一致。
+  **Validation棄却・Final未開封。OHLCVのみの方向アルファ探索を終了**。
+- [2026-08-16 Microstructure v1](2026-08-16-microstructure-v1-protocol.md)
+  — prospectiveに集める約定・BBO・400段板を使い、M1=L1 OFI、M2=10bps板枯れ、
+  M3=aggressive-flow吸収の3仮説だけを検定する事前仕様。**定義凍結・収集中・未検定**。
+  24h soak後、60日Calibration→60日Validation→通過仮説だけ将来60日Finalとする。
