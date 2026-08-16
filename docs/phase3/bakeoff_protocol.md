@@ -278,3 +278,26 @@ export ANTHROPIC_API_KEY=...   # または ant auth login
 uv run python -m mce.search.llm_search              # 公式run(1回)
 uv run python -m mce.search.llm_search --replay experiments/phase3/llm_<model>  # 再評価
 ```
+
+→ **結果(2026-08-16 確定)**: draw 32 / rejected 2 / duplicate 0 / evaluated 30 /
+research通過 **0** / 生存 **0**(API 呼び出し6・提案36・semantic family 31・
+refusal 0・plan error 0・runtime failure 0)。
+[findings](../findings/2026-08-16-phase3-armC-llm-v1.md) 参照。Arm C は凍結済み。
+
+---
+
+## 11. Bakeoff 完了(2026-08-16)
+
+4 arm(Random / Genetic / LLM / Baselines)すべて実行済み・凍結済み。
+主指標 **validation survivors / evaluations は 0/30・0/30・0/30・0/10**。
+cross-arm 集計は artifact から機械的に再生成できる:
+
+```sh
+uv run python -m mce.phase3_summary --json experiments/phase3/bakeoff_summary.json
+```
+
+総括と研究判断: [Phase 3 bakeoff summary](../findings/2026-08-16-phase3-bakeoff-summary-v1.md)。
+本プロトコル(共通部・各 arm)はここで凍結完了とし、**再実行・seed 変更・
+閾値変更・criteria 緩和を行わない**。新しい情報集合を探索対象にする場合は
+Market Microstructure DSL v2 + 新プロトコルとして別途凍結する
+([Phase 7](../phase7/information_space_expansion_v1.md))。
