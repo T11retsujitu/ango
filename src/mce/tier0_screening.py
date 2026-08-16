@@ -14,17 +14,24 @@ A(27列) と X(集合ごと 3-5列)を因果変換で構築
   -> expanding walk-forward(purge / embargo / block 末尾 purge)
   -> ridge(標準化 -> ±10 クリップ -> 内側 purged CV で alpha 選択)
   -> pooled OOS R2 の差 dR2 = R2(B) - R2(A)
-  -> A-projection placebo Bp で帰無分布 -> p, MDE
+  -> A-projection placebo Bp(主・第1段階 200)で帰無分布 -> p, MDE
+  -> 素朴シフト Bt(副次)と OHLCV-only sham S0(対照)を同じ pipeline で併記
+  -> 第1段階で #{placebo >= obs} <= 5 の cell だけ全数 placebo(第2段階)へ昇格
+  -> Holm(family 27・検定不能も p=1 で算入)/ BH
   -> 安定性・機序・コスト換算 -> artifact
 ```
+
+`--workers N` は placebo 評価を fork した worker へ配るだけで、結果は N に依らない
+(`test_placebo_distribution_is_independent_of_worker_count`)。
 """
 
 import argparse
 import hashlib
 import json
 import time
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from multiprocessing import get_context
 from pathlib import Path
 
 import numpy as np
@@ -40,6 +47,8 @@ BARS_PER_DAY = 288
 ARTIFACT_DIR = Path("experiments") / "phase7"
 CLIP = P.ESTIMATOR["post_standardization_clip"]
 ALPHAS = np.array(P.ESTIMATOR["alpha_grid"], dtype=float)
+# 第2段階(全数 placebo)へ昇格する条件: 第1段階で #{placebo >= obs} <= 5(事前登録 §12.3)。
+STAGE2_MAX_EXCEED = 5
 
 
 # --------------------------------------------------------------------------------------
@@ -48,8 +57,12 @@ ALPHAS = np.array(P.ESTIMATOR["alpha_grid"], dtype=float)
 
 
 def _z20d(column: str, name: str) -> pl.Expr:
-    mean = pl.col(column).rolling_mean_by("ts", window_size=P.ZSCORE_WINDOW, closed="left")
-    std = pl.col(column).rolling_std_by("ts", window_size=P.ZSCORE_WINDOW, closed="left")
+    mean = pl.col(column).rolling_mean_by(
+        "ts", window_size=P.ZSCORE_WINDOW, closed="left"
+    )
+    std = pl.col(column).rolling_std_by(
+        "ts", window_size=P.ZSCORE_WINDOW, closed="left"
+    )
     count = (
         pl.col(column)
         .is_not_null()
@@ -90,7 +103,9 @@ def _lagged(df: pl.DataFrame, column: str, bars: int, name: str) -> pl.DataFrame
 def build_design(features: pl.DataFrame) -> pl.DataFrame:
     """A の 27 列・X の全列・sham S0 を作る(事前登録 §3/§4/§12.4)。"""
     df = features.sort("ts")
-    df = df.with_columns((pl.col("close").log() - pl.col("close").log().shift(1)).alias("_u"))
+    df = df.with_columns(
+        (pl.col("close").log() - pl.col("close").log().shift(1)).alias("_u")
+    )
     df = df.with_columns(_rv(12, "rv_12"), _rv(48, "rv_48"))
     df = df.with_columns(
         ((pl.col("high") - pl.col("low")) / pl.col("close")).alias("_hl"),
@@ -131,7 +146,9 @@ def build_design(features: pl.DataFrame) -> pl.DataFrame:
         pl.when(pl.col("rv_12") > 0)
         .then((pl.col("return_5m") / pl.col("rv_12")).clip(-10, 10))
         .alias("norm_move_1"),
-        (pl.col("hour_utc") * 60 + pl.col("minute_mod_60")).cast(pl.Float64).alias("_tod"),
+        (pl.col("hour_utc") * 60 + pl.col("minute_mod_60"))
+        .cast(pl.Float64)
+        .alias("_tod"),
         pl.col("weekday_utc").cast(pl.Float64).alias("_dow"),
     )
     harmonics = []
@@ -155,8 +172,12 @@ def build_design(features: pl.DataFrame) -> pl.DataFrame:
     )
     # X の交互作用(事前登録 §4)
     df = df.with_columns(
-        (pl.col("signed_imb") * pl.col("norm_move_1")).alias("signed_imb_x_norm_move_1"),
-        (pl.col("dlog_oi_12") * pl.col("z20d_return_1h")).alias("dlog_oi_12_x_z20d_return_1h"),
+        (pl.col("signed_imb") * pl.col("norm_move_1")).alias(
+            "signed_imb_x_norm_move_1"
+        ),
+        (pl.col("dlog_oi_12") * pl.col("z20d_return_1h")).alias(
+            "dlog_oi_12_x_z20d_return_1h"
+        ),
     )
     # sham S0(§12.4): OHLCV 由来・A に含まれない・因果
     df = df.join(_lagged(df, "norm_move_1", 1, "s03"), on="ts", how="left").join(
@@ -172,7 +193,9 @@ def build_design(features: pl.DataFrame) -> pl.DataFrame:
     )
     df = df.with_columns(_z20d("_hl12", "s02"))
     df = df.with_columns(
-        pl.Series("s05", _causal_percentile_rank(df["volume_ratio_20"].to_numpy()) - 0.5)
+        pl.Series(
+            "s05", _causal_percentile_rank(df["volume_ratio_20"].to_numpy()) - 0.5
+        )
     )
     return df
 
@@ -196,7 +219,9 @@ def _causal_percentile_rank(values: np.ndarray, window: int = 5760) -> np.ndarra
         valid = np.isfinite(past)
         counts = valid.sum(axis=1)
         below = ((past < current) & valid).sum(axis=1)
-        rank = np.where(counts >= P.ZSCORE_MIN_VALID_BARS, below / np.maximum(counts, 1), np.nan)
+        rank = np.where(
+            counts >= P.ZSCORE_MIN_VALID_BARS, below / np.maximum(counts, 1), np.nan
+        )
         out[rows] = np.where(np.isfinite(current[:, 0]), rank, np.nan)
     return out
 
@@ -310,7 +335,11 @@ def fit_nested_pair(
             zv = z_train[v0:v1, :width]
             residual = yc[v0:v1][None, :] - betas @ zv.T
             sse += (residual**2).sum(axis=1)
-        alpha = float(ALPHAS[int(np.argmin(sse))]) if inner else float(ALPHAS[len(ALPHAS) // 2])
+        alpha = (
+            float(ALPHAS[int(np.argmin(sse))])
+            if inner
+            else float(ALPHAS[len(ALPHAS) // 2])
+        )
         beta = np.linalg.solve(
             gram[:width, :width] + alpha * np.eye(width), rhs[:width]
         )
@@ -349,9 +378,15 @@ class CellData:
     fold_train: list[np.ndarray]
     fold_test: list[np.ndarray]
     window_slots: int
+    sham: np.ndarray | None = None  # (n_slots, 5) OHLCV-only sham S0(§12.4 の対照)
+    excluded_months: tuple[
+        str, ...
+    ] = ()  # 月次被覆ゲートで落ちた暦月(§7。必ず報告する)
 
 
-def _dense(df: pl.DataFrame, start: datetime, end: datetime, columns: list[str]) -> tuple:
+def _dense(
+    df: pl.DataFrame, start: datetime, end: datetime, columns: list[str]
+) -> tuple:
     """窓内の 5分グリッドへ密に配置する(欠損は NaN)。"""
     start_ms = int(start.timestamp() * 1000)
     n_slots = int((end.timestamp() * 1000 - start_ms) // BAR_MS)
@@ -374,11 +409,13 @@ def prepare_cell(
 ) -> CellData:
     a_cols = list(P.A_COLUMNS)
     x_cols = list(info_set.model_columns)
+    sham_cols = list(SHAM_COLUMNS)
     y_col = f"fwd_{target.lower()}_h{horizon}"
-    dense, grid_ts = _dense(design, start, end, a_cols + x_cols + [y_col])
+    dense, grid_ts = _dense(design, start, end, a_cols + x_cols + sham_cols + [y_col])
     p_a, p_x = len(a_cols), len(x_cols)
     a = dense[:, :p_a]
     x = dense[:, p_a : p_a + p_x]
+    sham = dense[:, p_a + p_x : p_a + p_x + len(sham_cols)]
     y = dense[:, -1]
     valid = np.isfinite(a).all(axis=1) & np.isfinite(x).all(axis=1) & np.isfinite(y)
 
@@ -386,10 +423,12 @@ def prepare_cell(
     months = np.array(
         [datetime.fromtimestamp(t / 1000, UTC).strftime("%Y-%m") for t in grid_ts]
     )
+    excluded_months = []
     for month in np.unique(months):
         mask = months == month
         if valid[mask].mean() < P.MONTHLY_COVERAGE_MIN:
             valid[mask] = False
+            excluded_months.append(str(month))
 
     folds = make_folds(start, end)
     purge = horizon + 1 + P.FOLD["embargo_bars"]
@@ -405,7 +444,18 @@ def prepare_cell(
         if len(train_idx) > 500 and len(test_idx) > 100:
             fold_train.append(train_idx)
             fold_test.append(test_idx)
-    return CellData(grid_ts, a, x, y, valid, fold_train, fold_test, len(valid))
+    return CellData(
+        grid_ts,
+        a,
+        x,
+        y,
+        valid,
+        fold_train,
+        fold_test,
+        len(valid),
+        sham,
+        tuple(excluded_months),
+    )
 
 
 def evaluate(cell: CellData, x_provider=None) -> dict:
@@ -483,6 +533,20 @@ class FoldCache:
     ray: list[np.ndarray]  # block ごとの A'yc
     pred_a: np.ndarray
     alpha_a: float
+    _joint: dict = field(default_factory=dict)
+
+    def joint_buffer(self, p_x: int, p_a: int) -> np.ndarray:
+        """[A | X] の学習側バッファ。A 部分は placebo をまたいで不変なので一度だけ書く。
+
+        呼び出し側は `[:, p_a:]` だけを更新する。fork した worker では copy-on-write で
+        親のページを共有し、最初の書き込みでその worker 専用のページになる。
+        """
+        buffer = self._joint.get(p_x)
+        if buffer is None:
+            buffer = np.empty((len(self.train), p_a + p_x))
+            buffer[:, :p_a] = self.za_train
+            self._joint[p_x] = buffer
+        return buffer
 
 
 def _standardize_inplace(train: np.ndarray, test: np.ndarray) -> None:
@@ -496,11 +560,17 @@ def _standardize_inplace(train: np.ndarray, test: np.ndarray) -> None:
     test -= mean
     test /= std
     np.clip(test, -CLIP, CLIP, out=test)
+    # §18-6: 0除算や inf が null 判定を素通りしていないことを fold ごとに確かめる
+    if not (np.isfinite(train).all() and np.isfinite(test).all()):
+        raise QualityFailure("標準化後のモデル行列に有限でない値がある")
 
 
 def _blocks(n: int, purge: int) -> tuple[list[tuple[int, int, int]], list[int]]:
     bounds = np.linspace(0, n, 5).astype(int)
-    inner = [(max(int(bounds[i]) - purge, 1), int(bounds[i]), int(bounds[i + 1])) for i in (1, 2, 3)]
+    inner = [
+        (max(int(bounds[i]) - purge, 1), int(bounds[i]), int(bounds[i + 1]))
+        for i in (1, 2, 3)
+    ]
     inner = [(e, v0, v1) for e, v0, v1 in inner if e > 50 and v1 - v0 > 50]
     edges = [e for e, _, _ in inner] + [n]
     return inner, edges
@@ -524,7 +594,7 @@ def _prefix_solve(
         zv = z_train[v0:v1]
         residual = yc[v0:v1][None, :] - betas @ zv.T
         sse += (residual**2).sum(axis=1)
-    for gb, rb in zip(gram_blocks[len(inner):], rhs_blocks[len(inner):]):
+    for gb, rb in zip(gram_blocks[len(inner) :], rhs_blocks[len(inner) :]):
         gram += gb
         rhs += rb
     alpha = float(ALPHAS[int(np.argmin(sse))]) if inner else float(ALPHAS[2])
@@ -581,11 +651,22 @@ def evaluate_fast(cell: CellData, caches: list[FoldCache], x_provider=None) -> d
     `S_d` の上で A と B を両方とも作り直す(事前登録 §12.3)。
     """
     p_a = cell.a.shape[1]
-    preds_a, preds_b, ys, means, idxs, fold_ids, alphas, dropped = [], [], [], [], [], [], [], 0
+    preds_a, preds_b, ys, means, idxs, fold_ids, alphas, dropped = (
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        0,
+    )
     for k, cache in enumerate(caches):
-        x = cell.x if x_provider is None else x_provider(k, cache.train)
-        x_tr = x[cache.train]
-        x_te = x[cache.test]
+        if x_provider is None:
+            x_tr, x_te = cell.x[cache.train], cell.x[cache.test]
+        else:  # 窓全体を作らず必要行だけ gather する(値は __call__ と同一)
+            x_tr = x_provider.rows(k, cache.train)
+            x_te = x_provider.rows(k, cache.test)
         ok_tr = np.isfinite(x_tr).all(axis=1)
         ok_te = np.isfinite(x_te).all(axis=1)
         if ok_tr.all() and ok_te.all():
@@ -609,13 +690,14 @@ def evaluate_fast(cell: CellData, caches: list[FoldCache], x_provider=None) -> d
                 gram_blocks.append(block)
                 rhs_blocks.append(rhs)
                 cursor = edge
-            z_train_joint = np.empty((len(cache.train), p_a + zx_tr.shape[1]))
-            z_train_joint[:, :p_a] = cache.za_train
+            z_train_joint = cache.joint_buffer(zx_tr.shape[1], p_a)
             z_train_joint[:, p_a:] = zx_tr
             beta_b, alpha_b = _prefix_solve(
                 gram_blocks, rhs_blocks, cache.inner, z_train_joint, cache.yc
             )
-            pred_b = cache.y_mean + (cache.za_test @ beta_b[:p_a] + zx_te @ beta_b[p_a:])
+            pred_b = cache.y_mean + (
+                cache.za_test @ beta_b[:p_a] + zx_te @ beta_b[p_a:]
+            )
             pred_a = cache.pred_a
             mean = cache.y_mean
             te_rows = cache.test
@@ -625,7 +707,7 @@ def evaluate_fast(cell: CellData, caches: list[FoldCache], x_provider=None) -> d
             tr, te = cache.train[ok_tr], cache.test[ok_te]
             if len(tr) < 500 or len(te) < 100:
                 continue
-            width = p_a + x.shape[1]
+            width = p_a + x_tr.shape[1]
             z_train = np.empty((len(tr), width))
             z_test = np.empty((len(te), width))
             z_train[:, :p_a] = cache.a_train[ok_tr]
@@ -712,28 +794,144 @@ def fold_projections(cell: CellData) -> list[np.ndarray]:
     return residuals
 
 
-def a_projection_provider(projections: list, shift_days: int):
-    """Bp: X_p = A @ Gamma_hat + roll(E)(fold ごとの Gamma_hat を使う)。
+class _Provider:
+    """placebo / 対照の X 供給。
 
-    roll は fold に依存しないので、シフトごとに1回だけ計算して使い回す。
+    `__call__` は窓全体の行列を返す(素朴経路 `evaluate` 用)。`rows` は必要な行だけを
+    直接 gather する(`evaluate_fast` 用)。両者は定義上同じ値を返すので、最適化経路と
+    素朴経路の同値性は保たれる(test_fast_path_equals_naive_path_under_placebo)。
     """
-    shift = shift_days * BARS_PER_DAY
-    rolled = [np.roll(residual, shift, axis=0) for _, residual in projections]
 
-    def provider(fold_index: int, _train_idx: np.ndarray) -> np.ndarray:
-        return projections[fold_index][0] + rolled[fold_index]
-
-    return provider
+    def rows(self, fold_index: int, row_idx: np.ndarray) -> np.ndarray:
+        return self(fold_index, row_idx)[row_idx]
 
 
-def naive_shift_provider(cell: CellData, shift_days: int):
+class _AProjectionProvider(_Provider):
+    """Bp: X_p = A @ Gamma_hat + 巡回シフトした残差 E(fold ごとの Gamma_hat)。"""
+
+    def __init__(self, projections: list, shift_days: int):
+        self.projections = projections
+        self.shift = shift_days * BARS_PER_DAY
+
+    def __call__(self, fold_index: int, _train_idx: np.ndarray) -> np.ndarray:
+        fitted, residual = self.projections[fold_index]
+        return fitted + np.roll(residual, self.shift, axis=0)
+
+    def rows(self, fold_index: int, row_idx: np.ndarray) -> np.ndarray:
+        fitted, residual = self.projections[fold_index]
+        # roll(E)[i] == E[(i - shift) mod n]。全体を作らず必要行だけ引く。
+        source = (row_idx - self.shift) % len(residual)
+        return fitted[row_idx] + residual[source]
+
+
+class _NaiveShiftProvider(_Provider):
     """Bt: X 全体を巡回シフト(副次・反保守的なので判定に使わない)。"""
-    shifted = np.roll(cell.x, shift_days * BARS_PER_DAY, axis=0)
 
-    def provider(_fold_index: int, _train_idx: np.ndarray) -> np.ndarray:
-        return shifted
+    def __init__(self, cell: CellData, shift_days: int):
+        self.x = cell.x
+        self.shift = shift_days * BARS_PER_DAY
 
-    return provider
+    def __call__(self, _fold_index: int, _train_idx: np.ndarray) -> np.ndarray:
+        return np.roll(self.x, self.shift, axis=0)
+
+    def rows(self, _fold_index: int, row_idx: np.ndarray) -> np.ndarray:
+        return self.x[(row_idx - self.shift) % len(self.x)]
+
+
+class _ShamProvider(_Provider):
+    """S0: X を OHLCV 由来 sham 5列に差し替える(§12.4 の対照。行集合は cell のまま)。"""
+
+    def __init__(self, cell: CellData):
+        self.sham = cell.sham
+
+    def __call__(self, _fold_index: int, _train_idx: np.ndarray) -> np.ndarray:
+        return self.sham
+
+    def rows(self, _fold_index: int, row_idx: np.ndarray) -> np.ndarray:
+        return self.sham[row_idx]
+
+
+class _ExtraLagProvider(_Provider):
+    """X をさらに `bars` 本だけ遅らせる(§17-6 の公開遅延耐性)。
+
+    因果方向の遅延なので参照は過去側 `row - bars`。窓頭の `bars` 行は NaN にして
+    「その行は使えない」ことを明示する(巡回させない)。
+    """
+
+    def __init__(self, cell: CellData, bars: int):
+        self.x = cell.x
+        self.bars = bars
+
+    def __call__(self, _fold_index: int, _train_idx: np.ndarray) -> np.ndarray:
+        out = np.full_like(self.x, np.nan)
+        out[self.bars :] = self.x[: len(self.x) - self.bars]
+        return out
+
+    def rows(self, _fold_index: int, row_idx: np.ndarray) -> np.ndarray:
+        source = row_idx - self.bars
+        out = np.full((len(row_idx), self.x.shape[1]), np.nan)
+        ok = source >= 0
+        out[ok] = self.x[source[ok]]
+        return out
+
+
+def extra_lag_provider(cell: CellData, bars: int) -> _ExtraLagProvider:
+    return _ExtraLagProvider(cell, bars)
+
+
+def a_projection_provider(projections: list, shift_days: int) -> _AProjectionProvider:
+    return _AProjectionProvider(projections, shift_days)
+
+
+def naive_shift_provider(cell: CellData, shift_days: int) -> _NaiveShiftProvider:
+    return _NaiveShiftProvider(cell, shift_days)
+
+
+def sham_provider(cell: CellData) -> _ShamProvider:
+    return _ShamProvider(cell)
+
+
+# --- placebo 分布の並列評価 -------------------------------------------------------------
+# placebo は shift ごとに独立な純関数なので、fork した worker へ配る。
+# 親で cell / caches / projections を作ってから fork するので、巨大配列は copy-on-write で
+# 共有される(worker は読むだけ)。`Pool.map` は順序を保つので結果は決定的。
+
+_WORKER_STATE: tuple | None = None
+
+
+def _placebo_worker(job: tuple[str, int]) -> float | None:
+    kind, shift = job
+    cell, caches, projections = _WORKER_STATE
+    provider = (
+        a_projection_provider(projections, shift)
+        if kind == "bp"
+        else naive_shift_provider(cell, shift)
+    )
+    try:
+        result = evaluate_fast(cell, caches, x_provider=provider)
+    except QualityFailure:  # 退化した placebo 標本は棄却して K から外す(埋めない)
+        return None
+    return float(result["dr2"]) if result.get("n") else None
+
+
+def placebo_distribution(
+    cell: CellData,
+    caches: list[FoldCache],
+    projections: list,
+    kind: str,
+    shifts: list[int],
+    workers: int = 1,
+) -> np.ndarray:
+    """`kind` ("bp" / "bt") の帰無分布。worker 数は結果を変えない(純関数の写像)。"""
+    global _WORKER_STATE
+    _WORKER_STATE = (cell, caches, projections)
+    jobs = [(kind, shift) for shift in shifts]
+    if workers <= 1:
+        values = [_placebo_worker(job) for job in jobs]
+    else:
+        with get_context("fork").Pool(workers) as pool:
+            values = pool.map(_placebo_worker, jobs, chunksize=1)
+    return np.array([v for v in values if v is not None])
 
 
 # --------------------------------------------------------------------------------------
@@ -777,7 +975,7 @@ def _by_year(result: dict, grid_ts: np.ndarray) -> dict:
     return out
 
 
-def _day_diagnostics(result: dict, grid_ts: np.ndarray) -> dict:
+def _day_diagnostics(result: dict, grid_ts: np.ndarray, stage: str) -> dict:
     days = (grid_ts[result["index"]] // 86_400_000).astype(int)
     dsse = (result["y"] - result["pred_a"]) ** 2 - (result["y"] - result["pred_b"]) ** 2
     unique_days, inverse = np.unique(days, return_inverse=True)
@@ -789,7 +987,7 @@ def _day_diagnostics(result: dict, grid_ts: np.ndarray) -> dict:
         - _r2(result["y"][keep], result["pred_a"][keep], result["mean_a"][keep])
     )
     # day-cluster Rademacher randomization(副次 p。capacity を統制しないので判定に使わない)
-    rng = np.random.default_rng(P.SEEDS["dev"])
+    rng = np.random.default_rng(P.SEEDS[stage])
     observed = per_day.sum()
     signs = rng.choice([-1.0, 1.0], size=(P.RANDOMIZATION["reps"], len(per_day)))
     null = signs @ per_day
@@ -851,7 +1049,113 @@ def _ic(result: dict) -> dict:
             return float("nan")
         return float(np.corrcoef(pred, result["y"])[0, 1])
 
-    return {"ic_a": corr(result["pred_a"]), "ic_b": corr(result["pred_b"])}
+    def spearman(pred):
+        if np.std(pred) == 0 or np.std(result["y"]) == 0:
+            return float("nan")
+        rank_p = np.argsort(np.argsort(pred)).astype(float)
+        rank_y = np.argsort(np.argsort(result["y"])).astype(float)
+        return float(np.corrcoef(rank_p, rank_y)[0, 1])
+
+    return {
+        "ic_a": corr(result["pred_a"]),
+        "ic_b": corr(result["pred_b"]),
+        "ic_spearman_a": spearman(result["pred_a"]),
+        "ic_spearman_b": spearman(result["pred_b"]),
+    }
+
+
+def _bootstrap_ci(result: dict, grid_ts: np.ndarray, stage: str) -> dict:
+    """dR2 の day-cluster ブートストラップ CI(§13)。
+
+    重複リターンの相関は日クラスタ内に閉じ込める。R2 は比なので、日ごとの
+    (dSSE, SST 寄与)を再標本して比を取り直す。
+    """
+    days = (grid_ts[result["index"]] // 86_400_000).astype(int)
+    _, inverse = np.unique(days, return_inverse=True)
+    sse_a = (result["y"] - result["pred_a"]) ** 2
+    sse_b = (result["y"] - result["pred_b"]) ** 2
+    sst = (result["y"] - result["mean_a"]) ** 2
+    per_day = np.stack(
+        [np.bincount(inverse, weights=w) for w in (sse_a, sse_b, sst)]
+    )  # (3, n_days)
+    n_days = per_day.shape[1]
+    rng = np.random.default_rng(P.SEEDS[stage])
+    reps = P.BOOTSTRAP["reps"]
+    estimates = []
+    for start in range(0, reps, 1000):  # 一時配列を抑えるための分割(結果は変わらない)
+        draws = rng.integers(0, n_days, size=(min(1000, reps - start), n_days))
+        totals = per_day[:, draws].sum(axis=2)  # (3, chunk)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            estimates.append((totals[0] - totals[1]) / totals[2])
+    dr2 = np.concatenate(estimates)
+    dr2 = dr2[np.isfinite(dr2)]
+    if not len(dr2):
+        return {"ci_low": None, "ci_high": None}
+    return {
+        "ci_low": float(np.percentile(dr2, 2.5)),
+        "ci_high": float(np.percentile(dr2, 97.5)),
+        "bootstrap_days": int(n_days),
+    }
+
+
+def _stability_flags(entry: dict) -> dict:
+    """§15 / STABILITY の各条件を機械判定する(閾値は tier0_prereg が正)。"""
+    folds = entry.get("fold_dr2") or []
+    years = entry.get("dr2_by_year") or {}
+    sign = entry.get("sign") or {}
+    lobo = entry.get("leave_one_block_out_dr2") or []
+    checks = {
+        "positive_fold_fraction": (
+            sum(1 for v in folds if v > 0) / len(folds) if folds else 0.0
+        ),
+        "positive_calendar_years": sum(1 for v in years.values() if v > 0),
+        "sign_agreement": sign.get("sign_agreement"),
+        "leave_one_block_out_all_positive": bool(lobo) and all(v > 0 for v in lobo),
+        "dic_sign_matches_dr2": (
+            entry.get("dic") is not None
+            and entry.get("dr2") is not None
+            and (entry["dic"] > 0) == (entry["dr2"] > 0)
+        ),
+        "drop_most_influential_day_still_positive": (
+            entry.get("dr2_without_most_influential_day", -1.0) > 0
+        ),
+    }
+    passed = {
+        "positive_fold_fraction": checks["positive_fold_fraction"]
+        >= P.STABILITY["positive_fold_fraction_min"],
+        "positive_calendar_years": checks["positive_calendar_years"]
+        >= P.STABILITY["positive_calendar_years_min"],
+        "sign_agreement": (checks["sign_agreement"] or 0.0)
+        >= P.STABILITY["coefficient_sign_agreement_min"],
+        "leave_one_block_out_all_positive": checks["leave_one_block_out_all_positive"],
+        "dic_sign_matches_dr2": checks["dic_sign_matches_dr2"],
+        "drop_most_influential_day_still_positive": checks[
+            "drop_most_influential_day_still_positive"
+        ],
+    }
+    return {"values": checks, "passed": passed, "all_passed": all(passed.values())}
+
+
+def _dev_disposition(entry: dict) -> str:
+    """dev 段階で確定できる範囲の判定(§17)。
+
+    §17-4 は confirmation 窓を要するので、dev だけで GO は出せない。
+    ここで出せるのは「NO-GO 確定」か「confirmation 待ち」だけである。
+    """
+    if entry.get("status") != "tested":
+        return "no_go_insufficient_sample"
+    if not entry.get("holm_significant"):
+        return "no_go_not_significant_after_holm"
+    gates = []
+    if entry["set"] == "T0-A":
+        gates.append(bool((entry.get("sham_s0") or {}).get("observed_beats_sham")))
+    if entry["set"] in ("T0-B1", "T0-B2"):
+        gates.append(bool((entry.get("publication_delay") or {}).get("gate_passed")))
+    if not all(gates):
+        return "no_go_failed_set_specific_gate"
+    if not (entry.get("stability") or {}).get("all_passed"):
+        return "conditional_hold_unstable"
+    return "dev_pass_pending_confirmation"
 
 
 # --------------------------------------------------------------------------------------
@@ -860,18 +1164,26 @@ def _ic(result: dict) -> dict:
 
 
 def run_cell(
-    design: pl.DataFrame, info_set, horizon: int, target: str, stage: str, placebo_k: int | None = None
+    design: pl.DataFrame,
+    info_set,
+    horizon: int,
+    target: str,
+    stage: str,
+    placebo_k: int | None = None,
+    workers: int = 1,
 ) -> dict:
     start = info_set.dev_start if stage == "dev" else P.CONFIRMATION_START
     end = P.DEV_END if stage == "dev" else P.CONFIRMATION_END
     cell = prepare_cell(design, info_set, horizon, target, start, end)
-    result = evaluate_fast(cell, prepare_folds(cell))
+    caches = prepare_folds(cell)
+    result = evaluate_fast(cell, caches)
     entry: dict = {
         "set": info_set.id,
         "horizon_bars": horizon,
         "target": target,
         "window": [start.isoformat(), end.isoformat()],
         "folds": len(cell.fold_train),
+        "excluded_months": list(cell.excluded_months),
     }
     if not result.get("n"):
         entry |= {"status": "insufficient_sample", "p": 1.0, "n": 0}
@@ -895,15 +1207,15 @@ def run_cell(
     window_days = (end - start).days
     shifts = placebo_shifts(window_days, placebo_k or P.PLACEBO["k_stage1"])
     projections = fold_projections(cell)
-    caches = prepare_folds(cell)
-    null_dr2 = []
-    for shift in shifts:
-        res_p = evaluate_fast(cell, caches, x_provider=a_projection_provider(projections, shift))
-        if res_p.get("n"):
-            null_dr2.append(res_p["dr2"])
-    null_dr2 = np.array(null_dr2)
-    exceed = int((null_dr2 >= result["dr2"]).sum())
+    observed = result["dr2"]
+
+    # --- 第1段階: Bp(主)と Bt(副次)を同じシフト集合で評価(§12.2 / §12.3)
+    null_dr2 = placebo_distribution(cell, caches, projections, "bp", shifts, workers)
+    exceed = int((null_dr2 >= observed).sum())
     p_value = (1 + exceed) / (1 + len(null_dr2))
+
+    null_bt = placebo_distribution(cell, caches, projections, "bt", shifts, workers)
+    exceed_bt = int((null_bt >= observed).sum())
 
     entry |= {
         "status": "tested",
@@ -913,18 +1225,107 @@ def run_cell(
         "p": p_value,
         "mde": float(np.percentile(null_dr2, 95)),
         "placebo_mean": float(null_dr2.mean()),
+        "placebo_bt": {
+            "k": len(null_bt),
+            "exceed": exceed_bt,
+            "p": (1 + exceed_bt) / (1 + len(null_bt)) if len(null_bt) else 1.0,
+            "mde": float(np.percentile(null_bt, 95)) if len(null_bt) else None,
+            "note": "副次。corr(X,A) を壊すので反保守的。昇格判定には使わない(§12.2)",
+        },
         "fold_dr2": _fold_dr2(result),
         "leave_one_block_out_dr2": _leave_one_block_out(result),
         "dr2_by_year": _by_year(result, cell.grid_ts),
         "sign": _sign_stability(cell, result),
         **_ic(result),
-        **_day_diagnostics(result, cell.grid_ts),
-        "stage2_candidate": exceed <= 5,
+        **_day_diagnostics(result, cell.grid_ts, stage),
     }
     entry["dic"] = entry["ic_b"] - entry["ic_a"]
+
+    entry |= _bootstrap_ci(result, cell.grid_ts, stage)
+
+    # --- 公開遅延耐性(§17-6): X をさらに遅らせても dR2 > 0 か
+    #   +1 バーは T0-B1 / T0-B2 の GO 条件、+12 バーは報告のみ(条件にしない)。
+    delay = {}
+    for bars in (
+        P.PUBLICATION_DELAY_ROBUSTNESS["gate_extra_lag_bars"],
+        P.PUBLICATION_DELAY_ROBUSTNESS["reported_extra_lag_bars"],
+    ):
+        try:
+            lagged = evaluate_fast(
+                cell, caches, x_provider=extra_lag_provider(cell, bars)
+            )
+        except QualityFailure:
+            lagged = {}
+        delay[f"extra_lag_{bars}_bars"] = (
+            {"dr2": lagged["dr2"], "n": lagged["n"]} if lagged.get("n") else None
+        )
+    gate_key = f"extra_lag_{P.PUBLICATION_DELAY_ROBUSTNESS['gate_extra_lag_bars']}_bars"
+    delay["gate_passed"] = bool(delay[gate_key] and delay[gate_key]["dr2"] > 0)
+    delay["note"] = "gate は +1 バーのみ(T0-B1/B2)。+12 バーは感度の報告(§17-6)"
+    entry["publication_delay"] = delay
+
+    # --- OHLCV-only sham S0(§12.4): 同一行集合・同一 pipeline の対照
+    if cell.sham is not None:
+        sham_result = evaluate_fast(cell, caches, x_provider=sham_provider(cell))
+        if sham_result.get("n"):
+            entry["sham_s0"] = {
+                "dr2": sham_result["dr2"],
+                "n": sham_result["n"],
+                "rows_match": sham_result["n"] == result["n"],
+                "observed_beats_sham": bool(observed > sham_result["dr2"]),
+            }
+
+    # --- 第2段階(§12.3): 昇格条件は第1段階の順位のみ。効果量の大きさでは決めない。
+    entry["stage2_candidate"] = exceed <= STAGE2_MAX_EXCEED
+    if entry["stage2_candidate"]:
+        # 公式実行は全数。smoke では分岐を通すだけなので縮小する(artifact は smoke 印付き)。
+        all_shifts = placebo_shifts(
+            window_days, None if placebo_k is None else placebo_k * 2
+        )
+        null2 = placebo_distribution(
+            cell, caches, projections, "bp", all_shifts, workers
+        )
+        exceed2 = int((null2 >= observed).sum())
+        p2 = (1 + exceed2) / (1 + len(null2))
+        entry |= {
+            "placebo_k_stage2": len(null2),
+            "placebo_exceed_stage2": exceed2,
+            "p_stage2": p2,
+            "p": p2,  # 解像度の高い方を採用(§12.3)
+            "mde": float(np.percentile(null2, 95)),
+            "placebo_mean": float(null2.mean()),
+        }
     if target == "Y1":
         entry["cost"] = _cost_translation(result)
     return entry
+
+
+def provenance(symbol: str) -> dict:
+    """再現に必要な指紋(§18-3-5)。manifest / lockfile / commit / 凍結記録。"""
+    manifests = {}
+    for path in sorted(config.MANIFESTS_DIR.glob("binance_*.json")):
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        record = json.loads(path.read_text())
+        manifests[path.stem] = {
+            "manifest_sha256": digest,
+            "source_digest": record.get("source_digest"),
+            "rows": record.get("rows"),
+        }
+    lockfile = Path("uv.lock")
+    return {
+        "symbol": symbol,
+        "manifests": manifests,
+        "lockfile_sha256": hashlib.sha256(lockfile.read_bytes()).hexdigest()
+        if lockfile.exists()
+        else None,
+        "prereg_module_sha256": hashlib.sha256(
+            Path(P.__file__).read_bytes()
+        ).hexdigest(),
+        "screening_module_sha256": hashlib.sha256(
+            Path(__file__).read_bytes()
+        ).hexdigest(),
+        "source_commit": experiments.git_commit_hash(),
+    }
 
 
 def holm(entries: list[dict], alpha: float = 0.05) -> None:
@@ -955,28 +1356,42 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Phase 7 Tier 0 screening")
     parser.add_argument("--stage", choices=("dev", "confirmation"), required=True)
     parser.add_argument("--symbol", default=DEFAULT_SYMBOL)
-    parser.add_argument("--cells", type=int, default=None, help="先頭 N cell だけ(配管検証用)")
+    parser.add_argument(
+        "--cells", type=int, default=None, help="先頭 N cell だけ(配管検証用)"
+    )
     parser.add_argument(
         "--placebo-k",
         type=int,
         default=None,
         help="placebo 数を減らして配管だけ確認する(smoke 専用。公式 artifact は書かない)",
     )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="placebo 評価の並列プロセス数。純関数の写像なので結果は worker 数に依らない",
+    )
     args = parser.parse_args()
 
     dev_artifact = ARTIFACT_DIR / "tier0_screening_dev_v1.json"
     if args.stage == "confirmation" and not dev_artifact.exists():
-        raise SystemExit("dev の artifact が無い。confirmation は dev の後にしか実行できない")
+        raise SystemExit(
+            "dev の artifact が無い。confirmation は dev の後にしか実行できない"
+        )
 
     features_path = config.binance_features_parquet(args.symbol)
-    labels_path = config.LABELS_DIR / f"{config.BINANCE_SOURCE}_{args.symbol}_{config.BAR}.parquet"
+    labels_path = (
+        config.LABELS_DIR
+        / f"{config.BINANCE_SOURCE}_{args.symbol}_{config.BAR}.parquet"
+    )
     features = pl.read_parquet(features_path)
     labels = pl.read_parquet(labels_path)
     if args.stage == "dev":
-        max_ts = features["ts"].max()
-        if max_ts >= P.CONFIRMATION_START:
-            features = features.filter(pl.col("ts") < P.CONFIRMATION_START)
-            labels = labels.filter(pl.col("ts") < P.CONFIRMATION_START)
+        features = features.filter(pl.col("ts") < P.DEV_END)
+        labels = labels.filter(pl.col("ts") < P.DEV_END)
+        # §18-2: dev 実行から confirmation 窓を物理的に読めなくする
+        if features["ts"].max() >= P.DEV_END or labels["ts"].max() >= P.DEV_END:
+            raise SystemExit("dev 実行に confirmation 窓の行が残っている")
 
     design = build_design(features).join(
         labels.select(["ts"] + [c for c in labels.columns if c.startswith("fwd_")]),
@@ -990,11 +1405,28 @@ def main() -> None:
     if args.cells:
         family = family[: args.cells]
     sets = {s.id: s for s in P.INFORMATION_SETS}
+    # cell ごとの途中経過。長時間実行が中断しても済んだ cell を失わない(再開用ではなく記録用)。
+    checkpoint = ARTIFACT_DIR / f"tier0_screening_{args.stage}_v1.checkpoint.jsonl"
+    checkpoint.parent.mkdir(parents=True, exist_ok=True)
+    checkpoint.unlink(missing_ok=True)
     for set_id, horizon, target in family:
         cell_started = time.perf_counter()
-        entry = run_cell(design, sets[set_id], horizon, target, args.stage, args.placebo_k)
+        entry = run_cell(
+            design,
+            sets[set_id],
+            horizon,
+            target,
+            args.stage,
+            args.placebo_k,
+            args.workers,
+        )
         entry["runtime_sec"] = round(time.perf_counter() - cell_started, 1)
         entries.append(entry)
+        with checkpoint.open("a", encoding="utf-8") as handle:
+            handle.write(
+                json.dumps(entry, ensure_ascii=False, sort_keys=True, default=float)
+                + "\n"
+            )
         print(
             f"{set_id:6s} h={horizon:2d} {target}  n_eff={entry.get('n_eff', 0):>9} "
             f"dR2={entry.get('dr2', float('nan')):+.3e} p={entry.get('p', 1.0):.4f} "
@@ -1003,6 +1435,10 @@ def main() -> None:
         )
     holm(entries)
     benjamini_hochberg(entries)
+    for entry in entries:  # 安定性と判定は family 補正後にしか確定しない(§17-2)
+        if entry.get("status") == "tested":
+            entry["stability"] = _stability_flags(entry)
+        entry["disposition"] = _dev_disposition(entry) if args.stage == "dev" else None
 
     report = {
         "report": f"phase7_tier0_screening_{args.stage}_v1",
@@ -1013,20 +1449,33 @@ def main() -> None:
         if (ARTIFACT_DIR / "tier0_freeze.json").exists()
         else None,
         "source_commit": experiments.git_commit_hash(),
+        "provenance": provenance(args.symbol),
         "family_size": len(P.family()),
         "seeds": dict(P.SEEDS),
+        "placebo_shift_rule": (
+            "S = {30 .. W_days-30}; 第1段階は np.linspace で等間隔に 200 個、"
+            "第2段階は全数。乱数を使わないので K と窓から完全に再現できる"
+        ),
         "placebo": {k: v for k, v in P.PLACEBO.items()},
+        "stage2_promotion_max_exceed": STAGE2_MAX_EXCEED,
+        "workers": args.workers,  # 実行の都合。結果には影響しない
         "runtime_sec": round(time.perf_counter() - started, 1),
         "cells": entries,
     }
     smoke = args.placebo_k is not None or args.cells is not None
     if smoke:
         report["smoke_test"] = True
-        report["warning"] = "配管検証。凍結値と違う placebo 数/cell 数なので公式結果ではない"
+        report["warning"] = (
+            "配管検証。凍結値と違う placebo 数/cell 数なので公式結果ではない"
+        )
     suffix = "_smoke" if smoke else ""
     out = ARTIFACT_DIR / f"tier0_screening_{args.stage}_v1{suffix}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True, default=float) + "\n", encoding="utf-8")
+    out.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True, default=float)
+        + "\n",
+        encoding="utf-8",
+    )
     print(f"\nwrote {out}")
 
 

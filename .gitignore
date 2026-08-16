@@ -7,3 +7,7 @@ __pycache__/
 .venv/
 .pytest_cache/
 .ruff_cache/
+
+# screening の途中経過(公式 artifact は tier0_screening_*_v1.json)
+experiments/phase7/*.checkpoint.jsonl
+experiments/phase7/*_smoke.json
