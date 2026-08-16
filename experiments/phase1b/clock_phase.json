@@ -1,0 +1,908 @@
+{
+  "config": {
+    "end": "2025-07-01T00:00:00+00:00",
+    "n_permutations": 500,
+    "seed": 20260817,
+    "start": "2023-11-19T00:00:00+00:00",
+    "thresholds": {
+      "min_effect_bps": 1.0,
+      "p_directional": 0.01,
+      "t_activity": 5.0,
+      "t_directional": 3.0
+    }
+  },
+  "created_at": "2026-08-16T19:37:15.984488+09:00",
+  "families": {
+    "hour_utc": {
+      "judgment": null,
+      "phases": [
+        {
+          "abs_ret_mean_bps": 10.6995,
+          "abs_ret_t": 2.429,
+          "fwd1h_open_mean_bps": -2.0367,
+          "fwd5m_effect_bps": 0.0452,
+          "fwd5m_mean_bps": 0.0328,
+          "fwd5m_t": -0.224,
+          "half_effects_bps": [
+            -0.0651,
+            -0.0254
+          ],
+          "n": 7068,
+          "phase": 0,
+          "sign_consistent": true,
+          "volume_mean": 341.6202
+        },
+        {
+          "abs_ret_mean_bps": 11.0034,
+          "abs_ret_t": 4.176,
+          "fwd1h_open_mean_bps": -0.0599,
+          "fwd5m_effect_bps": 0.2601,
+          "fwd5m_mean_bps": -0.1731,
+          "fwd5m_t": -1.27,
+          "half_effects_bps": [
+            -0.4384,
+            -0.0825
+          ],
+          "n": 7068,
+          "phase": 1,
+          "sign_consistent": true,
+          "volume_mean": 367.446
+        },
+        {
+          "abs_ret_mean_bps": 9.666,
+          "abs_ret_t": -4.968,
+          "fwd1h_open_mean_bps": 1.8504,
+          "fwd5m_effect_bps": 0.1377,
+          "fwd5m_mean_bps": 0.2081,
+          "fwd5m_t": 0.739,
+          "half_effects_bps": [
+            0.0443,
+            0.2307
+          ],
+          "n": 7068,
+          "phase": 2,
+          "sign_consistent": true,
+          "volume_mean": 344.0508
+        },
+        {
+          "abs_ret_mean_bps": 8.1609,
+          "abs_ret_t": -20.515,
+          "fwd1h_open_mean_bps": 0.2261,
+          "fwd5m_effect_bps": 0.098,
+          "fwd5m_mean_bps": -0.0178,
+          "fwd5m_t": -0.661,
+          "half_effects_bps": [
+            -0.2922,
+            0.0955
+          ],
+          "n": 7068,
+          "phase": 3,
+          "sign_consistent": false,
+          "volume_mean": 282.037
+        },
+        {
+          "abs_ret_mean_bps": 7.7751,
+          "abs_ret_t": -24.046,
+          "fwd1h_open_mean_bps": 0.5415,
+          "fwd5m_effect_bps": 0.0836,
+          "fwd5m_mean_bps": -0.004,
+          "fwd5m_t": -0.562,
+          "half_effects_bps": [
+            -0.0708,
+            -0.0964
+          ],
+          "n": 7068,
+          "phase": 4,
+          "sign_consistent": true,
+          "volume_mean": 262.7882
+        },
+        {
+          "abs_ret_mean_bps": 7.5351,
+          "abs_ret_t": -28.17,
+          "fwd1h_open_mean_bps": 1.6497,
+          "fwd5m_effect_bps": 0.1126,
+          "fwd5m_mean_bps": 0.1841,
+          "fwd5m_t": 0.823,
+          "half_effects_bps": [
+            0.0461,
+            0.179
+          ],
+          "n": 7068,
+          "phase": 5,
+          "sign_consistent": true,
+          "volume_mean": 255.4597
+        },
+        {
+          "abs_ret_mean_bps": 7.9679,
+          "abs_ret_t": -19.66,
+          "fwd1h_open_mean_bps": 2.0728,
+          "fwd5m_effect_bps": 0.1903,
+          "fwd5m_mean_bps": 0.2585,
+          "fwd5m_t": 1.158,
+          "half_effects_bps": [
+            0.4225,
+            -0.0412
+          ],
+          "n": 7068,
+          "phase": 6,
+          "sign_consistent": false,
+          "volume_mean": 277.5683
+        },
+        {
+          "abs_ret_mean_bps": 8.2521,
+          "abs_ret_t": -19.229,
+          "fwd1h_open_mean_bps": 1.1072,
+          "fwd5m_effect_bps": 0.1065,
+          "fwd5m_mean_bps": -0.0259,
+          "fwd5m_t": -0.704,
+          "half_effects_bps": [
+            -0.0779,
+            -0.135
+          ],
+          "n": 7068,
+          "phase": 7,
+          "sign_consistent": true,
+          "volume_mean": 323.699
+        },
+        {
+          "abs_ret_mean_bps": 8.7299,
+          "abs_ret_t": -14.774,
+          "fwd1h_open_mean_bps": 2.6654,
+          "fwd5m_effect_bps": 0.0856,
+          "fwd5m_mean_bps": 0.1582,
+          "fwd5m_t": 0.552,
+          "half_effects_bps": [
+            0.1956,
+            -0.024
+          ],
+          "n": 7068,
+          "phase": 8,
+          "sign_consistent": false,
+          "volume_mean": 346.5073
+        },
+        {
+          "abs_ret_mean_bps": 8.413,
+          "abs_ret_t": -18.166,
+          "fwd1h_open_mean_bps": 0.1524,
+          "fwd5m_effect_bps": 0.027,
+          "fwd5m_mean_bps": 0.1021,
+          "fwd5m_t": 0.178,
+          "half_effects_bps": [
+            0.0147,
+            0.0393
+          ],
+          "n": 7068,
+          "phase": 9,
+          "sign_consistent": true,
+          "volume_mean": 327.2446
+        },
+        {
+          "abs_ret_mean_bps": 8.2175,
+          "abs_ret_t": -20.158,
+          "fwd1h_open_mean_bps": 1.7762,
+          "fwd5m_effect_bps": 0.0885,
+          "fwd5m_mean_bps": 0.161,
+          "fwd5m_t": 0.585,
+          "half_effects_bps": [
+            0.1584,
+            0.0188
+          ],
+          "n": 7068,
+          "phase": 10,
+          "sign_consistent": true,
+          "volume_mean": 317.0097
+        },
+        {
+          "abs_ret_mean_bps": 8.4452,
+          "abs_ret_t": -17.845,
+          "fwd1h_open_mean_bps": 1.6074,
+          "fwd5m_effect_bps": 0.0926,
+          "fwd5m_mean_bps": 0.1649,
+          "fwd5m_t": 0.602,
+          "half_effects_bps": [
+            0.1878,
+            -0.0023
+          ],
+          "n": 7068,
+          "phase": 11,
+          "sign_consistent": false,
+          "volume_mean": 329.0977
+        },
+        {
+          "abs_ret_mean_bps": 10.0723,
+          "abs_ret_t": -1.72,
+          "fwd1h_open_mean_bps": -1.2635,
+          "fwd5m_effect_bps": 0.1041,
+          "fwd5m_mean_bps": -0.0236,
+          "fwd5m_t": -0.491,
+          "half_effects_bps": [
+            -0.0168,
+            -0.1911
+          ],
+          "n": 7068,
+          "phase": 12,
+          "sign_consistent": true,
+          "volume_mean": 436.0063
+        },
+        {
+          "abs_ret_mean_bps": 12.7589,
+          "abs_ret_t": 14.824,
+          "fwd1h_open_mean_bps": -0.338,
+          "fwd5m_effect_bps": 0.2242,
+          "fwd5m_mean_bps": -0.1387,
+          "fwd5m_t": -0.945,
+          "half_effects_bps": [
+            -0.1321,
+            -0.3161
+          ],
+          "n": 7068,
+          "phase": 13,
+          "sign_consistent": true,
+          "volume_mean": 595.4723
+        },
+        {
+          "abs_ret_mean_bps": 15.7212,
+          "abs_ret_t": 27.15,
+          "fwd1h_open_mean_bps": 0.8602,
+          "fwd5m_effect_bps": 0.2129,
+          "fwd5m_mean_bps": -0.1279,
+          "fwd5m_t": -0.769,
+          "half_effects_bps": [
+            -0.6267,
+            0.1994
+          ],
+          "n": 7068,
+          "phase": 14,
+          "sign_consistent": false,
+          "volume_mean": 802.9612
+        },
+        {
+          "abs_ret_mean_bps": 14.3475,
+          "abs_ret_t": 23.503,
+          "fwd1h_open_mean_bps": 0.6637,
+          "fwd5m_effect_bps": 0.3345,
+          "fwd5m_mean_bps": 0.3968,
+          "fwd5m_t": 1.37,
+          "half_effects_bps": [
+            0.1595,
+            0.509
+          ],
+          "n": 7068,
+          "phase": 15,
+          "sign_consistent": true,
+          "volume_mean": 705.5348
+        },
+        {
+          "abs_ret_mean_bps": 13.0156,
+          "abs_ret_t": 17.242,
+          "fwd1h_open_mean_bps": 2.5819,
+          "fwd5m_effect_bps": 0.2548,
+          "fwd5m_mean_bps": -0.168,
+          "fwd5m_t": -1.129,
+          "half_effects_bps": [
+            -0.2521,
+            -0.2575
+          ],
+          "n": 7068,
+          "phase": 16,
+          "sign_consistent": true,
+          "volume_mean": 579.4599
+        },
+        {
+          "abs_ret_mean_bps": 12.6506,
+          "abs_ret_t": 13.733,
+          "fwd1h_open_mean_bps": 3.2005,
+          "fwd5m_effect_bps": 0.4591,
+          "fwd5m_mean_bps": 0.5161,
+          "fwd5m_t": 1.985,
+          "half_effects_bps": [
+            0.4857,
+            0.4326
+          ],
+          "n": 7072,
+          "phase": 17,
+          "sign_consistent": true,
+          "volume_mean": 509.5667
+        },
+        {
+          "abs_ret_mean_bps": 11.782,
+          "abs_ret_t": 9.54,
+          "fwd1h_open_mean_bps": -0.1985,
+          "fwd5m_effect_bps": 0.096,
+          "fwd5m_mean_bps": -0.0158,
+          "fwd5m_t": -0.459,
+          "half_effects_bps": [
+            0.08,
+            -0.2719
+          ],
+          "n": 7080,
+          "phase": 18,
+          "sign_consistent": false,
+          "volume_mean": 426.5726
+        },
+        {
+          "abs_ret_mean_bps": 11.5218,
+          "abs_ret_t": 8.007,
+          "fwd1h_open_mean_bps": -1.1161,
+          "fwd5m_effect_bps": 0.1953,
+          "fwd5m_mean_bps": -0.111,
+          "fwd5m_t": -0.926,
+          "half_effects_bps": [
+            -0.1855,
+            -0.2051
+          ],
+          "n": 7080,
+          "phase": 19,
+          "sign_consistent": true,
+          "volume_mean": 396.1337
+        },
+        {
+          "abs_ret_mean_bps": 11.3684,
+          "abs_ret_t": 6.238,
+          "fwd1h_open_mean_bps": 1.2218,
+          "fwd5m_effect_bps": 0.1143,
+          "fwd5m_mean_bps": -0.0334,
+          "fwd5m_t": -0.532,
+          "half_effects_bps": [
+            -0.0842,
+            -0.1444
+          ],
+          "n": 7080,
+          "phase": 20,
+          "sign_consistent": true,
+          "volume_mean": 367.6626
+        },
+        {
+          "abs_ret_mean_bps": 10.7999,
+          "abs_ret_t": 2.977,
+          "fwd1h_open_mean_bps": 4.0536,
+          "fwd5m_effect_bps": 0.3656,
+          "fwd5m_mean_bps": 0.4265,
+          "fwd5m_t": 1.77,
+          "half_effects_bps": [
+            0.6779,
+            0.0534
+          ],
+          "n": 7080,
+          "phase": 21,
+          "sign_consistent": true,
+          "volume_mean": 275.4321
+        },
+        {
+          "abs_ret_mean_bps": 10.4188,
+          "abs_ret_t": 0.414,
+          "fwd1h_open_mean_bps": 0.3909,
+          "fwd5m_effect_bps": 0.0027,
+          "fwd5m_mean_bps": 0.0788,
+          "fwd5m_t": 0.013,
+          "half_effects_bps": [
+            0.0127,
+            -0.0072
+          ],
+          "n": 7080,
+          "phase": 22,
+          "sign_consistent": false,
+          "volume_mean": 280.7036
+        },
+        {
+          "abs_ret_mean_bps": 9.1826,
+          "abs_ret_t": -9.702,
+          "fwd1h_open_mean_bps": 0.0922,
+          "fwd5m_effect_bps": 0.1011,
+          "fwd5m_mean_bps": -0.0208,
+          "fwd5m_t": -0.615,
+          "half_effects_bps": [
+            -0.2446,
+            0.0424
+          ],
+          "n": 7080,
+          "phase": 23,
+          "sign_consistent": false,
+          "volume_mean": 276.544
+        }
+      ]
+    },
+    "m15_x_vol_regime": {
+      "cells": [
+        {
+          "abs_ret_mean_bps": 12.4398,
+          "fwd5m_mean_bps": 0.1067,
+          "n": 27420,
+          "phase": 0,
+          "regime": "high_vol"
+        },
+        {
+          "abs_ret_mean_bps": 11.8979,
+          "fwd5m_mean_bps": 0.1719,
+          "n": 27418,
+          "phase": 5,
+          "regime": "high_vol"
+        },
+        {
+          "abs_ret_mean_bps": 10.9645,
+          "fwd5m_mean_bps": -0.0183,
+          "n": 27424,
+          "phase": 10,
+          "regime": "high_vol"
+        },
+        {
+          "abs_ret_mean_bps": 9.4809,
+          "fwd5m_mean_bps": 0.0118,
+          "n": 27421,
+          "phase": 0,
+          "regime": "low_vol"
+        },
+        {
+          "abs_ret_mean_bps": 9.2102,
+          "fwd5m_mean_bps": 0.098,
+          "n": 27423,
+          "phase": 5,
+          "regime": "low_vol"
+        },
+        {
+          "abs_ret_mean_bps": 8.4874,
+          "fwd5m_mean_bps": 0.0383,
+          "n": 27417,
+          "phase": 10,
+          "regime": "low_vol"
+        }
+      ],
+      "note": "in-sample中央値2分の記述統計(walk-forwardではない)",
+      "vol_median": 0.0015244986838230106
+    },
+    "minute_mod_15": {
+      "judgment": {
+        "D1_passing_phases": [],
+        "activity_confirmed_phases": [
+          0,
+          10
+        ],
+        "top_effect_bps": 0.1079,
+        "top_phase": 5,
+        "true_boundary": 0,
+        "verdict": "no_directional_structure"
+      },
+      "phases": [
+        {
+          "D1_pass": false,
+          "abs_ret_mean_bps": 10.9037,
+          "abs_ret_t": 12.927,
+          "activity_confirmed": true,
+          "fwd1h_open_mean_bps": 0.9024,
+          "fwd5m_effect_bps": 0.0233,
+          "fwd5m_mean_bps": 0.0607,
+          "fwd5m_t": -0.279,
+          "half_effects_bps": [
+            -0.2372,
+            0.1902
+          ],
+          "n": 56569,
+          "perm_p": 0.94212,
+          "phase": 0,
+          "sign_consistent": false,
+          "volume_mean": 418.1561
+        },
+        {
+          "D1_pass": false,
+          "abs_ret_mean_bps": 10.4873,
+          "abs_ret_t": 3.121,
+          "activity_confirmed": false,
+          "fwd1h_open_mean_bps": 0.9048,
+          "fwd5m_effect_bps": 0.1079,
+          "fwd5m_mean_bps": 0.1481,
+          "fwd5m_t": 1.343,
+          "half_effects_bps": [
+            0.4562,
+            -0.2395
+          ],
+          "n": 56569,
+          "perm_p": 0.38523,
+          "phase": 5,
+          "sign_consistent": false,
+          "volume_mean": 390.54
+        },
+        {
+          "D1_pass": false,
+          "abs_ret_mean_bps": 9.6729,
+          "abs_ret_t": -16.594,
+          "activity_confirmed": true,
+          "fwd1h_open_mean_bps": 0.9055,
+          "fwd5m_effect_bps": 0.0847,
+          "fwd5m_mean_bps": 0.0197,
+          "fwd5m_t": -1.008,
+          "half_effects_bps": [
+            -0.219,
+            0.0493
+          ],
+          "n": 56570,
+          "perm_p": 0.55689,
+          "phase": 10,
+          "sign_consistent": false,
+          "volume_mean": 369.5616
+        }
+      ]
+    },
+    "minute_mod_60": {
+      "judgment": {
+        "D1_passing_phases": [],
+        "activity_confirmed_phases": [
+          0,
+          5,
+          15,
+          25,
+          30,
+          40,
+          50,
+          55
+        ],
+        "top_effect_bps": 0.2407,
+        "top_phase": 25,
+        "true_boundary": 0,
+        "verdict": "no_directional_structure"
+      },
+      "phases": [
+        {
+          "D1_pass": false,
+          "abs_ret_mean_bps": 11.1968,
+          "abs_ret_t": 8.299,
+          "activity_confirmed": true,
+          "fwd1h_open_mean_bps": 0.9039,
+          "fwd5m_effect_bps": 0.1366,
+          "fwd5m_mean_bps": -0.049,
+          "fwd5m_t": -0.894,
+          "half_effects_bps": [
+            -0.5933,
+            0.3189
+          ],
+          "n": 14142,
+          "perm_p": 0.99202,
+          "phase": 0,
+          "sign_consistent": false,
+          "volume_mean": 444.2177
+        },
+        {
+          "D1_pass": false,
+          "abs_ret_mean_bps": 11.0202,
+          "abs_ret_t": 6.122,
+          "activity_confirmed": true,
+          "fwd1h_open_mean_bps": 0.9101,
+          "fwd5m_effect_bps": 0.2014,
+          "fwd5m_mean_bps": 0.2608,
+          "fwd5m_t": 1.432,
+          "half_effects_bps": [
+            0.3924,
+            0.011
+          ],
+          "n": 14142,
+          "perm_p": 0.8503,
+          "phase": 5,
+          "sign_consistent": true,
+          "volume_mean": 412.9688
+        },
+        {
+          "D1_pass": false,
+          "abs_ret_mean_bps": 10.1413,
+          "abs_ret_t": -2.14,
+          "activity_confirmed": false,
+          "fwd1h_open_mean_bps": 0.9091,
+          "fwd5m_effect_bps": 0.0775,
+          "fwd5m_mean_bps": 0.0051,
+          "fwd5m_t": -0.544,
+          "half_effects_bps": [
+            -0.1118,
+            -0.0433
+          ],
+          "n": 14142,
+          "perm_p": 1.0,
+          "phase": 10,
+          "sign_consistent": true,
+          "volume_mean": 387.3698
+        },
+        {
+          "D1_pass": false,
+          "abs_ret_mean_bps": 10.8848,
+          "abs_ret_t": 5.446,
+          "activity_confirmed": true,
+          "fwd1h_open_mean_bps": 0.906,
+          "fwd5m_effect_bps": 0.1467,
+          "fwd5m_mean_bps": 0.2107,
+          "fwd5m_t": 1.05,
+          "half_effects_bps": [
+            0.1249,
+            0.1685
+          ],
+          "n": 14142,
+          "perm_p": 0.98802,
+          "phase": 15,
+          "sign_consistent": true,
+          "volume_mean": 403.6659
+        },
+        {
+          "D1_pass": false,
+          "abs_ret_mean_bps": 10.4365,
+          "abs_ret_t": 0.846,
+          "activity_confirmed": false,
+          "fwd1h_open_mean_bps": 0.907,
+          "fwd5m_effect_bps": 0.1876,
+          "fwd5m_mean_bps": 0.2482,
+          "fwd5m_t": 1.372,
+          "half_effects_bps": [
+            0.4881,
+            -0.1121
+          ],
+          "n": 14142,
+          "perm_p": 0.88024,
+          "phase": 20,
+          "sign_consistent": false,
+          "volume_mean": 384.8098
+        },
+        {
+          "D1_pass": false,
+          "abs_ret_mean_bps": 9.7746,
+          "abs_ret_t": -5.961,
+          "activity_confirmed": true,
+          "fwd1h_open_mean_bps": 0.9048,
+          "fwd5m_effect_bps": 0.2407,
+          "fwd5m_mean_bps": -0.1445,
+          "fwd5m_t": -1.587,
+          "half_effects_bps": [
+            -0.3181,
+            -0.1634
+          ],
+          "n": 14142,
+          "perm_p": 0.63872,
+          "phase": 25,
+          "sign_consistent": true,
+          "volume_mean": 367.162
+        },
+        {
+          "D1_pass": false,
+          "abs_ret_mean_bps": 11.1731,
+          "abs_ret_t": 7.686,
+          "activity_confirmed": true,
+          "fwd1h_open_mean_bps": 0.8982,
+          "fwd5m_effect_bps": 0.1583,
+          "fwd5m_mean_bps": -0.069,
+          "fwd5m_t": -1.098,
+          "half_effects_bps": [
+            -0.1978,
+            -0.119
+          ],
+          "n": 14142,
+          "perm_p": 0.97405,
+          "phase": 30,
+          "sign_consistent": true,
+          "volume_mean": 434.6521
+        },
+        {
+          "D1_pass": false,
+          "abs_ret_mean_bps": 10.6296,
+          "abs_ret_t": 2.723,
+          "activity_confirmed": false,
+          "fwd1h_open_mean_bps": 0.9,
+          "fwd5m_effect_bps": 0.1551,
+          "fwd5m_mean_bps": 0.2183,
+          "fwd5m_t": 1.155,
+          "half_effects_bps": [
+            0.0222,
+            0.2876
+          ],
+          "n": 14142,
+          "perm_p": 0.97804,
+          "phase": 35,
+          "sign_consistent": true,
+          "volume_mean": 397.197
+        },
+        {
+          "D1_pass": false,
+          "abs_ret_mean_bps": 9.8024,
+          "abs_ret_t": -5.868,
+          "activity_confirmed": true,
+          "fwd1h_open_mean_bps": 0.9008,
+          "fwd5m_effect_bps": 0.1362,
+          "fwd5m_mean_bps": -0.0487,
+          "fwd5m_t": -0.982,
+          "half_effects_bps": [
+            -0.2378,
+            -0.0348
+          ],
+          "n": 14143,
+          "perm_p": 0.99202,
+          "phase": 40,
+          "sign_consistent": true,
+          "volume_mean": 370.2482
+        },
+        {
+          "D1_pass": false,
+          "abs_ret_mean_bps": 10.3601,
+          "abs_ret_t": 0.057,
+          "activity_confirmed": false,
+          "fwd1h_open_mean_bps": 0.9014,
+          "fwd5m_effect_bps": 0.0805,
+          "fwd5m_mean_bps": 0.15,
+          "fwd5m_t": 0.595,
+          "half_effects_bps": [
+            -0.024,
+            0.1848
+          ],
+          "n": 14143,
+          "perm_p": 1.0,
+          "phase": 45,
+          "sign_consistent": false,
+          "volume_mean": 390.0908
+        },
+        {
+          "D1_pass": false,
+          "abs_ret_mean_bps": 9.8629,
+          "abs_ret_t": -5.171,
+          "activity_confirmed": true,
+          "fwd1h_open_mean_bps": 0.902,
+          "fwd5m_effect_bps": 0.2301,
+          "fwd5m_mean_bps": -0.1348,
+          "fwd5m_t": -1.865,
+          "half_effects_bps": [
+            0.4244,
+            -0.8831
+          ],
+          "n": 14143,
+          "perm_p": 0.69661,
+          "phase": 50,
+          "sign_consistent": false,
+          "volume_mean": 367.1862
+        },
+        {
+          "D1_pass": false,
+          "abs_ret_mean_bps": 8.9734,
+          "abs_ret_t": -16.035,
+          "activity_confirmed": true,
+          "fwd1h_open_mean_bps": 0.9072,
+          "fwd5m_effect_bps": 0.208,
+          "fwd5m_mean_bps": 0.2669,
+          "fwd5m_t": 1.409,
+          "half_effects_bps": [
+            0.0307,
+            0.3849
+          ],
+          "n": 14143,
+          "perm_p": 0.82036,
+          "phase": 55,
+          "sign_consistent": true,
+          "volume_mean": 353.4674
+        }
+      ]
+    },
+    "weekday_utc": {
+      "judgment": null,
+      "phases": [
+        {
+          "abs_ret_mean_bps": 12.1641,
+          "abs_ret_t": 21.666,
+          "fwd1h_open_mean_bps": 3.2846,
+          "fwd5m_effect_bps": 0.2123,
+          "fwd5m_mean_bps": 0.2579,
+          "fwd5m_t": 1.666,
+          "half_effects_bps": [
+            0.4096,
+            0.0187
+          ],
+          "n": 24480,
+          "phase": 0,
+          "sign_consistent": true,
+          "volume_mean": 489.1123
+        },
+        {
+          "abs_ret_mean_bps": 11.9653,
+          "abs_ret_t": 20.757,
+          "fwd1h_open_mean_bps": -0.9123,
+          "fwd5m_effect_bps": 0.1775,
+          "fwd5m_mean_bps": -0.076,
+          "fwd5m_t": -1.459,
+          "half_effects_bps": [
+            -0.4217,
+            0.0666
+          ],
+          "n": 24192,
+          "phase": 1,
+          "sign_consistent": false,
+          "volume_mean": 479.3813
+        },
+        {
+          "abs_ret_mean_bps": 11.6797,
+          "abs_ret_t": 16.605,
+          "fwd1h_open_mean_bps": 2.8578,
+          "fwd5m_effect_bps": 0.205,
+          "fwd5m_mean_bps": 0.252,
+          "fwd5m_t": 1.673,
+          "half_effects_bps": [
+            0.174,
+            0.2361
+          ],
+          "n": 24192,
+          "phase": 2,
+          "sign_consistent": true,
+          "volume_mean": 464.5699
+        },
+        {
+          "abs_ret_mean_bps": 11.1309,
+          "abs_ret_t": 10.792,
+          "fwd1h_open_mean_bps": -0.4855,
+          "fwd5m_effect_bps": 0.1157,
+          "fwd5m_mean_bps": -0.023,
+          "fwd5m_t": -1.019,
+          "half_effects_bps": [
+            -0.0547,
+            -0.1766
+          ],
+          "n": 24192,
+          "phase": 3,
+          "sign_consistent": true,
+          "volume_mean": 425.652
+        },
+        {
+          "abs_ret_mean_bps": 11.182,
+          "abs_ret_t": 11.04,
+          "fwd1h_open_mean_bps": 1.262,
+          "fwd5m_effect_bps": 0.0205,
+          "fwd5m_mean_bps": 0.0937,
+          "fwd5m_t": 0.176,
+          "half_effects_bps": [
+            -0.0759,
+            0.1169
+          ],
+          "n": 24192,
+          "phase": 4,
+          "sign_consistent": false,
+          "volume_mean": 443.3642
+        },
+        {
+          "abs_ret_mean_bps": 6.5466,
+          "abs_ret_t": -73.509,
+          "fwd1h_open_mean_bps": 0.544,
+          "fwd5m_effect_bps": 0.0427,
+          "fwd5m_mean_bps": 0.0396,
+          "fwd5m_t": -0.539,
+          "half_effects_bps": [
+            -0.001,
+            -0.0843
+          ],
+          "n": 24192,
+          "phase": 5,
+          "sign_consistent": true,
+          "volume_mean": 193.8871
+        },
+        {
+          "abs_ret_mean_bps": 7.8003,
+          "abs_ret_t": -44.08,
+          "fwd1h_open_mean_bps": -0.2459,
+          "fwd5m_effect_bps": 0.1038,
+          "fwd5m_mean_bps": -0.0128,
+          "fwd5m_t": -1.169,
+          "half_effects_bps": [
+            -0.0301,
+            -0.1778
+          ],
+          "n": 24268,
+          "phase": 6,
+          "sign_consistent": true,
+          "volume_mean": 252.5886
+        }
+      ]
+    }
+  },
+  "judgment": {
+    "economic_note": "D1通過効果もmaker往復2bps/taker往復10bpsと必ず比較すること(恒久ルール5)",
+    "family_verdicts": {
+      "minute_mod_15": "no_directional_structure",
+      "minute_mod_60": "no_directional_structure"
+    },
+    "proceed_to_aggtrades_on_directional": false
+  },
+  "manifest_sha256": {
+    "features": "f759f5eddc82ee38eb867ca8cffc0d559baf2d73bdf969e4c103389ff9d1ec9d",
+    "labels": "2f874fe153e653787bc7d388b2c0a5d5e00efdd9f8a0ea931c2e7e1bd6a66ac4"
+  },
+  "protocol": "phase1b_v1",
+  "reference": "The Quarter-Hour Effect (arXiv:2607.09426; 原論文はBinance perp・1分足を含む)",
+  "replication_class": "cross_exchange_validation",
+  "source_commit": "325c4401024ca6a94fc863eeeccc2b43becf63e1"
+}
