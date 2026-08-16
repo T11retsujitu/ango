@@ -6,14 +6,15 @@
     "market_type",
     "fwd_return_5m",
     "fwd_return_1h",
-    "fwd_return_4h"
+    "fwd_return_4h",
+    "fwd_open_return_1h"
   ],
   "expected_rows": 288124,
   "file": "okx_BTC-USDT-SWAP_5m.parquet",
   "missing_rows": 0,
   "rows": 288124,
-  "sha256": "8b38be0c50a534431f3293d528f61fde82be34d7e7f58a1ee1c7e695f3419953",
-  "size_bytes": 6976406,
+  "sha256": "2f874fe153e653787bc7d388b2c0a5d5e00efdd9f8a0ea931c2e7e1bd6a66ac4",
+  "size_bytes": 9038219,
   "ts_max": "2026-08-16T03:55:00+00:00",
   "ts_min": "2023-11-19T17:40:00+00:00"
 }
