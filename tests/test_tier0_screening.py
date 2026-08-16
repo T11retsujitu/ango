@@ -1,6 +1,7 @@
 """screening エンジンの正しさ(fold・purge・帰無の作り方・最適化経路の同値性)。"""
 
 from datetime import datetime, timezone
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -232,3 +233,38 @@ def test_causal_percentile_rank_never_looks_forward():
     )
     tail_down = rank_down[~np.isnan(rank_down)]
     assert np.allclose(tail_down, 0.0)
+
+
+def test_resume_reuses_checkpoint_cells_verbatim(tmp_path):
+    """再開は中断しなかった場合と同じ結果でなければならない(cell は互いに独立)。"""
+    path = tmp_path / "cp.jsonl"
+    rows = [
+        {"set": "T0-A", "horizon_bars": 1, "target": "Y1", "dr2": 1.0},
+        {"set": "T0-A", "horizon_bars": 1, "target": "Y2", "dr2": 2.0},
+    ]
+    path.write_text(
+        "\n".join(__import__("json").dumps(r) for r in rows) + "\n", encoding="utf-8"
+    )
+    done = S.load_checkpoint(path)
+    assert done[("T0-A", 1, "Y1")]["dr2"] == 1.0
+    assert done[("T0-A", 1, "Y2")]["dr2"] == 2.0
+    assert len(done) == 2
+
+
+def test_resume_discards_a_torn_final_line():
+    """強制終了で切れた末尾行は捨てる(その cell は再計算される)。"""
+    import json
+    import tempfile
+
+    with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as handle:
+        handle.write(
+            json.dumps({"set": "T0-A", "horizon_bars": 1, "target": "Y1"}) + "\n"
+        )
+        handle.write('{"set": "T0-A", "horizon_ba')  # 書き込み途中で死んだ行
+        name = handle.name
+    done = S.load_checkpoint(Path(name))
+    assert len(done) == 1 and ("T0-A", 1, "Y1") in done
+
+
+def test_load_checkpoint_without_a_file_is_empty():
+    assert S.load_checkpoint(Path("/nonexistent/cp.jsonl")) == {}

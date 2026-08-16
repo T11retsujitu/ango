@@ -1300,6 +1300,20 @@ def run_cell(
     return entry
 
 
+def load_checkpoint(path: Path) -> dict:
+    """途中経過から完了済み cell を読む。壊れた末尾行(強制終了)は捨てる。"""
+    if not path.exists():
+        return {}
+    done: dict = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue  # 書き込み途中で落ちた行
+        done[(entry["set"], entry["horizon_bars"], entry["target"])] = entry
+    return done
+
+
 def provenance(symbol: str) -> dict:
     """再現に必要な指紋(§18-3-5)。manifest / lockfile / commit / 凍結記録。"""
     manifests = {}
@@ -1371,6 +1385,11 @@ def main() -> None:
         default=1,
         help="placebo 評価の並列プロセス数。純関数の写像なので結果は worker 数に依らない",
     )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="中断した実行の続き。checkpoint にある cell を再利用し、残りだけ計算する",
+    )
     args = parser.parse_args()
 
     dev_artifact = ARTIFACT_DIR / "tier0_screening_dev_v1.json"
@@ -1405,11 +1424,25 @@ def main() -> None:
     if args.cells:
         family = family[: args.cells]
     sets = {s.id: s for s in P.INFORMATION_SETS}
-    # cell ごとの途中経過。長時間実行が中断しても済んだ cell を失わない(再開用ではなく記録用)。
+    # cell ごとの途中経過。長時間実行が中断しても済んだ cell を失わない。
     checkpoint = ARTIFACT_DIR / f"tier0_screening_{args.stage}_v1.checkpoint.jsonl"
     checkpoint.parent.mkdir(parents=True, exist_ok=True)
-    checkpoint.unlink(missing_ok=True)
+    # --resume は「中断した1回の実行の続き」であって2回目の実行ではない。
+    # run_cell は (design, set, horizon, target, stage) の純関数で他の cell に依存せず、
+    # Holm / 安定性 / 判定は最後に 27 cell 全体へ掛け直すので、
+    # 途中再開しても中断しなかった場合と同じ artifact になる。
+    done = load_checkpoint(checkpoint) if args.resume else {}
+    if not args.resume:
+        checkpoint.unlink(missing_ok=True)
     for set_id, horizon, target in family:
+        cached = done.get((set_id, horizon, target))
+        if cached is not None:
+            entries.append(cached)
+            print(
+                f"{set_id:6s} h={horizon:2d} {target}  (checkpoint から再利用)",
+                flush=True,
+            )
+            continue
         cell_started = time.perf_counter()
         entry = run_cell(
             design,
@@ -1459,6 +1492,10 @@ def main() -> None:
         "placebo": {k: v for k, v in P.PLACEBO.items()},
         "stage2_promotion_max_exceed": STAGE2_MAX_EXCEED,
         "workers": args.workers,  # 実行の都合。結果には影響しない
+        "resumed_from_checkpoint": bool(args.resume),
+        "cells_reused_from_checkpoint": sum(
+            1 for c in entries if (c["set"], c["horizon_bars"], c["target"]) in done
+        ),
         "runtime_sec": round(time.perf_counter() - started, 1),
         "cells": entries,
     }
