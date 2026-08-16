@@ -1,0 +1,357 @@
+{
+  "datasets": {
+    "klines_5m": {
+      "path": "data/normalized/binance/klines_BTCUSDT_5m.parquet",
+      "present": true,
+      "raw_accounting": {
+        "conflicting_duplicates": 0,
+        "conflicts_resolved_by_owning_file": 0,
+        "cutoff": "2026-01-01T00:00:00+00:00",
+        "dataset": "klines_5m",
+        "duplicate_rows_dropped": 0,
+        "files": 72,
+        "raw_rows": 631296,
+        "sealed_rows_dropped": 0,
+        "symbol": "BTCUSDT",
+        "unresolved_conflicts": 0
+      },
+      "source": {
+        "checksum_verified": 72,
+        "digest": "768e49966ff8e489e2711d38fdc519dbc9af573738cffb590d7a1d24d84714d5",
+        "periods_absent": 0,
+        "periods_with_file": 72,
+        "present": true
+      },
+      "timestamps": {
+        "expected_rows_on_grid": 631296,
+        "gap_count": 0,
+        "largest_gaps": [],
+        "longest_gap_minutes": 0,
+        "missing_ratio": 0.0,
+        "missing_rows": 0,
+        "off_grid_rows": 0,
+        "rows": 631296,
+        "sealed_rows_present": 0,
+        "strictly_increasing": true,
+        "time_zone": "UTC",
+        "ts_max": "2025-12-31T23:55:00+00:00",
+        "ts_min": "2020-01-01T00:00:00+00:00"
+      },
+      "values": {
+        "high_lt_max_open_close": 0,
+        "low_gt_min_open_close": 0,
+        "negative_trades": 0,
+        "negative_volume": 0,
+        "nonpositive_close": 0,
+        "null_counts": {},
+        "taker_buy_gt_volume": 0,
+        "taker_buy_quote_gt_volume_quote": 0,
+        "taker_buy_ratio_median": 0.497012,
+        "trades_median": 7278.0,
+        "zero_trade_bars": 66,
+        "zero_volume_bars": 66
+      }
+    },
+    "metrics_5m": {
+      "path": "data/normalized/binance/metrics_BTCUSDT_5m.parquet",
+      "present": true,
+      "raw_accounting": {
+        "conflicting_duplicates": 2,
+        "conflicts_resolved_by_owning_file": 2,
+        "cutoff": "2026-01-01T00:00:00+00:00",
+        "dataset": "metrics_5m",
+        "duplicate_rows_dropped": 75257,
+        "files": 1948,
+        "raw_rows": 635645,
+        "sealed_rows_dropped": 0,
+        "symbol": "BTCUSDT",
+        "unresolved_conflicts": 0
+      },
+      "source": {
+        "checksum_verified": 1948,
+        "digest": "364700f34e1c331d26a9dfa28ac3e268a49bc4d19c286a1264be107cbe63b9af",
+        "periods_absent": 244,
+        "periods_with_file": 1948,
+        "present": true
+      },
+      "timestamps": {
+        "expected_rows_on_grid": 561024,
+        "gap_count": 298,
+        "largest_gaps": [
+          {
+            "gap_minutes": 630.0,
+            "gap_start": "2024-02-17T00:00:00+00:00"
+          },
+          {
+            "gap_minutes": 320.0,
+            "gap_start": "2021-02-20T01:20:00+00:00"
+          },
+          {
+            "gap_minutes": 265.0,
+            "gap_start": "2021-06-22T22:50:00+00:00"
+          },
+          {
+            "gap_minutes": 190.0,
+            "gap_start": "2021-06-22T03:30:00+00:00"
+          },
+          {
+            "gap_minutes": 155.0,
+            "gap_start": "2021-04-27T13:40:00+00:00"
+          },
+          {
+            "gap_minutes": 105.0,
+            "gap_start": "2021-06-22T14:30:00+00:00"
+          },
+          {
+            "gap_minutes": 90.0,
+            "gap_start": "2021-01-20T02:15:00+00:00"
+          },
+          {
+            "gap_minutes": 65.0,
+            "gap_start": "2021-02-19T01:35:00+00:00"
+          },
+          {
+            "gap_minutes": 65.0,
+            "gap_start": "2021-06-23T03:15:00+00:00"
+          },
+          {
+            "gap_minutes": 60.0,
+            "gap_start": "2020-11-15T04:10:00+00:00"
+          }
+        ],
+        "longest_gap_minutes": 630.0,
+        "missing_ratio": 0.001134,
+        "missing_rows": 636,
+        "off_grid_rows": 143,
+        "rows": 560388,
+        "sealed_rows_present": 0,
+        "strictly_increasing": true,
+        "time_zone": "UTC",
+        "ts_max": "2025-12-31T23:55:00+00:00",
+        "ts_min": "2020-09-01T00:00:00+00:00"
+      },
+      "values": {
+        "implied_price_median": 43579.37,
+        "negative_ratios": {
+          "global_account_ls_ratio": 0,
+          "taker_ls_vol_ratio": 0,
+          "top_trader_account_ls_ratio": 0,
+          "top_trader_position_ls_ratio": 0
+        },
+        "nonpositive_open_interest": 473,
+        "nonpositive_open_interest_value": 485,
+        "null_counts": {
+          "global_account_ls_ratio": 5797,
+          "taker_ls_vol_ratio": 37271,
+          "top_trader_account_ls_ratio": 92226,
+          "top_trader_position_ls_ratio": 92192
+        },
+        "open_interest_median": 82291.748,
+        "open_interest_value_median": 3118699801.1,
+        "zero_ratios": {
+          "global_account_ls_ratio": 0,
+          "taker_ls_vol_ratio": 1,
+          "top_trader_account_ls_ratio": 0,
+          "top_trader_position_ls_ratio": 0
+        }
+      }
+    },
+    "premium_index_5m": {
+      "path": "data/normalized/binance/premium_index_BTCUSDT_5m.parquet",
+      "present": true,
+      "raw_accounting": {
+        "conflicting_duplicates": 0,
+        "conflicts_resolved_by_owning_file": 0,
+        "cutoff": "2026-01-01T00:00:00+00:00",
+        "dataset": "premium_index_5m",
+        "duplicate_rows_dropped": 0,
+        "files": 72,
+        "raw_rows": 629246,
+        "sealed_rows_dropped": 0,
+        "symbol": "BTCUSDT",
+        "unresolved_conflicts": 0
+      },
+      "source": {
+        "checksum_verified": 72,
+        "digest": "3d8257b37bb335958e033cb956fbbcf643b62caf0505b118917fd05f7dc095db",
+        "periods_absent": 0,
+        "periods_with_file": 72,
+        "present": true
+      },
+      "timestamps": {
+        "expected_rows_on_grid": 631296,
+        "gap_count": 10,
+        "largest_gaps": [
+          {
+            "gap_minutes": 5765.0,
+            "gap_start": "2021-07-28T00:00:00+00:00"
+          },
+          {
+            "gap_minutes": 1445.0,
+            "gap_start": "2021-07-02T00:00:00+00:00"
+          },
+          {
+            "gap_minutes": 1445.0,
+            "gap_start": "2022-10-03T00:00:00+00:00"
+          },
+          {
+            "gap_minutes": 1445.0,
+            "gap_start": "2023-02-25T00:00:00+00:00"
+          },
+          {
+            "gap_minutes": 85.0,
+            "gap_start": "2020-12-02T00:00:00+00:00"
+          },
+          {
+            "gap_minutes": 40.0,
+            "gap_start": "2022-07-12T14:30:00+00:00"
+          },
+          {
+            "gap_minutes": 30.0,
+            "gap_start": "2020-01-19T13:35:00+00:00"
+          },
+          {
+            "gap_minutes": 25.0,
+            "gap_start": "2020-12-17T07:55:00+00:00"
+          },
+          {
+            "gap_minutes": 10.0,
+            "gap_start": "2022-07-12T13:20:00+00:00"
+          },
+          {
+            "gap_minutes": 10.0,
+            "gap_start": "2023-11-10T04:05:00+00:00"
+          }
+        ],
+        "longest_gap_minutes": 5765.0,
+        "missing_ratio": 0.003247,
+        "missing_rows": 2050,
+        "off_grid_rows": 0,
+        "rows": 629246,
+        "sealed_rows_present": 0,
+        "strictly_increasing": true,
+        "time_zone": "UTC",
+        "ts_max": "2025-12-31T23:55:00+00:00",
+        "ts_min": "2020-01-01T00:00:00+00:00"
+      },
+      "values": {
+        "abs_premium_gt_10pct": 0,
+        "null_counts": {},
+        "premium_close_median": -0.000324,
+        "premium_close_p01": -0.000909,
+        "premium_close_p99": 0.001771,
+        "premium_samples_median": 60.0
+      }
+    }
+  },
+  "features": {
+    "forward_looking_columns": [],
+    "metrics_joinable_rows": 559772,
+    "rows": 631296,
+    "rows_by_year": {
+      "2020": 105408,
+      "2021": 105120,
+      "2022": 105120,
+      "2023": 105120,
+      "2024": 105408,
+      "2025": 105120
+    },
+    "tier0_coverage": {
+      "avg_trade_notional": {
+        "coverage": 0.9999,
+        "non_null": 631230
+      },
+      "avg_trade_size": {
+        "coverage": 0.9999,
+        "non_null": 631230
+      },
+      "global_account_ls_ratio": {
+        "coverage": 0.8783,
+        "non_null": 554448
+      },
+      "open_interest": {
+        "coverage": 0.8867,
+        "non_null": 559772
+      },
+      "open_interest_value": {
+        "coverage": 0.8867,
+        "non_null": 559760
+      },
+      "premium_close": {
+        "coverage": 0.9968,
+        "non_null": 629246
+      },
+      "premium_open": {
+        "coverage": 0.9968,
+        "non_null": 629246
+      },
+      "taker_buy_quote_ratio": {
+        "coverage": 0.9999,
+        "non_null": 631230
+      },
+      "taker_buy_ratio": {
+        "coverage": 0.9999,
+        "non_null": 631230
+      },
+      "taker_ls_vol_ratio": {
+        "coverage": 0.8284,
+        "non_null": 522973
+      },
+      "top_trader_account_ls_ratio": {
+        "coverage": 0.7414,
+        "non_null": 468019
+      },
+      "top_trader_position_ls_ratio": {
+        "coverage": 0.7414,
+        "non_null": 468053
+      },
+      "trade_count": {
+        "coverage": 1.0,
+        "non_null": 631296
+      }
+    },
+    "ts_max": "2025-12-31T23:55:00+00:00",
+    "ts_min": "2020-01-01T00:00:00+00:00"
+  },
+  "gates": {
+    "all_passed": true,
+    "features:metrics_join_is_exact": true,
+    "features:no_forward_looking_columns": true,
+    "klines_5m:no_null_key_columns": true,
+    "klines_5m:no_sealed_rows": true,
+    "klines_5m:no_unresolved_conflicts": true,
+    "klines_5m:ohlc_consistent": true,
+    "klines_5m:on_5m_grid": true,
+    "klines_5m:strictly_increasing": true,
+    "klines_5m:taker_buy_within_volume": true,
+    "klines_5m:utc": true,
+    "metrics_5m:no_null_key_columns": true,
+    "metrics_5m:no_sealed_rows": true,
+    "metrics_5m:no_unresolved_conflicts": true,
+    "metrics_5m:strictly_increasing": true,
+    "metrics_5m:utc": true,
+    "okx_consistency:close_median_diff_under_10bps": true,
+    "okx_consistency:return_correlation_over_0.9": true,
+    "premium_index_5m:no_null_key_columns": true,
+    "premium_index_5m:no_sealed_rows": true,
+    "premium_index_5m:no_unresolved_conflicts": true,
+    "premium_index_5m:on_5m_grid": true,
+    "premium_index_5m:strictly_increasing": true,
+    "premium_index_5m:utc": true
+  },
+  "labels_read": false,
+  "okx_consistency": {
+    "binance_only_rows": 405964,
+    "close_abs_diff_bps_max": 87.142,
+    "close_abs_diff_bps_median": 3.456,
+    "close_abs_diff_bps_p99": 7.681,
+    "okx_only_rows": 0,
+    "overlap_rows": 225332,
+    "return_correlation": 0.998332,
+    "volume_ratio_median": 2.227
+  },
+  "report": "phase7_tier0_quality_v1",
+  "screening_cutoff": "2026-01-01T00:00:00+00:00",
+  "symbol": "BTCUSDT",
+  "venue": "binance_um_perp"
+}

@@ -1,0 +1,25 @@
+{
+  "columns": [
+    "ts",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "volume_quote",
+    "trades",
+    "taker_buy_volume",
+    "taker_buy_quote",
+    "symbol",
+    "source",
+    "market_type"
+  ],
+  "expected_rows": 631296,
+  "file": "klines_BTCUSDT_5m.parquet",
+  "missing_rows": 0,
+  "rows": 631296,
+  "sha256": "b5c03c965e903fc98570598066f72c21da1e0399f6268f5956b9df6676d012ab",
+  "size_bytes": 25656280,
+  "ts_max": "2025-12-31T23:55:00+00:00",
+  "ts_min": "2020-01-01T00:00:00+00:00"
+}

@@ -1,0 +1,21 @@
+{
+  "columns": [
+    "ts",
+    "premium_open",
+    "premium_high",
+    "premium_low",
+    "premium_close",
+    "premium_samples",
+    "symbol",
+    "source",
+    "market_type"
+  ],
+  "expected_rows": 631296,
+  "file": "premium_index_BTCUSDT_5m.parquet",
+  "missing_rows": 2050,
+  "rows": 629246,
+  "sha256": "37aa552d314bcf2896214573203bdbf9e49d4860d48d61569f492602fc967535",
+  "size_bytes": 16606747,
+  "ts_max": "2025-12-31T23:55:00+00:00",
+  "ts_min": "2020-01-01T00:00:00+00:00"
+}
