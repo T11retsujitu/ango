@@ -97,6 +97,21 @@ mce/backtest/
 mce/experiments.py  run artifact(JSON・追記専用)を experiments/runs/ へ保存
 ```
 
+## DSL layer (Phase 2 — Semantic Schema + DSL + AST)
+
+searcher(Random / Genetic / LLM)は Python を書けない。生成できるのは JSON の
+AST のみで、whitelist compiler が凍結済み Judge の strategy へ決定的に変換する。
+仕様は [docs/phase2/dsl_spec.md](docs/phase2/dsl_spec.md)(Phase 3 開始前に凍結予定)。
+
+```
+mce/dsl/
+  ops.py        feature/transform/bool 演算(contract 準拠: ts一致join・完全窓・負lagなし)
+  nodes.py      AST 正規化・sha256 hash(duplicate control 第1層)・(de)serialization
+  validator.py  制約検査(depth≤5 / features≤4 / params≤6 / holding≤48 / whitelist)
+  compiler.py   AST → StrategySpec + ExecutionConfig(検証必須・部分木memoize)
+  schema.py     Event×Context×Quality×Direction×Action の仮説語彙と検証
+```
+
 DuckDB から直接クエリする場合:
 
 ```sql
