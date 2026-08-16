@@ -47,8 +47,32 @@ uv run python -m mce.features
 # 評価専用ラベル fwd_return_* 生成(data/labels/ へ分離出力)
 uv run python -m mce.labels
 
+# dataset manifest 生成(sha256・行数・期間・欠損数。git 管理)
+uv run python -m mce.manifest
+
+# baseline backtest(signal at close[t] → fill at open[t+1]。artifact を experiments/runs/ へ保存)
+uv run python -m mce.backtest --strategy buy_and_hold --split research --cost base_taker
+
 # テスト
 uv run pytest
+```
+
+## backtest layer (Phase 0 — Deterministic Judge)
+
+[ROADMAP.md](ROADMAP.md) Phase 0 の決定論的評価器。契約は
+[docs/data_contract.md](docs/data_contract.md)、Exit Criteria との対応は
+[docs/phase0/exit_criteria.md](docs/phase0/exit_criteria.md) を参照。
+
+```
+mce/backtest/
+  splits.py     research / validation / final_oos の凍結境界(final_oos は封印)
+  data.py       guard 付き loader(fwd_ 列拒否・availability 検査・split 強制)
+  execution.py  signal at close[t] → fill at open[t+1](欠損バー時は遅延上限つき)
+  costs.py      fee/spread/slippage の bps 成分・シナリオ・break-even cost
+  metrics.py    Sharpe / Sortino / MaxDD / turnover / hit rate / exposure など
+  engine.py     features → strategy → execution → cost → metrics の一気通貫
+  baselines.py  always_flat / buy_and_hold / naive_momentum / random(seed 必須)
+mce/experiments.py  run artifact(JSON・追記専用)を experiments/runs/ へ保存
 ```
 
 DuckDB から直接クエリする場合:
