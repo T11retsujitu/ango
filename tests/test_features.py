@@ -56,3 +56,24 @@ def test_missing_funding_and_oi_columns_exist():
     df = build_features(make_ohlcv([(0, 100, 1)]))
     assert df["funding_rate"].null_count() == 1
     assert df["oi"].null_count() == 1
+
+
+def test_drift_20d():
+    # 20日 = 28,800分。基準バーがあるときだけ値を持つ
+    df = build_features(make_ohlcv([(0, 100, 1), (5, 100, 1), (28_800, 110, 1), (28_805, 121, 1)]))
+    assert abs(by_minute(df, 28_800)["drift_20d"] - 0.10) < 1e-12
+    assert abs(by_minute(df, 28_805)["drift_20d"] - 0.21) < 1e-12
+    assert by_minute(df, 0)["drift_20d"] is None  # 20日前のバーが無い
+
+
+def test_realized_vol_20d_requires_coverage():
+    # 0..28,795分 = 5,760本連続 + 28,800分の1本。最後のバーの窓は有効 return_5m
+    # 5,759本(先頭バーのみ null)で 90% 基準(5,184本)を満たす。
+    closes = [100.0 if i % 2 == 0 else 101.0 for i in range(5760)]
+    bars = [(5 * i, closes[i], 1.0) for i in range(5760)] + [(28_800, 100.0, 1.0)]
+    df = build_features(make_ohlcv(bars))
+    vol = by_minute(df, 28_800)["realized_vol_20d"]
+    assert vol is not None
+    assert 0.005 < vol < 0.015  # ±1%交互リターンの標準偏差 ≈ 0.01
+    # 窓が 1,000 本しかないバーでは null
+    assert by_minute(df, 5_000)["realized_vol_20d"] is None

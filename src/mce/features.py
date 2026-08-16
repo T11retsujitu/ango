@@ -63,6 +63,23 @@ def build_features(
         .alias("volume_ratio_20"),
     ).drop("_one", "_vol_sum", "_vol_n", "close_5m_ago", "close_1h_ago", "close_5m_later", "close_1h_later", "close_4h_later")
 
+    # 20日ローリング特徴量(レジーム分類用)。drift_20d は ts 一致 join なので
+    # 基準バー欠損なら null。realized_vol_20d は窓 [ts-20d, ts) の return_5m
+    # 標準偏差で、有効本数が窓の90%(= 5,184本)未満なら null。
+    df = (
+        df.join(_close_at_offset(ohlcv, 20 * 24 * 60, "close_20d_ago"), on="ts", how="left")
+        .with_columns(pl.col("return_5m").is_not_null().cast(pl.Int32).alias("_ret_ok"))
+        .with_columns(
+            pl.col("return_5m").rolling_std_by("ts", window_size="20d", closed="left").alias("_vol20"),
+            pl.col("_ret_ok").rolling_sum_by("ts", window_size="20d", closed="left").alias("_vol20_n"),
+        )
+        .with_columns(
+            (pl.col("close") / pl.col("close_20d_ago") - 1).alias("drift_20d"),
+            pl.when(pl.col("_vol20_n") >= 5184).then(pl.col("_vol20")).alias("realized_vol_20d"),
+        )
+        .drop("close_20d_ago", "_ret_ok", "_vol20", "_vol20_n")
+    )
+
     if funding is not None and not funding.is_empty():
         df = df.join_asof(
             funding.sort("ts").select("ts", "funding_rate"),
@@ -103,7 +120,7 @@ def main() -> None:
     tmp.replace(out)
 
     print(f"features: {df.height} 行 -> {out}")
-    for c in ["return_5m", "return_1h", "volume_ratio_20", "fwd_return_5m", "fwd_return_1h", "fwd_return_4h", "funding_rate", "oi"]:
+    for c in ["return_5m", "return_1h", "volume_ratio_20", "fwd_return_5m", "fwd_return_1h", "fwd_return_4h", "drift_20d", "realized_vol_20d", "funding_rate", "oi"]:
         n = df.height - df[c].null_count()
         print(f"  {c:<16}: 有効 {n} / {df.height}")
 

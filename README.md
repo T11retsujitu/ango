@@ -85,6 +85,8 @@ GROUP BY d ORDER BY d;
 | `return_5m`, `return_1h` | 過去リターン(基準バーが欠損なら null) |
 | `volume_ratio_20` | 出来高 / 直近20本平均(窓に20本揃わなければ null) |
 | `fwd_return_5m`, `fwd_return_1h`, `fwd_return_4h` | **先読みリターン**(条件検索の「その後どうなった」用) |
+| `drift_20d` | 20日リターン(基準バーが欠損なら null)。レジーム分類用 |
+| `realized_vol_20d` | 直近20日([ts−20d, ts))の5分リターン標準偏差(有効本数が窓の90%未満なら null) |
 | `funding_rate` | その時点で確定している直近 Funding(as-of join, 9時間超は null) |
 | `oi`, `oi_usd` | 同時刻の Open Interest(なければ null) |
 
