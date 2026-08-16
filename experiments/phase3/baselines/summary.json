@@ -1,0 +1,48 @@
+{
+  "arm_meta": {
+    "arm": "baselines",
+    "baseline_hashes": {
+      "always_long": "bb190d17b4bf1fa468da8aa5263ea31d7a2f3a23f92de5f8fc014be46762910a",
+      "always_short": "d4b7ff08b19c48e0d35fc670cc9a834c14757c16f46c70743fa9995a18dd4544",
+      "lowvol_momentum_long": "431c0fd98aa6b969214fd500a4ed1b78a680cccbabf0d3fee73e7e4dd130b836",
+      "momentum_1d": "bf269d51d02574a76bae8e913a967942485bcd6c618521a02c30c5183f3d448e",
+      "momentum_1h": "db4f92d73e8be0742e6a99a561f83c5fbe9894df240d8debc8664554cd66e482",
+      "momentum_1h_hold12": "3413c98b9f678a35514195b1c9f7124916c0da13e0e6ab7bfdc87b736b9b2aee",
+      "momentum_1h_persist3": "bc2fb21b382fc46f6dae8758d6d1a05f4becf0ca1bb823ffd372b6b5aca9dea3",
+      "momentum_4h": "73cf873d654245fb9d60d631616074865e24c4117e6939b9dfb2facaefcf7d3d",
+      "reversal_1h": "18dc7276888b3170703e3313d8877abdf535991f2d2b6a331b1edce90a9918ac",
+      "volume_shock_fade": "ebe7d0a93b98bd8302a32275fa80faa3decfd1a39b193594ac96823e83487fab"
+    }
+  },
+  "config": {
+    "budget": 10,
+    "primary_cost": "base_taker",
+    "research_rule": {
+      "min_trades": 30
+    },
+    "secondary_cost": "maker_low",
+    "seed": 0,
+    "validation_rule": {
+      "min_trades": 10
+    }
+  },
+  "counters": {
+    "candidate_count": 10,
+    "duplicate_count": 0,
+    "evaluated_count": 10,
+    "rejected_candidate_count": 0,
+    "research_pass_count": 0,
+    "runtime_failure_count": 0,
+    "survivor_count": 0,
+    "unique_candidate_count": 10,
+    "validation_count": 0
+  },
+  "created_at": "2026-08-16T20:17:35.444591+09:00",
+  "manifest_sha256": {
+    "features": "f759f5eddc82ee38eb867ca8cffc0d559baf2d73bdf969e4c103389ff9d1ec9d"
+  },
+  "method": "baselines",
+  "protocol": "phase3_bakeoff_v1",
+  "source_commit": "76f60c62fd7ba993b184ffa3196dd803de5c1c79",
+  "survivors": []
+}
