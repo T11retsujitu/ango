@@ -34,6 +34,11 @@
 - [2026-08-16 5分足の傾向調査と33ヶ月追試](2026-08-16-5m-tendencies-33mo-retest.md)
   — 生存4(ボラ・流動性構造)/ 棄却1 / レジーム依存1 / 判定不能1 / ヌル生存2。
   Funding キャリーの33ヶ月定量化。
+- [2026-08-16 Phase 1B clock phase v1](2026-08-16-phase1b-clock-phase-v1.md)
+  — **方向性なし**(最大効果0.24bps・FWER後有意なし)/**活動構造あり**(境界バーの
+  ボラ跳ね t=+12.9、境界直前の静穏 t=−16.6 は cross-exchange で確認)。
+  aggTrades 進行の directional 根拠なし。Phase 1 完了 → Judge 凍結
+  ([freeze v1](../phase1/freeze_v1.md))。
 - [2026-08-16 Phase 1A cost-aware abstention v1](2026-08-16-phase1a-cost-abstention-v1.md)
   — **棄却**(J3: exposure一致random対照に負ける。net改善は取引削減の機械的効果のみ)。
   副産物: per-bar閾値の断片化問題(ヒステリシス必要)、高閾値尾部グロス+4.3bps/trade
