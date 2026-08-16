@@ -1,0 +1,22 @@
+{
+  "columns": [
+    "ts",
+    "open",
+    "high",
+    "low",
+    "close",
+    "volume",
+    "volume_quote",
+    "symbol",
+    "source",
+    "market_type"
+  ],
+  "expected_rows": 288124,
+  "file": "okx_BTC-USDT-SWAP_5m.parquet",
+  "missing_rows": 0,
+  "rows": 288124,
+  "sha256": "cb52996b5c117c8ad89eb8289bc01287d527b3aad1d188d3c6c10d95e36516ec",
+  "size_bytes": 7591515,
+  "ts_max": "2026-08-16T03:55:00+00:00",
+  "ts_min": "2023-11-19T17:40:00+00:00"
+}

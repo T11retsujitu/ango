@@ -1,0 +1,19 @@
+{
+  "columns": [
+    "ts",
+    "symbol",
+    "source",
+    "market_type",
+    "fwd_return_5m",
+    "fwd_return_1h",
+    "fwd_return_4h"
+  ],
+  "expected_rows": 288124,
+  "file": "okx_BTC-USDT-SWAP_5m.parquet",
+  "missing_rows": 0,
+  "rows": 288124,
+  "sha256": "8b38be0c50a534431f3293d528f61fde82be34d7e7f58a1ee1c7e695f3419953",
+  "size_bytes": 6976406,
+  "ts_max": "2026-08-16T03:55:00+00:00",
+  "ts_min": "2023-11-19T17:40:00+00:00"
+}

@@ -1,0 +1,15 @@
+{
+  "columns": [
+    "ts",
+    "funding_rate",
+    "symbol",
+    "source",
+    "market_type"
+  ],
+  "file": "okx_BTC-USDT-SWAP.parquet",
+  "rows": 280,
+  "sha256": "63f4371edc39a7d169000c02a86dba54e8f540e2763b8d38bd13a4216f2c6423",
+  "size_bytes": 4925,
+  "ts_max": "2026-08-15T16:00:00+00:00",
+  "ts_min": "2026-05-14T16:00:00+00:00"
+}
