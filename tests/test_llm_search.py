@@ -223,6 +223,25 @@ def test_refusal_is_recorded_and_loop_continues(tmp_path):
     assert "user_prompt" in entries[0] and "prompt_sha256" in entries[0]
 
 
+def test_auth_error_surfaces_and_does_not_block_retry(tmp_path):
+    """認証エラーは握りつぶさず送出し、空 ledger を残さない(再実行可能)。"""
+    path = _features_parquet(tmp_path)
+
+    def unauthenticated(system, user):
+        raise llm.AuthError(llm.AUTH_HELP)
+
+    cfg = SearchConfig(method="llm", seed=0, budget=1, features_path=path)
+    with pytest.raises(llm.AuthError) as exc:
+        run_llm_search(cfg, tmp_path / "run", propose=unauthenticated, model="fake")
+    assert "ANTHROPIC_API_KEY" in str(exc.value) and "ant auth login" in str(exc.value)
+    assert not (tmp_path / "run" / "candidates.jsonl").exists()
+
+    # 同じディレクトリでそのまま再実行できる
+    propose, _ = _fake_propose([[_hypothesis("H1")]])
+    report = run_llm_search(cfg, tmp_path / "run", propose=propose, model="fake")
+    assert report["counters"]["evaluated_count"] == 1
+
+
 def test_replay_is_deterministic_and_calls_no_api(tmp_path):
     path = _features_parquet(tmp_path)
     hyps = [_hypothesis(f"H{i}", entry={"feature": "return", "window": w, "op": "greater", "threshold": 0.001})

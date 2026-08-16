@@ -57,7 +57,14 @@ def test_ledger_appends_and_refuses_rerun(tmp_path):
     lines = [json.loads(x) for x in (tmp_path / "run" / "candidates.jsonl").read_text().splitlines()]
     assert [x["i"] for x in lines] == [1, 2]
     with pytest.raises(FileExistsError):
-        SearchLedger(tmp_path / "run")  # 公式runの上書き禁止
+        SearchLedger(tmp_path / "run")  # 記録済み公式runの上書き禁止
+
+
+def test_ledger_without_records_does_not_block_retry(tmp_path):
+    """1件も記録せずに落ちた run(API認証エラー等)は再実行を塞がない。"""
+    SearchLedger(tmp_path / "run")
+    assert not (tmp_path / "run" / "candidates.jsonl").exists()
+    SearchLedger(tmp_path / "run")  # 例外にならない
 
 
 # ---- runner(合成データ: research + validation の両 split 区間を含む)----

@@ -86,6 +86,8 @@ def run_llm_search(
                 }
                 try:
                     payload = propose(llm.SYSTEM_PROMPT, user)
+                except llm.AuthError:
+                    raise  # 設定の問題。記録して握りつぶさず即座に表面化させる
                 except llm.Refusal as e:
                     refusals += 1
                     transcript.record({**entry, "status": "refusal", "error": str(e)})

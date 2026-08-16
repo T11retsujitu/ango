@@ -32,7 +32,8 @@ class SearchLedger:
         self.path = self.out_dir / "candidates.jsonl"
         if self.path.exists():
             raise FileExistsError(f"{self.path} は既に存在する(公式runは1回。再実行は別ディレクトリで)")
-        self.path.touch()
+        # ファイルは最初の record で作る。1件も記録せずに落ちた run(API 認証エラー等)が
+        # 空ファイルを残して再実行を塞がないようにするため(記録済みの run は上書きされない)。
 
     def record(self, record: dict) -> None:
         with open(self.path, "a", encoding="utf-8") as f:

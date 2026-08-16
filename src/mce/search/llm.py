@@ -121,6 +121,21 @@ class LlmError(RuntimeError):
     pass
 
 
+AUTH_HELP = """Anthropic API の認証情報が見つからない。次のいずれかを設定すること:
+
+  1) API キー(console.anthropic.com で発行)
+       export ANTHROPIC_API_KEY=sk-ant-...
+  2) OAuth プロファイル(ant CLI。SDK が自動で読む)
+       ant auth login     # 確認: ant auth status
+
+注意: 空文字の ANTHROPIC_API_KEY が export されていると 1) と誤認して失敗する。
+その場合は unset ANTHROPIC_API_KEY してから設定し直すこと。"""
+
+
+class AuthError(LlmError):
+    """API 認証情報が解決できない。"""
+
+
 class Refusal(LlmError):
     """safety classifier がリクエストを拒否した(stop_reason == "refusal")。"""
 
@@ -146,13 +161,18 @@ class AnthropicClient:
             self._client = anthropic.Anthropic()
 
     def propose(self, system: str, user: str) -> dict:
-        response = self._client.messages.create(
-            model=self.model,
-            max_tokens=self.max_tokens,
-            system=system,
-            messages=[{"role": "user", "content": user}],
-            output_config={"format": {"type": "json_schema", "schema": HYPOTHESIS_SCHEMA}},
-        )
+        try:
+            response = self._client.messages.create(
+                model=self.model,
+                max_tokens=self.max_tokens,
+                system=system,
+                messages=[{"role": "user", "content": user}],
+                output_config={"format": {"type": "json_schema", "schema": HYPOTHESIS_SCHEMA}},
+            )
+        except TypeError as e:  # SDK は認証情報が解決できないとき TypeError を投げる
+            if "authentication" in str(e).lower():
+                raise AuthError(AUTH_HELP) from e
+            raise
         if response.stop_reason == "refusal":
             details = getattr(response, "stop_details", None)
             raise Refusal(f"model declined the request (category={getattr(details, 'category', None)})")
