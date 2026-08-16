@@ -48,15 +48,23 @@ D1(|t|≥3 ∧ p<0.01 ∧ ≥1bps ∧ 前後半符号一致)に近い候補す�
 3. **ROADMAP 分岐**: `proceed_to_aggtrades_on_directional = false`。
    clock 単体の方向性 alpha 仮説は保留。aggTrades への移行判断は Phase 3
    (OHLCV search 全体の結果)まで持ち越し。
-4. データ妥当性: hour_utc / weekday_utc の記述統計(JSON 内)が既存 H1/H2 と
-   整合するかの照合は未実施 → 次回確認事項(不整合ならデータ側を疑う)。
+4. データ妥当性(照合完了・2026-08-16): hour_utc / weekday_utc の記述統計は
+   既存の確定構造を再現した。
+   - **H2 再現**: |return_5m| 上位は 14時UTC 15.72bps(t=+27.1)、15時 14.35(+23.5)、
+     16時 13.02、13時 12.76。下位は 4〜6時UTC(7.5〜8.0bps)
+   - **H1 再現**: 週末 |ret|(土 6.55 / 日 7.80bps)対 平日(11.1〜12.2bps)の比 ≈ 0.62
+     — **33ヶ月追試の H1 比 0.62 と一致**
+   - weekday の方向性(fwd5m)は最大 0.26bps で無し。m15×ボラレジームの
+     directional も全セル ≤ 0.17bps で交互作用なし
+   データ基盤と集計パイプラインの妥当性が独立経路で確認された。
 
 ## 事前予想の採点(プロトコル§7)
 
 1. 「activity 構造は m15・m60 とも確認される」→ **的中**(t = ±12〜16)
 2. 「directional は no_directional_structure が本命、届いても1〜3bps」→ **的中**
    (実際は最大0.24bpsで予想レンジ下限にも届かず)
-3. 「hour_utc は H2 を再現する」→ **未採点**(JSON 照合が残タスク)
+3. 「hour_utc は H2 を再現する」→ **的中**(13〜16時UTCが上位、t=+14.8〜+27.1。
+   さらに H1 の週末/平日比 0.62 まで一致)
 4. 「verdict 予想: 両family no_directional、activity 確認、aggTrades 根拠なし」→ **的中**
 
 ## Phase 1 完了
