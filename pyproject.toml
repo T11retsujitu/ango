@@ -8,6 +8,7 @@ dependencies = [
     "polars>=1.0",
     "duckdb>=1.0",
     "websockets>=14",
+    "numpy>=1.26",
 ]
 
 [dependency-groups]

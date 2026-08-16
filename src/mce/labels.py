@@ -18,15 +18,35 @@ LABEL_PREFIX = "fwd_"
 # (offset_min, 列名)。offset は負 = 未来の close を参照する
 _HORIZONS = [(-5, "fwd_return_5m"), (-60, "fwd_return_1h"), (-240, "fwd_return_4h")]
 
+# 執行整合ラベル: entry = open[t+1], exit = open[t+1+h]。
+# (horizon_bars, 列名)。Phase 1A(cost-aware abstention)の学習・評価用。
+_OPEN_HORIZONS = [(12, "fwd_open_return_1h")]
+
+
+def open_at_offset(df: pl.DataFrame, offset_min: int, name: str) -> pl.DataFrame:
+    """ts + offset の位置に open を並べたテーブル(close_at_offset の open 版)。"""
+    return df.select(
+        (pl.col("ts") + pl.duration(minutes=offset_min)).alias("ts"),
+        pl.col("open").alias(name),
+    )
+
 
 def build_labels(ohlcv: pl.DataFrame) -> pl.DataFrame:
-    """fwd_return_* を ts 完全一致 join で計算する(未来バー欠損なら null)。"""
+    """fwd_* ラベルを ts 完全一致 join で計算する(未来バー欠損なら null)。"""
     df = ohlcv.sort("ts").select("ts", "symbol", "source", "market_type", "close")
     for offset_min, name in _HORIZONS:
         df = df.join(close_at_offset(ohlcv, offset_min, f"_c_{name}"), on="ts", how="left")
     df = df.with_columns(
         [(pl.col(f"_c_{name}") / pl.col("close") - 1).alias(name) for _, name in _HORIZONS]
     ).drop("close", *[f"_c_{name}" for _, name in _HORIZONS])
+    # 執行整合ラベル(バー ts の close 後に signal → open[t+1] entry → open[t+1+h] exit)
+    for h_bars, name in _OPEN_HORIZONS:
+        df = (
+            df.join(open_at_offset(ohlcv, -5, f"_entry_{name}"), on="ts", how="left")
+            .join(open_at_offset(ohlcv, -5 * (h_bars + 1), f"_exit_{name}"), on="ts", how="left")
+            .with_columns((pl.col(f"_exit_{name}") / pl.col(f"_entry_{name}") - 1).alias(name))
+            .drop(f"_entry_{name}", f"_exit_{name}")
+        )
     return df
 
 
@@ -43,9 +63,9 @@ def main() -> None:
     tmp.replace(out)
 
     print(f"labels: {df.height} 行 -> {out}")
-    for _, name in _HORIZONS:
+    for name in [n for _, n in _HORIZONS] + [n for _, n in _OPEN_HORIZONS]:
         n = df.height - df[name].null_count()
-        print(f"  {name:<14}: 有効 {n} / {df.height}")
+        print(f"  {name:<18}: 有効 {n} / {df.height}")
 
 
 if __name__ == "__main__":

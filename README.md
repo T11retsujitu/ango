@@ -61,6 +61,10 @@ uv run python -m mce.manifest
 # baseline backtest(signal at close[t] → fill at open[t+1]。artifact を experiments/runs/ へ保存)
 uv run python -m mce.backtest --strategy buy_and_hold --split research --cost base_taker
 
+# Phase 1A: cost-aware abstention 実験(walk-forward。プロトコルは docs/phase1/phase1a_protocol.md)
+uv run python -m mce.research.abstention --cost maker_low
+uv run python -m mce.research.abstention --cost base_taker
+
 # 約定・BBO・400段板を60秒だけ疎通確認（省略時はSIGINT/SIGTERMまで継続）
 uv run python -m mce.collect_microstructure --duration 60
 
@@ -146,6 +150,7 @@ OHLCV 全列に加えて:
 | 列 | 意味 |
 |---|---|
 | `fwd_return_5m`, `fwd_return_1h`, `fwd_return_4h` | **先読みリターン**(条件検索の「その後どうなった」用。strategy feature としての利用禁止) |
+| `fwd_open_return_1h` | **執行整合ラベル**: open[t+1] entry → open[t+13] exit のリターン(Phase 1A の学習・評価用) |
 
 リターン計算は行シフトではなく ts の完全一致 join なので、欠損バーを
 またいで誤った期間のリターンが混入することはない。
