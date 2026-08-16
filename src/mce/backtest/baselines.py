@@ -57,12 +57,17 @@ def cost_aware_target(edge_bps: pl.Series, roundtrip_cost_bps: float) -> pl.Seri
     予測エッジ(bps)が往復コストを超えるときだけ sign(edge) を取り、それ以外は flat。
 
     モデル(Logistic Regression 等)は Phase 1 で供給する。ここはモデル非依存の
-    「forecast → trade conversion」規則のみ。"""
+    「forecast → trade conversion」規則のみ。
+
+    エッジが null / NaN の行(feature 欠損などで予測不能)は必ず abstain(0)。
+    polars は NaN を任意の数より大きいと比較するため、NaN を null に落としてから
+    比較する(null 条件は otherwise に落ちる)。"""
+    edge = edge_bps.fill_nan(None)
     return (
         pl.select(
-            pl.when(edge_bps > roundtrip_cost_bps)
+            pl.when(edge > roundtrip_cost_bps)
             .then(1)
-            .when(edge_bps < -roundtrip_cost_bps)
+            .when(edge < -roundtrip_cost_bps)
             .then(-1)
             .otherwise(0)
             .cast(pl.Int8)

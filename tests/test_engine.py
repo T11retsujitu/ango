@@ -58,6 +58,13 @@ def test_cost_aware_target():
     assert t.to_list() == [1, -1, 0, 0, 0]  # コスト以下のエッジでは abstain
 
 
+def test_cost_aware_target_abstains_on_nan_and_null():
+    # polars は NaN を任意の数より大きいと比較するため、明示的に abstain へ落とす
+    edge = pl.Series([float("nan"), None, 15.0], dtype=pl.Float64)
+    t = baselines.cost_aware_target(edge, roundtrip_cost_bps=10.0)
+    assert t.to_list() == [0, 0, 1]
+
+
 def test_artifact_roundtrip(tmp_path):
     feats = _features()
     res = run_backtest(feats, baselines.random_signal(seed=7), SCENARIOS["stress"])
