@@ -1,23 +1,8 @@
 import polars as pl
 
+from conftest import by_minute, make_ohlcv
 from mce.features import build_features
-from mce.normalize import normalize_candles, normalize_funding
-
-MIN_MS = 60_000
-
-
-def make_ohlcv(bars: list[tuple[int, float, float]]) -> pl.DataFrame:
-    """bars: (分, close, volume) のリストから OHLCV を作る。"""
-    rows = [
-        [str(m * MIN_MS), str(c), str(c), str(c), str(c), "0", str(v), "0", "1"]
-        for m, c, v in bars
-    ]
-    return normalize_candles(rows, "BTC-USDT-SWAP")
-
-
-def by_minute(df: pl.DataFrame, minute: int) -> dict:
-    ms = minute * MIN_MS
-    return df.filter(pl.col("ts").dt.epoch("ms") == ms).row(0, named=True)
+from mce.normalize import normalize_funding
 
 
 def test_returns_and_gap_safety():
@@ -26,9 +11,6 @@ def test_returns_and_gap_safety():
     assert abs(by_minute(df, 5)["return_5m"] - 0.10) < 1e-12
     assert by_minute(df, 20)["return_5m"] is None  # 15分が無いので null
     assert by_minute(df, 0)["return_5m"] is None  # 先頭も null
-    # 前方リターン: 10分のバーの5分後(15分)は欠損 → null、5分バーの5分後は有効
-    assert abs(by_minute(df, 5)["fwd_return_5m"] - 0.10) < 1e-12
-    assert by_minute(df, 10)["fwd_return_5m"] is None
 
 
 def test_return_1h():

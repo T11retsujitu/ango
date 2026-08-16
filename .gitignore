@@ -1,5 +1,6 @@
-# data files are local-only, never committed
-data/
+# data files are local-only, never committed — except small manifests (fingerprints)
+data/*
+!data/manifests/
 
 __pycache__/
 *.pyc
