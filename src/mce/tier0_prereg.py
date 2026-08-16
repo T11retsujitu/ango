@@ -141,7 +141,7 @@ EXCLUDED_COLUMNS = {
 TARGETS = {
     # entry は open[t+1]。同一バー close 執行は構造的に不可能(data contract §2)
     "Y1": "open[t+1+h] / open[t+1] - 1",
-    "Y2": "log(1 + sqrt(sum_{i=1..h} (log close[t+i] - log close[t+i-1])^2))",
+    "Y2": "log(1 + sqrt(sum_{i=1..h} (log open[t+1+i] - log open[t+i])^2))",
     "Y3": "min_{i=1..h}( low[t+i] / open[t+1] ) - 1",  # long 目線の MAE
 }
 
@@ -169,7 +169,12 @@ ESTIMATOR = {
 }
 
 PLACEBO = {
-    "scheme": "circular day-shift of the X block only (A is never shifted)",
+    # 主帰無: A で説明できる成分を残し、残差の時刻対応だけを壊す。
+    # 素朴な X 全体のシフトは corr(X, A) まで壊すので反保守的(統計監査の fatal)。
+    "primary": "Bp: X_p = A @ Gamma_hat + circular_day_shift(E), E = X - A @ Gamma_hat, "
+    "Gamma_hat fitted on TRAIN rows only",
+    "secondary_reported": "Bt: circular day-shift of the whole X block (anti-conservative; report only)",
+    "scheme": "circular day-shift (A is never shifted)",
     "min_shift_days": 7,
     # シフト群は有限: S = {7 .. W_days-7}。K を無限に増やすことはできない。
     "k_stage1": 200,
@@ -207,6 +212,9 @@ STABILITY = {
     "coefficient_sign_agreement_min": 0.75,  # fold の 75% 以上で符号一致
     "positive_fold_fraction_min": 0.75,
     "positive_calendar_years_min": 2,
+    "leave_one_block_out_all_positive": True,
+    "dIC_sign_must_match_dR2": True,
+    "drop_most_influential_day_still_positive": True,
 }
 
 CONFIRMATION_RULE = {
