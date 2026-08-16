@@ -69,8 +69,8 @@ A は **stationary な派生 observable のみ**とする。生の価格水準�
 | `volume_ratio_20` | 既存 features | close_of_bar |
 | `drift_20d` | 既存 features | close_of_bar |
 | `realized_vol_20d` | 既存 features | start_of_bar |
-| `rv_12` | 直近12本(現在バーまで)の5分対数リターン二乗和の平方根 | close_of_bar |
-| `rv_48` | 同 48本 | close_of_bar |
+| `rv_12` | 窓 `[t-12, t)` の5分対数リターン二乗和の平方根(**現在バーを含まない**) | start_of_bar |
+| `rv_48` | 同 `[t-48, t)` | start_of_bar |
 | `hl_range_z20d` | `(high-low)/close` の 20日 z-score | close_of_bar |
 | `log_volume_z20d` | `log(volume+1)` の 20日 z-score(下記 Z 変換) | close_of_bar |
 | `norm_move_1` | `clip(return_5m / rv_12, -10, +10)` | close_of_bar |
@@ -88,6 +88,11 @@ B だけが「baseline データの非線形関数」を表現できてしまい
 `dR2 > 0` が X の情報ではなく **A の非線形性**で説明できる余地が残る
 (交互作用項の平均成分 `E[signed_imb] * norm_move_1` は baseline のスケール変換に等しい)。
 両因子を A に入れることで、**B の増分は純粋な交差項だけ**になる。
+
+`rv_12` / `rv_48` の窓が**現在バーを含まない**のは意図的である。含めてしまうと
+`norm_move_1 = return_5m / rv_12` の分母に分子が入り、値が構造的に `[-1, +1]` へ
+押し込まれて「直近ボラに対して今どれだけ動いたか」という意味を失う
+(`realized_vol_20d` の左閉右開規約と同じ扱い)。
 
 **時刻ハーモニクスを3次まで入れる理由**: X 側の参加量(`trade_count` の z-score)は
 日内の活動プロファイルを細かく表現できるのに対し、A が1次ハーモニクスしか持たないと、
