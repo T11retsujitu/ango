@@ -26,6 +26,12 @@ def _datasets() -> dict[str, tuple[Path, int | None]]:
         "open_interest": (config.open_interest_parquet(), config.BAR_MS),
         "features": (config.features_parquet(), config.BAR_MS),
         "labels": (config.labels_parquet(), config.BAR_MS),
+        # Phase 7 Tier 0(Binance Vision)。metrics は5分スナップショットなので
+        # 期待間隔は同じ 5m だが、欠測の意味は「その時刻のスナップショットが無い」。
+        "binance_klines": (config.binance_klines_parquet(), config.BAR_MS),
+        "binance_metrics": (config.binance_metrics_parquet(), config.BAR_MS),
+        "binance_premium_index": (config.binance_premium_index_parquet(), config.BAR_MS),
+        "binance_features": (config.binance_features_parquet(), config.BAR_MS),
     }
 
 
@@ -68,8 +74,22 @@ def write_manifest(name: str, path: Path, interval_ms: int | None, out_dir: Path
 
 
 def main() -> None:
+    import argparse
+
+    datasets = _datasets()
+    parser = argparse.ArgumentParser(description="データ資産の manifest 生成")
+    parser.add_argument(
+        "--datasets",
+        nargs="*",
+        default=list(datasets),
+        choices=list(datasets),
+        help="対象を限定する(凍結済み実験が参照する指紋を、別環境で不用意に上書きしないため)",
+    )
+    args = parser.parse_args()
+
     written = 0
-    for name, (path, interval_ms) in _datasets().items():
+    for name in args.datasets:
+        path, interval_ms = datasets[name]
         if not path.exists():
             print(f"{name}: なし ({path})")
             continue
