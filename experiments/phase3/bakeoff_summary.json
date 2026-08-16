@@ -1,0 +1,223 @@
+{
+  "arms": [
+    {
+      "arm": "random",
+      "budget": 30,
+      "counters": {
+        "candidate_count": 46,
+        "duplicate_count": 0,
+        "evaluated_count": 30,
+        "rejected_candidate_count": 16,
+        "research_pass_count": 4,
+        "runtime_failure_count": 0,
+        "survivor_count": 0,
+        "validation_count": 4
+      },
+      "features_sha256": "f759f5eddc82ee38eb867ca8cffc0d559baf2d73bdf969e4c103389ff9d1ec9d",
+      "method": "random",
+      "primary_cost": "base_taker",
+      "protocol": "phase3_bakeoff_v1",
+      "research_distribution": {
+        "active_candidates": 27,
+        "active_net_max": 0.9593,
+        "active_net_positive": 4,
+        "exposure_median": 0.33,
+        "n_evaluated": 30,
+        "primary_net_max": 1.2659,
+        "primary_net_median": -5.2178,
+        "primary_net_min": -59.9726,
+        "primary_net_positive": 7,
+        "secondary_net_positive": 8,
+        "sides": {
+          "both": 9,
+          "long": 10,
+          "short": 11
+        },
+        "trade_count_median": 4874.5,
+        "turnover_median": 9750.0
+      },
+      "run_dir": "experiments/phase3/random_seed20260818",
+      "search_quality": {
+        "draws_per_evaluation": 1.5333,
+        "duplicate_rate": 0.0,
+        "unique_per_draw": 0.6522,
+        "valid_rate": 0.6522
+      },
+      "seed": 20260818,
+      "source_commit": "7fe73ce9546aa453383413f0e97458ada1af1599"
+    },
+    {
+      "arm": "genetic",
+      "budget": 30,
+      "counters": {
+        "candidate_count": 102,
+        "duplicate_count": 64,
+        "evaluated_count": 30,
+        "rejected_candidate_count": 8,
+        "research_pass_count": 0,
+        "runtime_failure_count": 0,
+        "survivor_count": 0,
+        "validation_count": 0
+      },
+      "features_sha256": "f759f5eddc82ee38eb867ca8cffc0d559baf2d73bdf969e4c103389ff9d1ec9d",
+      "method": "genetic",
+      "primary_cost": "base_taker",
+      "protocol": "phase3_bakeoff_v1",
+      "research_distribution": {
+        "active_candidates": 24,
+        "active_net_max": -0.0692,
+        "active_net_positive": 0,
+        "exposure_median": 0.5992,
+        "n_evaluated": 30,
+        "primary_net_max": 0.0,
+        "primary_net_median": -1.6715,
+        "primary_net_min": -24.7495,
+        "primary_net_positive": 0,
+        "secondary_net_positive": 1,
+        "sides": {
+          "long": 4,
+          "short": 26
+        },
+        "trade_count_median": 569.5,
+        "turnover_median": 1140.0
+      },
+      "run_dir": "experiments/phase3/genetic_seed20260819",
+      "search_quality": {
+        "draws_per_evaluation": 3.4,
+        "duplicate_rate": 0.6275,
+        "unique_per_draw": 0.2941,
+        "valid_rate": 0.9216
+      },
+      "seed": 20260819,
+      "source_commit": "76f60c62fd7ba993b184ffa3196dd803de5c1c79"
+    },
+    {
+      "arm": "llm",
+      "budget": 30,
+      "counters": {
+        "candidate_count": 32,
+        "duplicate_count": 0,
+        "evaluated_count": 30,
+        "rejected_candidate_count": 2,
+        "research_pass_count": 0,
+        "runtime_failure_count": 0,
+        "survivor_count": 0,
+        "validation_count": 0
+      },
+      "features_sha256": "f759f5eddc82ee38eb867ca8cffc0d559baf2d73bdf969e4c103389ff9d1ec9d",
+      "llm_transcript": {
+        "api_calls": 6,
+        "mechanism_keyword_hits": 34,
+        "models": [
+          "claude-opus-5"
+        ],
+        "non_ok_calls": 0,
+        "proposals": 36,
+        "unique_signal_families": 35
+      },
+      "method": "llm",
+      "primary_cost": "base_taker",
+      "protocol": "phase3_bakeoff_v1",
+      "research_distribution": {
+        "active_candidates": 27,
+        "active_net_max": -0.0703,
+        "active_net_positive": 0,
+        "exposure_median": 0.0383,
+        "n_evaluated": 30,
+        "primary_net_max": 0.0,
+        "primary_net_median": -1.6563,
+        "primary_net_min": -9.9237,
+        "primary_net_positive": 0,
+        "secondary_net_positive": 1,
+        "sides": {
+          "both": 4,
+          "long": 16,
+          "short": 10
+        },
+        "trade_count_median": 1575.0,
+        "turnover_median": 3150.0
+      },
+      "run_dir": "experiments/phase3/llm_claude-opus-5",
+      "search_quality": {
+        "draws_per_evaluation": 1.0667,
+        "duplicate_rate": 0.0,
+        "unique_per_draw": 0.9375,
+        "valid_rate": 0.9375
+      },
+      "seed": 0,
+      "source_commit": "6b288a00767d9e2f9ca5af2dabbb4a44e732b282"
+    },
+    {
+      "arm": "baselines",
+      "budget": 10,
+      "counters": {
+        "candidate_count": 10,
+        "duplicate_count": 0,
+        "evaluated_count": 10,
+        "rejected_candidate_count": 0,
+        "research_pass_count": 0,
+        "runtime_failure_count": 0,
+        "survivor_count": 0,
+        "validation_count": 0
+      },
+      "features_sha256": "f759f5eddc82ee38eb867ca8cffc0d559baf2d73bdf969e4c103389ff9d1ec9d",
+      "method": "baselines",
+      "primary_cost": "base_taker",
+      "protocol": "phase3_bakeoff_v1",
+      "research_distribution": {
+        "active_candidates": 8,
+        "active_net_max": -5.3704,
+        "active_net_positive": 0,
+        "exposure_median": 0.9989,
+        "n_evaluated": 10,
+        "primary_net_max": 1.2922,
+        "primary_net_median": -11.3277,
+        "primary_net_min": -29.3513,
+        "primary_net_positive": 1,
+        "secondary_net_positive": 1,
+        "sides": {
+          "both": 6,
+          "long": 2,
+          "short": 2
+        },
+        "trade_count_median": 11402.0,
+        "turnover_median": 22805.0
+      },
+      "run_dir": "experiments/phase3/baselines",
+      "search_quality": {
+        "draws_per_evaluation": 1.0,
+        "duplicate_rate": 0.0,
+        "unique_per_draw": 1.0,
+        "valid_rate": 1.0
+      },
+      "seed": 0,
+      "source_commit": "76f60c62fd7ba993b184ffa3196dd803de5c1c79"
+    }
+  ],
+  "consistency": {
+    "features_sha256": [
+      "f759f5eddc82ee38eb867ca8cffc0d559baf2d73bdf969e4c103389ff9d1ec9d"
+    ],
+    "protocols": [
+      "phase3_bakeoff_v1"
+    ],
+    "same_features_manifest": true,
+    "source_commits": [
+      "6b288a00767d9e2f9ca5af2dabbb4a44e732b282",
+      "76f60c62fd7ba993b184ffa3196dd803de5c1c79",
+      "7fe73ce9546aa453383413f0e97458ada1af1599"
+    ]
+  },
+  "report": "phase3_bakeoff_cross_arm_v1",
+  "source": "experiments/phase3",
+  "totals": {
+    "candidate_count": 190,
+    "duplicate_count": 64,
+    "evaluated_count": 100,
+    "rejected_candidate_count": 26,
+    "research_pass_count": 4,
+    "runtime_failure_count": 0,
+    "survivor_count": 0,
+    "validation_count": 4
+  }
+}
