@@ -165,3 +165,24 @@ def test_interaction_baseline_factors_are_in_the_baseline():
         assert baseline_factor in prereg.A_COLUMNS, (
             f"{interaction} の baseline 因子 {baseline_factor} が A に無い"
         )
+
+
+DEV_ARTIFACT = REPO / "experiments" / "phase7" / "tier0_screening_dev_v1.json"
+
+
+@pytest.mark.skipif(not DEV_ARTIFACT.exists(), reason="screening 未実行")
+def test_frozen_spec_was_not_edited_after_the_run():
+    """実行後に凍結仕様を書き換えたら落ちる(改竄の構造的検出)。
+
+    artifact に記録された tier0_prereg.py の sha256 と、現在のファイルを照合する。
+    """
+    import hashlib
+    import json
+
+    recorded = json.loads(DEV_ARTIFACT.read_text(encoding="utf-8")).get("prereg_sha256")
+    assert recorded, "artifact に prereg_sha256 が記録されていない"
+    current = hashlib.sha256(Path(prereg.__file__).read_bytes()).hexdigest()
+    assert recorded == current, (
+        "screening 実行後に tier0_prereg.py が変更されている(凍結違反)。"
+        "変更が必要なら v2 として別 module を作ること。"
+    )

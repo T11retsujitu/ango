@@ -592,7 +592,8 @@ report に必ず含めるもの(選別なし):
 2. placebo 分布の要約と K(第1段階/第2段階)
 3. fold 別 `dR2`・年別 `dR2`
 4. 除外した暦月と欠測集計
-5. 使用データの manifest sha256・source digest・コード commit・lockfile hash
+5. 使用データの manifest sha256・source digest・コード commit・lockfile hash・
+   `tier0_prereg.py` の sha256・凍結確定時刻
 6. 実行時間と乱数種
 
 ### 次タスク(screening 実装)の受け入れ条件
@@ -608,7 +609,11 @@ report に必ず含めるもの(選別なし):
    存在しないと実行できない(順序の構造的強制)。
 4. 27 test 全ての結果を1つの artifact に機械的に出力する。手で表から行を消せない形にする。
 5. placebo・bootstrap の再現手順(K・シフト量・種)を artifact に含める。
-6. 実行後に `mce.tier0_prereg` を書き換える差分が出たら CI(テスト)で落ちること。
+6. artifact に **`src/mce/tier0_prereg.py` の sha256** と **凍結確定時刻**
+   (= 最初のラベル生成コマンドを実行した時刻)を記録する。
+   `tests/test_tier0_prereg.py` は artifact が存在する場合、記録された sha256 が
+   現在の `tier0_prereg.py` と一致することを検査する
+   → **実行後に凍結仕様を書き換えたら CI が落ちる**(改竄の構造的検出)。
 
 ### 実行時間の見積り(実測ベース)
 
