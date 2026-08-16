@@ -34,6 +34,10 @@
 - [2026-08-16 5分足の傾向調査と33ヶ月追試](2026-08-16-5m-tendencies-33mo-retest.md)
   — 生存4(ボラ・流動性構造)/ 棄却1 / レジーム依存1 / 判定不能1 / ヌル生存2。
   Funding キャリーの33ヶ月定量化。
+- [2026-08-16 Phase 3 Arm B genetic + baselines](2026-08-16-phase3-armB-genetic-baselines-v1.md)
+  — **生存者0/30・0/10**。GAはbest sharpe −19.6→−0.93と機構は機能したが
+  登る山が無く(net>0は0/30)、重複64で数個体に崩壊。主指標でRandomと同着0。
+  「research通過はdrift-fit偽陽性を含む」ことがOOS生存効率比較の正しさを裏付けた。
 - [2026-08-16 Phase 3 Arm A random search](2026-08-16-phase3-armA-random-v1.md)
   — **生存者0/30**(凍結seed・凍結選抜)。research通過4は全てlong-onlyのドリフト適合で
   validation防火壁が全滅させた(min_tradesガードが偽survivor 1本を阻止)。
