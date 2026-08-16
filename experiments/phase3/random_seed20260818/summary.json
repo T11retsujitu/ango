@@ -1,0 +1,33 @@
+{
+  "config": {
+    "budget": 30,
+    "primary_cost": "base_taker",
+    "research_rule": {
+      "min_trades": 30
+    },
+    "secondary_cost": "maker_low",
+    "seed": 20260818,
+    "validation_rule": {
+      "min_trades": 10
+    }
+  },
+  "counters": {
+    "candidate_count": 46,
+    "duplicate_count": 0,
+    "evaluated_count": 30,
+    "rejected_candidate_count": 16,
+    "research_pass_count": 4,
+    "runtime_failure_count": 0,
+    "survivor_count": 0,
+    "unique_candidate_count": 30,
+    "validation_count": 4
+  },
+  "created_at": "2026-08-16T20:02:43.018502+09:00",
+  "manifest_sha256": {
+    "features": "f759f5eddc82ee38eb867ca8cffc0d559baf2d73bdf969e4c103389ff9d1ec9d"
+  },
+  "method": "random",
+  "protocol": "phase3_bakeoff_v1",
+  "source_commit": "7fe73ce9546aa453383413f0e97458ada1af1599",
+  "survivors": []
+}
