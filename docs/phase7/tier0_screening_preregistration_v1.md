@@ -616,7 +616,7 @@ family は **(information set, horizon) 9 × target 3 = 27 test**。
 - confirmation 段階は **昇格した test だけの新しい family** として Holm 補正した p を
   **報告する**。ただし GO の判定条件は §17-4(符号一致と大きさ)であって
   confirmation の p ではない。confirmation 窓は 365 日しかなく、
-  巡回シフト群が `|S| = 352` に制限される(最小 p = 2.83e-3)ため、
+  巡回シフト群が `|S| = 306` に制限される(最小 p = 3.26e-3)ため、
   昇格 test が多いと Holm の最小閾値へ届かないことがある。
   **p 解像度の制約が判定を左右しないように、判定は再現性(符号と大きさ)で行う。**
 
