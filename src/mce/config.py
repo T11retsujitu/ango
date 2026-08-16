@@ -7,6 +7,8 @@ DATA_DIR = Path(os.environ.get("MCE_DATA_DIR", "data"))
 RAW_DIR = DATA_DIR / "raw"
 NORMALIZED_DIR = DATA_DIR / "normalized"
 FEATURES_DIR = DATA_DIR / "features"
+LABELS_DIR = DATA_DIR / "labels"
+MANIFESTS_DIR = DATA_DIR / "manifests"
 
 # PoC の対象は BTC の USDT 無期限スワップのみ
 INST_ID = "BTC-USDT-SWAP"
@@ -26,3 +28,11 @@ def funding_parquet(inst_id: str = INST_ID) -> Path:
 
 def open_interest_parquet(inst_id: str = INST_ID, period: str = BAR) -> Path:
     return NORMALIZED_DIR / "open_interest" / f"{SOURCE}_{inst_id}_{period}.parquet"
+
+
+def features_parquet(inst_id: str = INST_ID, bar: str = BAR) -> Path:
+    return FEATURES_DIR / f"{SOURCE}_{inst_id}_{bar}.parquet"
+
+
+def labels_parquet(inst_id: str = INST_ID, bar: str = BAR) -> Path:
+    return LABELS_DIR / f"{SOURCE}_{inst_id}_{bar}.parquet"
