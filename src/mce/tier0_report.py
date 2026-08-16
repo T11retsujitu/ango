@@ -138,10 +138,14 @@ def summary(report: dict) -> dict:
         "stage2_promoted": sum(1 for c in cells if c.get("placebo_k_stage2")),
         "positive_dr2": sum(1 for c in tested if (c.get("dr2") or 0) > 0),
         "max_dr2": max((c.get("dr2") or 0) for c in tested) if tested else None,
-        "median_mde": sorted(c["mde"] for c in tested)[len(tested) // 2] if tested else None,
+        "median_mde": sorted(c["mde"] for c in tested)[len(tested) // 2]
+        if tested
+        else None,
         "dispositions": {
             d: sum(1 for c in cells if c.get("disposition") == d)
-            for d in sorted({c.get("disposition") for c in cells if c.get("disposition")})
+            for d in sorted(
+                {c.get("disposition") for c in cells if c.get("disposition")}
+            )
         },
         "runtime_hours": round(report["runtime_sec"] / 3600, 2),
     }
@@ -162,7 +166,9 @@ def render(report: dict) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Tier 0 screening artifact -> markdown")
+    parser = argparse.ArgumentParser(
+        description="Tier 0 screening artifact -> markdown"
+    )
     parser.add_argument("--stage", choices=("dev", "confirmation"), default="dev")
     args = parser.parse_args()
     path = ARTIFACT_DIR / f"tier0_screening_{args.stage}_v1.json"
