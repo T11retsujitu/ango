@@ -128,3 +128,40 @@ def test_source_columns_exist_in_the_actual_features_file():
     for info_set in prereg.INFORMATION_SETS:
         for column in info_set.source_columns:
             assert column in columns
+
+
+def test_family_cannot_grow_without_breaking_placebo_resolution():
+    """target をもう1つ足すと最短 dev 窓の cell が原理的に有意になれない(§5 の記録)。
+
+    「なぜ Y5 を入れなかったのか」を後から誰かが再検討するとき、この計算を
+    もう一度手でやらずに済むように固定しておく。
+    """
+    shortest = min(
+        prereg.placebo_shift_count((prereg.DEV_END - s.dev_start).days)
+        for s in prereg.INFORMATION_SETS
+    )
+    min_p = 1 / (1 + shortest)
+    set_horizon_pairs = sum(len(s.horizons_bars) for s in prereg.INFORMATION_SETS)
+    assert min_p < 0.05 / (set_horizon_pairs * len(prereg.TARGETS))  # 現行 27 は到達可能
+    assert min_p > 0.05 / (set_horizon_pairs * (len(prereg.TARGETS) + 1))  # 36 は不可能
+
+
+def test_interaction_baseline_factors_are_in_the_baseline():
+    """交互作用項の baseline 因子が A に入っていること(strict nesting)。
+
+    入っていないと「B だけが baseline の非線形関数を表現できる」抜け穴になり、
+    dR2 > 0 を X の情報だと誤読しうる(leakage 監査の指摘)。
+    """
+    interactions = {
+        c for s in prereg.INFORMATION_SETS for c in s.model_columns if "_x_" in c
+    }
+    assert interactions, "交互作用項が1つも無い(設計と食い違っている)"
+    required_factors = {
+        "signed_imb_x_norm_move_1": "norm_move_1",
+        "dlog_oi_12_x_z20d_return_1h": "z20d_return_1h",
+    }
+    assert set(required_factors) == interactions
+    for interaction, baseline_factor in required_factors.items():
+        assert baseline_factor in prereg.A_COLUMNS, (
+            f"{interaction} の baseline 因子 {baseline_factor} が A に無い"
+        )

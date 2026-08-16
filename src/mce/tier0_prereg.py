@@ -27,14 +27,24 @@ A_BASE_COLUMNS = (
     "drift_20d",
     "realized_vol_20d",
 )
-# 実行時に導出する列(定義は §3。短期ボラを A に入れて baseline を意図的に強くする)
+# 実行時に導出する列(定義は §3)。設計上の要点:
+#  - 短期ボラ(rv_12 / rv_48 / hl_range_z20d)を入れて baseline を意図的に強くする
+#  - norm_move_1 / z20d_return_1h は X 側の交互作用項の baseline 因子。A に入れることで
+#    「B だけが baseline の非線形関数を表現できる」抜け穴を塞ぐ(strict nesting)
+#  - 時刻ハーモニクスは3次まで。X の参加量が日内プロファイルを拾うのを防ぐ
 A_DERIVED_COLUMNS = (
     "rv_12",
     "rv_48",
     "hl_range_z20d",
     "log_volume_z20d",
-    "hour_sin",
-    "hour_cos",
+    "norm_move_1",
+    "z20d_return_1h",
+    "tod_sin_1",
+    "tod_cos_1",
+    "tod_sin_2",
+    "tod_cos_2",
+    "tod_sin_3",
+    "tod_cos_3",
     "is_weekend",
     "is_quarter_hour",
 )
@@ -166,6 +176,10 @@ PLACEBO = {
     "k_stage2": "exhaustive over S (|S| = window_days - 13)",
     "stage2_rule": "stage-1 rank only: #{placebo >= observed} <= 5 (never the effect size)",
     "p_rule": "(1 + #{placebo >= observed}) / (1 + K)",
+    # シフト後 null になった行は埋めない。placebo ごとに有効行を取り直し、
+    # その行集合で A と B を両方とも再評価する(埋めると placebo が甘くなる)。
+    "null_rule": "recompute S_d = S ∩ {shifted X non-null}; re-evaluate BOTH A and B on S_d",
+    "window_rule": "shifts are circular WITHIN the stage window (dev placebos never read confirmation X)",
 }
 
 

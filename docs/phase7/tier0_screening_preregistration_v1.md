@@ -73,11 +73,26 @@ A は **stationary な派生 observable のみ**とする。生の価格水準�
 | `rv_48` | 同 48本 | close_of_bar |
 | `hl_range_z20d` | `(high-low)/close` の 20日 z-score | close_of_bar |
 | `log_volume_z20d` | `log(volume+1)` の 20日 z-score(下記 Z 変換) | close_of_bar |
-| `hour_sin`, `hour_cos` | `hour_utc` から `sin/cos(2*pi*h/24)` | start_of_bar |
+| `norm_move_1` | `clip(return_5m / rv_12, -10, +10)` | close_of_bar |
+| `z20d_return_1h` | `Z20d(return_1h)` | close_of_bar |
+| `tod_sin_k`, `tod_cos_k`(k=1,2,3) | `sin/cos(2*pi*k*(60*hour_utc + minute_mod_60)/1440)` | start_of_bar |
 | `is_weekend` | `weekday_utc >= 5` | start_of_bar |
 | `is_quarter_hour` | `minute_mod_15 == 0` | start_of_bar |
 
-A は 13 列。**A の定義は全 test で共通**であり、X ごとに変えない。
+A は 19 列。**A の定義は全 test で共通**であり、X ごとに変えない。
+
+**`norm_move_1` と `z20d_return_1h` を A に入れる理由(strict nesting の担保)**:
+これらは §4 で X 側に置く交互作用項 `signed_imb * norm_move_1` /
+`dlog_oi_12 * Z20d(return_1h)` の **baseline 側の因子**である。A に入れておかないと、
+B だけが「baseline データの非線形関数」を表現できてしまい、
+`dR2 > 0` が X の情報ではなく **A の非線形性**で説明できる余地が残る
+(交互作用項の平均成分 `E[signed_imb] * norm_move_1` は baseline のスケール変換に等しい)。
+両因子を A に入れることで、**B の増分は純粋な交差項だけ**になる。
+
+**時刻ハーモニクスを3次まで入れる理由**: X 側の参加量(`trade_count` の z-score)は
+日内の活動プロファイルを細かく表現できるのに対し、A が1次ハーモニクスしか持たないと、
+Y2(ボラ)の `dR2` が「X の情報」ではなく「時間帯の形」を拾ってしまう。
+A 側の時刻表現を先に厚くしておく。
 
 **A を意図的に強くしてある**理由: target に volatility 系(Y2)・path 系(Y3)を含むため、
 「直近のボラを A が持っていない」状態で X(約定件数など)を足せば、
@@ -129,10 +144,11 @@ aggressive flow があったのに価格がほとんど動かない」= 吸収�
 `dlog_oi_12 * Z20d(return_1h)`(T0-B1、価格 × 建玉変化 = build-up / short cover の区別)を
 **事前に固定して X 側へ入れる**。
 
-交互作用は A の情報(`norm_move_1`, `return_1h`)を含むが、これは false positive の源に
-ならない。placebo(§12)は **X ブロックだけを日単位でシフトする**ため、
-「A の非線形性だけで説明できる利得」は placebo 側でも同じだけ再現され、
-帰無分布の中心へ吸収されるからである。
+交互作用は A の情報(`norm_move_1`, `z20d_return_1h`)を含む。これが
+「B だけが baseline の非線形関数を表現できる」抜け穴にならないよう、
+**両因子を A 側にも入れて strict nesting を担保する**(§3)。
+そのうえで placebo(§12)が **X ブロックだけをシフトする**ので、
+残る抜け穴(交互作用の平均成分など)も帰無分布へ吸収される。二重の防御である。
 
 - 差分は行シフトではなく **ts 完全一致 join**(欠損バーを跨いだ差分を作らない)。
 - `taker_buy_quote_ratio` は `taker_buy_ratio` と、`open_interest_value` は
@@ -140,7 +156,9 @@ aggressive flow があったのに価格がほとんど動かない」= 吸収�
   見せない)。`avg_trade_size` も `avg_trade_notional` と共線のため除外。
 - `top_trader_account_ls_ratio` は `top_trader_position_ls_ratio` と同族なので
   positioning 側は position 版を採る(account 版は除外)。
-- 各 X の列数は **3〜4 に固定**。X 間で自由度が大きく違わないようにする。
+- 各 X の列数は **3〜5**(T0-A 5 / T0-B1 4 / T0-B2 3 / T0-C 3)。
+  集合間で自由度が揃っていないが、**各集合は自分の placebo 帰無に対してのみ判定される**ので
+  比較の公平性は損なわれない(集合間の `dR2` 比較は §7 で禁止済み)。
 
 ---
 
@@ -165,6 +183,23 @@ aggressive flow があったのに価格がほとんど動かない」= 吸収�
 - 3 target のうち Y2 と Y3 は方向に依らない量であり、Phase 3 で死んだ「方向符号のみ」の
   枠組みを避けるための本命である。既存 findings で 33ヶ月生存したのは
   ボラ・流動性構造(H1–H4)であり、Tier 0 情報が最も乗りやすいのもこの軸だと考える。
+
+### 検討したが採用しなかった target(記録)
+
+**Y5 = `1[ |Y1| > 10bps ]`(その h の間に往復コストを超える動きが出るか)** は、
+abstain 判断に最も直結する target であり、採用を検討した。**採用しなかった理由は
+検出力ではなく p 解像度の算術**である:
+
+```text
+target 4 個にすると family = 36、Holm の最小閾値 = 0.05/36 = 1.389e-3
+dev T0-B2 の全数 placebo の最小 p = 1/719          = 1.391e-3  >  1.389e-3
+→ 最短 dev 窓の cell が、全数 placebo でも最小閾値へ届かなくなる
+```
+
+つまり **family を 4 target へ広げると、T0-B2 の cell は原理的に有意になれない**。
+「検定できない cell を family に入れる」ことになるので v1 では 3 target に留める。
+Y5 は cost relevance(§16)の中で**記述統計として**報告し、仮説検定はしない。
+将来 T0-B2 の被覆が伸びて窓を長くできれば v2 で target に昇格させる。
 
 ---
 
@@ -361,6 +396,13 @@ placebo_k: X の全列を、暦日単位で k 日だけ巡回シフトして A �
 - **A は動かさない**。動かすのは X のブロックのみ。
 - 日単位シフトなので、日内周期構造(hour 効果)と曜日構造は壊さず、
   Y との時刻対応だけを壊す。これが H0 そのものである。
+- **シフトはその段階の窓の内側で閉じる**(巡回シフト)。dev 段階の placebo が
+  confirmation 窓の X を読むことは無い。
+- **シフト後に null になる行の扱い(凍結)**: placebo ごとに有効行を
+  `S_d = S ∩ {シフト後の X 列が全て非 null}` として再計算し、
+  **その `S_d` の上で A と B を両方とも再評価**して `dR2_placebo` を作る。
+  欠測を中央値などで埋めない(埋めると placebo だけ情報が薄まり、検定が甘くなる)。
+  `S_d` の行数も記録する。
 - **シフト群は有限**である。`|S| = W_days - 13` を超える独立な placebo は作れないので、
   「K を好きなだけ増やす」ことはできない。したがって次の2段階とする。
 
@@ -553,6 +595,10 @@ report に必ず含めるもの(選別なし):
 1. `mce.tier0_prereg` の定数だけを参照する(閾値・列・窓を実装側に書き直さない)。
 2. ラベル生成は独立 module とし、出力は `data/labels/` のみ。features へ `fwd_` 列を
    書かない(既存 loader guard と同じ規約)。
+   **ラベル module は読み込み時に次を assert する**: 入力が
+   `data/normalized/binance/*.parquet` または `data/features/binance_BTCUSDT_5m.parquet`
+   のみであること、`max(ts) < 2026-01-01` であること、入力に `fwd_` 列が無いこと。
+   dev 実行 module は `max(ts) < DEV_END` も assert し、confirmation 窓を物理的に読めなくする。
 3. dev と confirmation は**別コマンド**で、confirmation は dev の artifact が
    存在しないと実行できない(順序の構造的強制)。
 4. 27 test 全ての結果を1つの artifact に機械的に出力する。手で表から行を消せない形にする。
