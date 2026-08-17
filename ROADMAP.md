@@ -18,6 +18,25 @@
 
 > **限られたバックテスト評価回数の下で、semantic priorを持つLLM Research Agentは、Random SearchやEvolutionary Searchよりも、BTC市場でOut-of-Sampleに生存する取引仮説を効率的に発見できるか。**
 
+> **研究軸の更新(2026-08-16 追記。以下の本文は当初設計として保存する)**
+>
+> Phase 3 Alpha Search Bakeoff が完了し、Random / Genetic / LLM の3 arm すべてで
+> validation survivor は **0 / 30** だった([bakeoff summary](docs/findings/2026-08-16-phase3-bakeoff-summary-v1.md))。
+> これを受けて主研究軸を、
+>
+> ```text
+> Which search algorithm finds alpha in OHLCV?
+>        ↓
+> Which information set contains incremental, cost-relevant information beyond OHLCV?
+> ```
+>
+> へ段階的に移す(Phase 7 — Information-Space Expansion)。
+> これは **searcher research の破棄ではなく優先順位の変更**であり、保留項目は
+> [research backlog](docs/research_backlog.md) に条件付きで残す。中心原則:
+>
+> > **Do not assume the searcher is the bottleneck. Test the information space
+> > before optimizing the searcher further.**
+
 したがって、システムを以下の2層に分離する。
 
 1. **Researcher**
@@ -765,7 +784,49 @@ MCTSは最初のPoCには入れない。
 
 ---
 
+## Phase 3 実行結果(2026-08-16 確定。上記の設計記述は変更しない)
+
+プロトコル: [docs/phase3/bakeoff_protocol.md](docs/phase3/bakeoff_protocol.md)(全 arm 実行前に凍結)。
+一次記録: `experiments/phase3/`。総括: [bakeoff summary](docs/findings/2026-08-16-phase3-bakeoff-summary-v1.md)。
+
+| arm | draw | rejected | duplicate | evaluated | research_pass | validation_survivor |
+|---|---:|---:|---:|---:|---:|---:|
+| Random(A) | 46 | 16 | 0 | 30 | 4 | **0** |
+| Genetic(B) | 102 | 8 | 64 | 30 | 0 | **0** |
+| LLM(C) | 32 | 2 | 0 | 30 | 0 | **0** |
+| Baselines | 10 | 0 | 0 | 10 | 0 | **0** |
+
+**Result**: 現在の探索budget(30 evaluations/arm)と凍結済み OHLCV DSL v1 の範囲では、
+どの searcher も validation survivor を発見できなかった。Final OOS は未開封。
+
+**言えないこと**: 「LLM と Random/Genetic が同等」「OHLCV に alpha が無い」
+「information set が唯一のボトルネック」。0/30 の片側95%上限は 9.5% であり、
+差の検出力はこの設計に無い(詳細と代替仮説は bakeoff summary §6)。
+
+**Definition of Success(§18)との対応**: Case C/D の軌道(OHLCV survivor 不在・
+コスト支配)。ただし Case B(LLM ≈ Random)を主張するには検出力が不足しているため、
+**LLM の alpha searcher 仮説は棄却ではなく保留**とする(ROADMAP §9.3)。
+LLM の valid rate / duplicate rate / semantic diversity の優位は研究資産として残す。
+
+**副次資産**: 100評価分の budget 会計・台帳・cross-arm 集計ユーティリティ
+(`python -m mce.phase3_summary`)。
+
+---
+
 # Phase 4 — Memory and Search Improvements
+
+> **状態: 条件付き保留(2026-08-16 追記。以下の設計は削除せず保存する)**
+>
+> Phase 3 で LLM の alpha searcher としての優位は survival endpoint では示されなかった。
+> 同一の OHLCV DSL v1 空間で memory / searcher を改良する研究 ROI は現時点で低いため、
+> 本 Phase は **hold** とする。再開条件:
+>
+> ```text
+> information-space screening で incremental information が確認され、
+> Market Microstructure DSL v2 が凍結された時点
+> ```
+>
+> 個別項目の状態は [research backlog §C](docs/research_backlog.md) を参照。
 
 Phase 3でLLMに価値がある場合のみ導入する。
 
@@ -823,6 +884,12 @@ AlphaAgent / QuantaAlphaの考え方を参考にする。
 # Phase 5 — Statistical Audit
 
 大量strategy探索を開始した時点で必須。
+
+> **状態(2026-08-16 追記)**: Phase 3 の validation survivor が 0 のため、
+> 現時点で DSR / PBO / SPA を適用する対象候補が存在しない。**削除ではなく待機**であり、
+> 「大量探索や候補 selection を再開した時点で必須」という条件はそのまま維持する
+> (Phase 7 の information-space screening でも multiple testing は §Phase 7 の
+> 規則で扱う)。survivor を作るために判定基準を緩めることは禁止。
 
 ---
 
@@ -890,7 +957,100 @@ Meta-search comparison:
 
 ---
 
-# Phase 7 — Data Expansion Decision
+# Phase 7 — Information-Space Expansion
+
+> 旧題: **Data Expansion Decision**。Phase 3 完了(survivor 0)により
+> **Branch B が発火**したため、本 Phase を「次にどの情報集合を検証するか」を
+> 体系的に扱う主研究軸へ発展させる(2026-08-16)。当初の Branch A/B/C 設計は
+> 下に原文のまま残す。
+>
+> 詳細プロトコル: [docs/phase7/information_space_expansion_v1.md](docs/phase7/information_space_expansion_v1.md)
+> 既存資産のレビュー: [docs/phase7/microstructure_v1_review.md](docs/phase7/microstructure_v1_review.md)
+
+## 7.0 Research Question
+
+> **5分足 OHLCV を baseline としたとき、どの追加情報群が、OHLCV だけでは説明できず、
+> かつ取引コスト上意味のある incremental predictive information を持つか。**
+
+```text
+H0: information set X は OHLCV baseline を超える有用な incremental information を含まない
+H1: X は再現可能な incremental information を含む
+```
+
+成功条件を「profitable strategy が見つかった」に**しない**。
+まず「OHLCV baseline だけでは説明できない追加情報が存在するか」を測る。
+
+```text
+OHLCV baseline → OHLCV + X → incremental information test
+→ mechanism validation → cost relevance → OOS validation → retain / reject
+```
+
+## 7.1 情報空間の優先順位(2026-08-16 のデータ可用性実測を反映)
+
+素朴な「trades → L1 → L2」順ではなく、**expected research value / data cost** で並べる。
+OKX の遡及は funding 約3ヶ月・OI 約5日・板/約定は遡及不可であり、
+「derivatives は L2 より履歴検証しやすい」という一般論はこの repository では成立しない。
+
+| Tier | 情報集合 | 主な observable | 取得コスト(実測) |
+|---|---|---|---|
+| **0** | bar 集約 aggressive flow / derivatives state / basis | taker buy share、約定件数、OI・ΔOI・OI z、long/short ratio、perp−index premium、funding | 合計 ~30 KB/日(Binance Vision、2021〜) |
+| **1** | aggTrades / bookDepth | signed volume、large-trade imbalance、flow persistence、burst、距離別 depth | 5–8 MB/日 / 0.55 MB/日 |
+| **2** | OKX prospective microstructure(trades / BBO / 400段 L2) | L1 OFI、10bps 板枯れ、吸収 | 収集機構は実装済み。**遡及不可** |
+| **3** | 遡及 L1 tick / cross-venue / liquidation / options・on-chain・macro | — | 200 GB 規模、または取得手段が未確定 |
+
+既存の [Microstructure v1](docs/findings/2026-08-16-microstructure-v1-protocol.md)
+(M1 = L1 OFI / M2 = 10bps 板枯れ / M3 = aggressive-flow 吸収)は Tier 2 の最初の3仮説として
+**そのまま包含**する。事前凍結済みのため、結果を見る前に定義を変更しない。
+
+## 7.2 Target を方向符号に限定しない
+
+`future_return_sign` だけで情報集合の価値を判定しない。候補 target:
+return magnitude / volatility / tail move / range expansion / adverse move after entry /
+(microstructure 到達後は)spread・depth・impact・adverse selection。
+
+最終的に trade / abstain・maker / taker・執行タイミング・サイジングへ接続しうるかを評価するが、
+**本 Phase では execution optimizer / RL / maker queue simulator を新規実装しない**。
+
+## 7.3 Incremental information test の骨子
+
+```text
+Model A: OHLCV baseline      → target
+Model B: OHLCV baseline + X  → target   (同一 split・同一 target・同一 estimator)
+```
+
+- capacity 差を information value と誤認しない(A/B は同一 estimator family、
+  さらに X をブロックシャッフルした placebo 対照を必ず置く)
+- feature timestamp を厳密に管理し、未来情報を使わない
+- 同時刻の機械的関係と将来予測力を分離する
+- multiple testing(情報集合 × target × horizon)を family として記録し Holm 補正
+- 効果量を必ず報告し、bps/取引へ変換して執行コストと比較する
+- **screening は `ts < 2026-01-01` のみ**(別 venue のデータでも Final OOS 期間を封印継承)
+
+## 7.4 Literature の役割変更
+
+論文 strategy をそのまま増やすことを主目的にしない。先行研究からは
+`information set → observable → mechanism → target → horizon → execution assumption →
+validation method → known failure mode` を抽出し、
+**その機序が Ango のデータでも存在するか**を独立に検証する
+([research backlog §B](docs/research_backlog.md))。
+
+## 7.5 将来の DSL v2 と search bakeoff
+
+incremental value が確認された機序に限り、
+
+```text
+Information-space screening → promising mechanisms → frozen Market Microstructure DSL v2
+→ Random baseline → LLM Semantic Search → MCTS / evolutionary / memory-based search
+→ statistical audit → sealed Final OOS
+```
+
+という新しい bakeoff を設計する。**その時点で search algorithm research を再開する**
+([research backlog §C](docs/research_backlog.md))。OHLCV DSL v1 は Phase 3 の探索空間定義として
+凍結保存し、結果を見た後に operator / threshold を変更して Phase 3 を再 run しない。
+
+---
+
+## 当初の分岐設計(2026-08-16 実行前の原文。歴史記録として保存)
 
 ## Branch A — OHLCVでsurvivorあり
 

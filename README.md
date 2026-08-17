@@ -65,6 +65,19 @@ uv run python -m mce.backtest --strategy buy_and_hold --split research --cost ba
 uv run python -m mce.research.abstention --cost maker_low
 uv run python -m mce.research.abstention --cost base_taker
 
+# Phase 7 Tier 0: Binance Vision 一括ダンプの取得→正規化→observable→品質レポート
+#   (ラベルは作らない。ts >= 2026-01-01 は封印継承で落とす)
+uv run python -m mce.binance_vision --start 2020-01 --end 2025-12
+uv run python -m mce.normalize_binance
+uv run python -m mce.features_tier0
+uv run python -m mce.tier0_quality --json experiments/phase7/tier0_quality_v1.json
+
+# Phase 3 bakeoff の cross-arm 集計(凍結 artifact を読むだけ・再評価しない)
+uv run python -m mce.phase3_summary --json experiments/phase3/bakeoff_summary.json
+
+# ローカルデータ在庫(manifest・OHLCV系・microstructure shard/raw の有無と期間)
+uv run python -m mce.data_inventory --json data/analysis/data_inventory.json
+
 # 約定・BBO・400段板を60秒だけ疎通確認（省略時はSIGINT/SIGTERMまで継続）
 uv run python -m mce.collect_microstructure --duration 60
 
@@ -132,6 +145,17 @@ GROUP BY d ORDER BY d;
 | `funding_rate` | 8h | ts, funding_rate, symbol, source, market_type |
 | `open_interest` | 5m | ts, oi (BTC建て), oi_usd, symbol, source, market_type |
 
+Phase 7 Tier 0(Binance USDT-M perp。別 venue なので `data/normalized/binance/` へ分離):
+
+| テーブル | 粒度 | 列 |
+|---|---|---|
+| `klines_5m` | 5m | ts, open, high, low, close, volume, volume_quote, trades, taker_buy_volume, taker_buy_quote |
+| `metrics_5m` | 5m snapshot | ts, open_interest, open_interest_value, top_trader_account_ls_ratio, top_trader_position_ls_ratio, global_account_ls_ratio, taker_ls_vol_ratio |
+| `premium_index_5m` | 5m | ts, premium_open, premium_high, premium_low, premium_close, premium_samples |
+
+契約・timestamp semantics・availability 宣言は
+[docs/phase7/tier0_ingest_v1.md](docs/phase7/tier0_ingest_v1.md)。
+
 ## 設計上のルール
 
 - **UTC 基準**: 内部時刻はすべて UTC。UNIX time は API 境界でのみ ms で扱い、即 Datetime 化する
@@ -198,3 +222,13 @@ WHERE f.volume_ratio_20 >= 2.0
 
 OHLCV方向探索の検証済み結論と、prospectiveなOFI・板枯れ・吸収v1の事前仕様は
 [docs/findings/README.md](docs/findings/README.md) を参照。
+
+## 現在の研究軸(2026-08-16)
+
+Phase 3 Alpha Search Bakeoff は Random / Genetic / LLM の3 arm すべてで
+validation survivor 0/30 で完了した([総括](docs/findings/2026-08-16-phase3-bakeoff-summary-v1.md))。
+これは「OHLCVにalphaが無い」ことでも「information setが唯一の原因」であることでもなく、
+**次に検証する仮説として information-set expansion の期待情報価値が最も高い**という
+優先順位の変更である。次の設計は
+[Phase 7 — Information-Space Expansion](docs/phase7/information_space_expansion_v1.md)、
+保留にした探索アルゴリズム研究は [research backlog](docs/research_backlog.md) にある。

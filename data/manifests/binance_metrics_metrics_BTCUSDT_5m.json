@@ -1,0 +1,22 @@
+{
+  "columns": [
+    "ts",
+    "open_interest",
+    "open_interest_value",
+    "top_trader_account_ls_ratio",
+    "top_trader_position_ls_ratio",
+    "global_account_ls_ratio",
+    "taker_ls_vol_ratio",
+    "symbol",
+    "source",
+    "market_type"
+  ],
+  "expected_rows": 561024,
+  "file": "metrics_BTCUSDT_5m.parquet",
+  "missing_rows": 636,
+  "rows": 560388,
+  "sha256": "f8d5083adc213e430126c473179dc62903dda7c807cb59bb4bbd78df4ad5f7d7",
+  "size_bytes": 22305600,
+  "ts_max": "2025-12-31T23:55:00+00:00",
+  "ts_min": "2020-09-01T00:00:00+00:00"
+}

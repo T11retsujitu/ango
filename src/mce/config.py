@@ -36,3 +36,25 @@ def features_parquet(inst_id: str = INST_ID, bar: str = BAR) -> Path:
 
 def labels_parquet(inst_id: str = INST_ID, bar: str = BAR) -> Path:
     return LABELS_DIR / f"{SOURCE}_{inst_id}_{bar}.parquet"
+
+
+# --- Phase 7 Tier 0(Binance Vision。別 venue なので path も source も分ける)---
+
+BINANCE_SOURCE = "binance"
+BINANCE_SYMBOL = "BTCUSDT"
+
+
+def binance_klines_parquet(symbol: str = BINANCE_SYMBOL, bar: str = BAR) -> Path:
+    return NORMALIZED_DIR / BINANCE_SOURCE / f"klines_{symbol}_{bar}.parquet"
+
+
+def binance_metrics_parquet(symbol: str = BINANCE_SYMBOL, bar: str = BAR) -> Path:
+    return NORMALIZED_DIR / BINANCE_SOURCE / f"metrics_{symbol}_{bar}.parquet"
+
+
+def binance_premium_index_parquet(symbol: str = BINANCE_SYMBOL, bar: str = BAR) -> Path:
+    return NORMALIZED_DIR / BINANCE_SOURCE / f"premium_index_{symbol}_{bar}.parquet"
+
+
+def binance_features_parquet(symbol: str = BINANCE_SYMBOL, bar: str = BAR) -> Path:
+    return FEATURES_DIR / f"{BINANCE_SOURCE}_{symbol}_{bar}.parquet"

@@ -42,6 +42,31 @@ BTC の OHLCV / 約定・出来高 / Funding Rate / Open Interest を取得で�
 - 日本のローカルPCから Bybit に到達できるなら、Bybit v5 は同等機能を持つ(コードは `sources` 層の差し替えで対応する設計)
 - 深い Funding / OI / Long-Short 履歴が必要になったら Binance Vision の一括ダンプが最有力(ただし日本居住者の利用規約上の扱いは要確認)
 
+## 追記(2026-08-16): Binance Vision 一括ダンプの実測
+
+Phase 7 Tier 0([information_space_expansion_v1](phase7/information_space_expansion_v1.md))の
+入力として、`https://data.binance.vision/data/futures/um/...`(BTCUSDT perp)を本実行環境から
+HTTP 実測した。サイズは zip の Content-Length / 実取得バイト。
+
+| データ | 粒度 | 実測サイズ | 遡及(実測) | 備考 |
+|---|---|---|---|---|
+| klines | 月次 5m | 約 0.4 MB/月 | 2020-01〜(2019-12 は 404) | `taker_buy_volume` / `taker_buy_quote_volume` / `count` を含む |
+| metrics | **日次のみ**(月次は 404) | 約 11–12 KB/日 | 2020-09-01〜(2020-08-15 は 404) | OI・long/short ratio・taker L/S vol ratio |
+| premiumIndexKlines | 月次 5m | 約 0.18 MB/月 | 2020-01〜 | perp/index premium |
+| fundingRate | 月次 | 約 0.9 KB/月 | — | Tier 0 では未使用 |
+| aggTrades | 日次 | 5.0 MB/日(2026-08-01)・8.0 MB/日(2023-11-19)・1.0 MB/日(2020-01-01) | 2020-01-01〜 | Tier 1 |
+| trades | 日次 | 8.1 MB/日 | — | Tier 1 |
+| bookDepth | 日次 | 0.55 MB/日 | 2023-11-19 で取得可 | Tier 1(列仕様は要確認) |
+| bookTicker | 日次 | **199 MB/日**(2024-01-02) | — | Tier 3(33ヶ月で ~200 GB) |
+| liquidationSnapshot | 日次 | **404**(2023-01-02 / 2026-08-01) | 取得不可 | Tier 3 / blocked |
+
+- 各 zip には `<file>.zip.CHECKSUM`(SHA-256)が併置されており、取得時に必ず検証する
+  (`mce.binance_vision`)。
+- **HEAD は当てにならない**: プロキシ経由だと `HTTP/1.1 200 Connection Established` が
+  先に来るため、状態判定は必ず GET(またはレンジ GET)の最終ステータスで行う。
+- 本実測は米国リージョンとみられる実行環境から。**日本 IP からの疎通と ToS 上の可否は
+  引き続き要確認**。取得データの再配布はしない(ローカル個人研究の範囲)。
+
 ## 利用規約に関する一般的注意
 
 - 各取引所の ToS は、マーケットデータの**個人的な分析利用**と、**加工データのWeb公開・生データ再配布**を区別している(または明記がない)ことが多い
