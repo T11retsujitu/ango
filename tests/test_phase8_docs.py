@@ -263,18 +263,35 @@ def test_findings_index_links_to_phase8_documents():
 
 def test_external_knowledge_contamination_is_recorded():
     data = _load()["external_knowledge_contamination"]
-    ids = {k["id"] for k in data["knowledge_acquired_during_this_review"]}
+    items = data["knowledge_acquired_during_this_review"]
+    ids = {k["id"] for k in items}
     assert {"K1", "K3", "K7"} <= ids
-    for item in data["knowledge_acquired_during_this_review"]:
+    for item in items:
         assert item["source_status"] in {
             "VERIFIED-FULL",
             "VERIFIED-META",
             "PARTIAL",
             "UNVERIFIED",
+            "IN-HOUSE",
         }
+
+
+def test_in_house_contamination_is_recorded_and_reaches_into_the_seal():
+    """ango 自身の過去の測定による汚染を、外部知識と同じ台帳で管理していること。
+
+    自分の repository に既にある測定を見落とすのは、外部文献を読むより危険である
+    (数値が精密で、既にコミット済みで、封印域に食い込みうるため)。
+    """
+    items = _load()["external_knowledge_contamination"]["knowledge_acquired_during_this_review"]
+    in_house = [k for k in items if k["source_status"] == "IN-HOUSE"]
+    assert in_house, "在庫由来の汚染が1件も記録されていない"
+    for item in in_house:
+        assert "source" in item, f"{item['id']}: 在庫の出所ファイルが記録されていない"
+        assert (REPO / item["source"]).exists(), f"{item['id']}: 出所ファイルが存在しない"
     # 既存の封印を動かしていないこと
-    assert "2026-01-01" in data["ango_sealed_split"]
-    assert "NOT opened" in data["ango_sealed_split"]
+    sealed = _load()["external_knowledge_contamination"]["ango_sealed_split"]
+    assert "2026-01-01" in sealed
+    assert "NOT opened" in sealed
 
 
 def test_seal_definition_is_untouched_by_phase8():
