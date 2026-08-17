@@ -212,6 +212,36 @@ def test_protocol_sets_a_sample_floor_and_an_mde_gate():
     assert "MDE" in text
 
 
+def test_arm_r_trades_on_rho_not_on_raw_basis():
+    """Arm R の entry/exit が A2 の ρ で書かれていること(Y45 / Y55)。
+
+    ρ は κ(1−e^{−(f−s)}) − (r−r′) であって単純な相対 basis ではない。
+    §4.2 で列を分離しても §6.3 へ伝播し損ねる、という実際に起きたバグを固定する。
+    """
+    text = PROTOCOL_DOC.read_text(encoding="utf-8")
+    assert "rho > arb_bound_upper" in text, "Arm R の entry が ρ 基準で書かれていない"
+    # v1.5 まで使われていた未定義トークンが復活していないこと
+    assert "theoretical_relation_no_cost" not in text
+    # A2 の年率化係数が明記されていること
+    assert "1095" in text
+
+
+def test_protocol_records_the_long_spot_only_variant():
+    """A2 は2変種を検定しており、Arm R が対応するのはどちらかを明示すること(Y54)。"""
+    text = PROTOCOL_DOC.read_text(encoding="utf-8")
+    assert "long-spot-only" in text, "対応する A2 の変種が明示されていない"
+
+
+def test_audit_record_declares_the_harness_race():
+    """監査中に監査対象を書き換えた事実を記録していること。
+
+    これを書かないと「63件が誤りだった」という誤読を招く。
+    """
+    text = (PHASE8 / "carry_protocol_audit_v1.md").read_text(encoding="utf-8")
+    assert "偽陽性率 95%" in text or "95%" in text
+    assert "凍結する" in text or "commit hash" in text
+
+
 def test_protocol_does_not_amend_the_seal_without_human_approval():
     text = PROTOCOL_DOC.read_text(encoding="utf-8")
     assert "PHASE8_PROSPECTIVE_START" in text

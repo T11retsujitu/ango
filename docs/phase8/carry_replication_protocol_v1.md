@@ -1,6 +1,6 @@
-# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.6**(**draft・未凍結**)
+# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.7**(**draft・未凍結**)
 
-- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5** → **v1.6**)
+- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5** → **v1.6** → **v1.7**)
 - 対象: [Phase 8.0 選定メモ](phase8_selection_memo_v1.md) が第1位に選んだ **P8-C1**
 - **再現アンカー(唯一)**: **A2** *Fundamentals of Perpetual Futures* —
   He, Manela, Ross, von Wachter. arXiv `2212.06888`(v6 2024-08-21)。**`VERIFIED-FULL`**
@@ -100,6 +100,16 @@ v1 は (i) アンカー論文2本の**全文取得**と (ii) **5レンズの独�
 | **Y50** | medium | **momentum 交絡。** A2 は「過去リターンの momentum が futures–spot ギャップを R² > 50% で説明する」と報告している。**`ρ > ρ_u` で建てることは、過去リターンが高い局面で建てることに近い** | **§2 non-goal 1(方向を予測しない)の但し書きとして明記**し、**過去リターンで条件付けた場合の感応度**を secondary に加える。**delta-neutral でも entry タイミングは方向性を帯びうる** |
 | **Y51** | medium | **comovement の主張(通貨間で乖離が共変動する)が BTC 単独では検定不能** | §3.2 N1 に**「A2 の3主張のうち comovement は検定しない」と明記**する(黙って落とさない) |
 | **Y52** | low | **K8 の表現が不正確。** 「最大 3.5」は BTC の**手数料ゼロ**の数値(Table 6: 3.53)であって「資産横断の最大値」ではない | K8 を**逐語に近い形へ訂正** |
+
+### v1.7 追加(**反証パスを生き延びた3件のみ**)
+
+監査66件のうち**敵対的反証を生き延びたのは3件**である(§5A)。その3件を反映する。
+
+| id | 深刻度 | 欠陥 | v1.7 の対応 |
+|---|---|---|---|
+| **Y54** | **fatal** | **K8 が A2 の変種を取り違えていた。** Arm R は **long-spot-only 変種**に対応するのに、記録したのは **unrestricted 変種**の数値だった。正しくは BTC・高コスト tier で **Sharpe 1.62 / return 5.49% / 稼働率 14.66% / 平均保有 147.92h**。**年別稼働率は 22.28 / 32.15 / 0.02 / 2.85 / 22.18 %** — **減衰年にはほとんど建たない** | **K8 を訂正**(§13.4)。**layer 2(7ヶ月)での想定 trade 数が極端に少なくなることを意味する**。ただし §16.3 の `MIN_TRADES` を**この数値に合わせて下げてはならない**(K8 由来の閾値較正は §13.4 が禁じている)。**layer 2 を過去へ延ばすこともしない**(K12 の使用済み領域に戻り、唯一の非汚染窓を潰すため) |
+| **Y53** | medium | **§3.1 R2 と §18.1 が A2 の二部構成の主張を片方だけ取っていた。** A2 は「mean deviation は小さく統計的に非有意(= 良いベンチマーク)」かつ「mean **absolute** deviation は年率 60〜90% と大きい」と述べている | **§18.1 R2 を二部構成に書き直した。** ただし (i) は「棄却されないこと」なので **confirm 条件にしない**(検出力が低いほど自動的に通ってしまう)。confirm は `mean(|ρ|) >= MAD_MIN` で行う |
+| **Y55** | low | **Y45 の伝播漏れ。** §4.2 で `rho` を分離したのに、**§6.3 の Arm R 行は `basis_rel` のまま**で、未定義トークン `theoretical_relation_no_cost` を使っていた。**§18.1 の R2/R5 も `basis_rel` を帯と比較していた** | §6.3 を **`rho > ρ_u` / `rho <= 0`** へ、§18.1 を `ρ` 基準へ修正 |
 
 ---
 
@@ -310,7 +320,7 @@ PnL_gross = q(S_out − S_in) − q(P_out − P_in) + Funding
 
 | arm | entry | exit | 位置づけ |
 |---|---|---|---|
-| **Arm R(replication)** | `basis_rel > arb_bound_upper(c)` | `basis_rel <= theoretical_relation_no_cost` | **primary。A2 の random-maturity arbitrage** |
+| **Arm R(replication)** | **`rho > arb_bound_upper(c)`**(= `ρ_u`) | **`rho <= 0`** | **primary。A2 の random-maturity arbitrage(long-spot-only 変種)** |
 | Arm B(baseline) | 期間開始で1回 | 期間終了で1回 | always_on carry |
 | Arm E(extension) | 固定 horizon の非重複グリッド | entry + h | **記述的 robustness のみ。promotion 対象外**(Y2) |
 
@@ -618,7 +628,8 @@ parquet を書く。したがって:
 |---|---|---|---|
 | K1 | **dated futures** carry は取引所横断平均 ≈ 7% p.a.、spike 時 40% 超 | 2019-03〜2024-07 | `VERIFIED-FULL` |
 | K2 | perpetual の理論価格からの乖離は通貨市場より大きく、**縮小する** | 2020-01-08〜2024-03-11 | `VERIFIED-FULL` |
-| **K8** | **A2 の BTC random-maturity arbitrage は「リテール投資家に典型的な高い取引コストの下で Sharpe 1.8、手数料を払わない高頻度 market maker では最大 3.5」**(Table 6 の BTC 手数料ゼロは 3.53)。**maker 手数料**・**稼働期間スケーリング**での年率化・**稼働率 20.06%**・平均保有 134.94 時間。**Table 9 の分解では total 13.70% = price convergence 8.64% + funding 5.06%** で、**funding 成分は 2022年 −1.94% / 2023年 −0.94%**(Y52 で表現を訂正) | 2020-01-08〜2024-03-11 | `VERIFIED-FULL` |
+| **K8** | **⚠ Y54 で訂正。変種を取り違えていた。** A2 の **unrestricted 変種**(両方向)は Sharpe 1.8 / 稼働率 20.06% / 平均保有 134.94h。**しかし Arm R が対応するのは long-spot-only 変種**であり、その BTC・高コスト tier の数値は **Sharpe 1.62 / return 5.49% / 稼働率 14.66% / 平均保有 147.92h**。**年別の稼働率は 22.28 / 32.15 / 0.02 / 2.85 / 22.18 %**(平均保有 111.94 / 198.36 / 1.00 / 124.00 / 185.50 h)。**maker 手数料**・**稼働期間スケーリング**での年率化。分解では total 13.70% = price convergence 8.64% + funding 5.06%、**funding 成分は 2022年 −1.94% / 2023年 −0.94%** | 2020-01-08〜2024-03-11 | `VERIFIED-FULL` |
+| **K13** | **A2 は post-2022 について「ρ の7日移動平均はほとんどの期間 −50% 前後に留まり、符号は負の領域で安定するように見える」と述べている** | 2022〜2024-03 | `VERIFIED-FULL` |
 | K7 | (**未検証**)Hyperliquid 単一 venue carry 17.9%(2024)/ 3.6%(2025) | 2024–2026 | `UNVERIFIED` |
 | **K9** | **ango 自身の在庫測定**(Y34): Binance BTCUSDT perp funding、**3,012決済**、**平均 +0.69 bps / 8h**、**85.4% が正**、2024-03 は年率 **+37%**、**2026-02〜04 は3ヶ月連続で負転** | **2023-11 〜 2026-07** | **在庫**([33ヶ月追試](../findings/2026-08-16-5m-tendencies-33mo-retest.md)) |
 
@@ -838,8 +849,15 @@ break_even_cost_bps = (コスト前 PnL(funding 込・清算損失除く)) / Σ(
 
 ```text
 R1 confirmed : corr( f(s), 直前8時間の basis_rel 平均 ) >= RHO_MIN
-R2 confirmed : |basis_rel| が帯の外に出た区間の割合 >= OUT_OF_BAND_MIN
-R5 confirmed : basis_rel の年次分散が単調非増加、または回帰の時間トレンド係数 < 0
+               ※ A2 §4.2 自身が「funding はスプレッドを完全には追随しない」と述べているため
+                  RHO_MIN は緩い値にする(Y48)
+R2 confirmed : A2 の主張は二部構成であり、片方だけを取ってはならない(Y53)
+               (i) mean(rho) は 0 から大きく離れない(= 良いベンチマークである)
+               (ii) mean(|rho|) は大きい(A2 は年率 60〜90% と報告)
+               → 実装: mean(|rho|) >= MAD_MIN を confirm 条件にする。
+                  (i) は「棄却されないこと」なので confirm 条件にしない
+                  (検出力が低いほど自動的に通ってしまうため)
+R5 confirmed : |rho| の年次平均が非増加、または回帰の時間トレンド係数 < 0
 replication 失敗 : f(s) > 0 の割合が 0.5 を有意に下回る(符号が体系的に逆)
 ```
 
