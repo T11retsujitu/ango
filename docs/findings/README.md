@@ -42,6 +42,9 @@ Phase 3 Alpha Search Bakeoff は **validation survivor 0/30 × 3 arm** で完了
 
 ## 台帳
 
+- [2026-08-17 Phase 7 Tier 0 incremental information test — confirmation(最終判定)](2026-08-17-phase7-tier0-confirmation-v1.md)
+  — 昇格5件中 **GO 2件**。dev 最大効果(+5.45e-03・安定性6条件全通過)は
+  **符号反転して脱落**。GO 2件はどちらも Y2/Y3 で方向を含まず、bootstrap CI は 0 を含む。
 - [2026-08-17 Phase 7 Tier 0 incremental information test — dev](2026-08-17-phase7-tier0-screening-v1.md)
   — 27 test 中 16 が Holm 有意。ただし有意性は Y2/Y3(値動きの大きさ)に集中し、
   方向 Y1 は 9/9 非有意。confirmation へ進むのは 5 test。**GO はまだ0**。

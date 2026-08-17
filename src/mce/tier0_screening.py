@@ -248,12 +248,18 @@ def _add_months(moment: datetime, months: int) -> datetime:
     return moment.replace(year=year, month=month)
 
 
-def make_folds(start: datetime, end: datetime) -> list[Fold]:
-    """expanding・初期学習 6ヶ月・テストブロック 3ヶ月(§9.2)。"""
-    init = P.FOLD["initial_train_months"]
+def make_folds(
+    start: datetime, end: datetime, test_from: datetime | None = None
+) -> list[Fold]:
+    """expanding・初期学習 6ヶ月・テストブロック 3ヶ月(§9.2)。
+
+    `test_from` を渡すとテストブロックをそこから始める。confirmation 用で、
+    「2025Q1〜Q4 の4ブロック・学習は **dev 開始からの** expanding」(§9.2)を作る。
+    dev では None なので `start + 6ヶ月` から始まり、従来と同じ fold になる。
+    """
     block = P.FOLD["test_block_months"]
     folds: list[Fold] = []
-    test_start = _add_months(start, init)
+    test_start = test_from or _add_months(start, P.FOLD["initial_train_months"])
     while test_start < end:
         test_end = min(_add_months(test_start, block), end)
         folds.append(Fold(start, test_start, test_start, test_end))
@@ -406,6 +412,7 @@ def prepare_cell(
     target: str,
     start: datetime,
     end: datetime,
+    test_from: datetime | None = None,
 ) -> CellData:
     a_cols = list(P.A_COLUMNS)
     x_cols = list(info_set.model_columns)
@@ -430,7 +437,7 @@ def prepare_cell(
             valid[mask] = False
             excluded_months.append(str(month))
 
-    folds = make_folds(start, end)
+    folds = make_folds(start, end, test_from)
     purge = horizon + 1 + P.FOLD["embargo_bars"]
     tail = horizon + 1  # block 末尾 purge(§9.3)
     fold_train, fold_test = [], []
@@ -1172,9 +1179,18 @@ def run_cell(
     placebo_k: int | None = None,
     workers: int = 1,
 ) -> dict:
-    start = info_set.dev_start if stage == "dev" else P.CONFIRMATION_START
+    # 学習は両段階とも dev 開始からの expanding。confirmation はテストブロックだけを
+    # 2025Q1〜Q4 に置く(§9.2)。窓が変わったのか手順が変わったのか分からない交絡を作らない。
+    start = info_set.dev_start
     end = P.DEV_END if stage == "dev" else P.CONFIRMATION_END
-    cell = prepare_cell(design, info_set, horizon, target, start, end)
+    test_from = None if stage == "dev" else P.CONFIRMATION_START
+    # placebo のシフト集合はその段階の窓の長さで決まる(§12.3。conf は 365日 -> |S|=306)
+    window_days = (
+        (end - start).days
+        if stage == "dev"
+        else (P.CONFIRMATION_END - P.CONFIRMATION_START).days
+    )
+    cell = prepare_cell(design, info_set, horizon, target, start, end, test_from)
     caches = prepare_folds(cell)
     result = evaluate_fast(cell, caches)
     entry: dict = {
@@ -1182,6 +1198,12 @@ def run_cell(
         "horizon_bars": horizon,
         "target": target,
         "window": [start.isoformat(), end.isoformat()],
+        "test_window": [
+            (
+                test_from or _add_months(start, P.FOLD["initial_train_months"])
+            ).isoformat(),
+            end.isoformat(),
+        ],
         "folds": len(cell.fold_train),
         "excluded_months": list(cell.excluded_months),
     }
@@ -1204,7 +1226,6 @@ def run_cell(
         entry |= {"status": "insufficient_sample", "p": 1.0}
         return entry
 
-    window_days = (end - start).days
     shifts = placebo_shifts(window_days, placebo_k or P.PLACEBO["k_stage1"])
     projections = fold_projections(cell)
     observed = result["dr2"]
@@ -1298,6 +1319,35 @@ def run_cell(
     if target == "Y1":
         entry["cost"] = _cost_translation(result)
     return entry
+
+
+def _confirmation_disposition(entry: dict, dev: dict) -> str:
+    """§17 の最終判定。confirmation の結果を dev と突き合わせる。
+
+    §17-4: `dR2` の符号が dev と一致し、かつ `dR2_conf >= 0.5 * dR2_dev`。
+    p は報告するが、昇格判定には使わない(§12.3 末尾)。
+    """
+    if entry.get("status") == "not_promoted_from_dev":
+        return "no_go_not_promoted_from_dev"
+    if entry.get("status") != "tested":
+        return "no_go_insufficient_sample"
+    dev_dr2, conf_dr2 = dev.get("dr2"), entry.get("dr2")
+    if dev_dr2 is None or conf_dr2 is None:
+        return "no_go_insufficient_sample"
+    if P.CONFIRMATION_RULE["sign_must_match_dev"] and (conf_dr2 > 0) != (dev_dr2 > 0):
+        return "no_go_sign_flipped_vs_dev"
+    if conf_dr2 < P.CONFIRMATION_RULE["magnitude_min_fraction_of_dev"] * dev_dr2:
+        return "conditional_hold_magnitude_below_half_of_dev"
+    # dev 側の集合固有ゲート(§17-5 sham / §17-6 遅延)は confirmation でも維持を求める
+    if entry["set"] in ("T0-B1", "T0-B2") and not (
+        entry.get("publication_delay") or {}
+    ).get("gate_passed"):
+        return "no_go_failed_set_specific_gate"
+    if entry["set"] == "T0-A" and not (entry.get("sham_s0") or {}).get(
+        "observed_beats_sham"
+    ):
+        return "no_go_failed_set_specific_gate"
+    return "go"
 
 
 def load_checkpoint(path: Path) -> dict:
@@ -1434,7 +1484,36 @@ def main() -> None:
     done = load_checkpoint(checkpoint) if args.resume else {}
     if not args.resume:
         checkpoint.unlink(missing_ok=True)
+    # §9.1: confirmation は「昇格候補のみ」1回だけ。ただし行は消さず、
+    # 走らせなかった test も理由付きで artifact に残す(§18-4「手で表から行を消せない形」)。
+    dev_cells: dict = {}
+    if args.stage == "confirmation":
+        dev_report = json.loads(dev_artifact.read_text(encoding="utf-8"))
+        dev_cells = {
+            (c["set"], c["horizon_bars"], c["target"]): c for c in dev_report["cells"]
+        }
     for set_id, horizon, target in family:
+        key = (set_id, horizon, target)
+        if args.stage == "confirmation":
+            dev_entry = dev_cells.get(key, {})
+            if dev_entry.get("disposition") != "dev_pass_pending_confirmation":
+                entries.append(
+                    {
+                        "set": set_id,
+                        "horizon_bars": horizon,
+                        "target": target,
+                        "status": "not_promoted_from_dev",
+                        "dev_disposition": dev_entry.get("disposition"),
+                        "dev_dr2": dev_entry.get("dr2"),
+                        "p": 1.0,
+                    }
+                )
+                print(
+                    f"{set_id:6s} h={horizon:2d} {target}  (dev で非昇格: "
+                    f"{dev_entry.get('disposition')})",
+                    flush=True,
+                )
+                continue
         cached = done.get((set_id, horizon, target))
         if cached is not None:
             entries.append(cached)
@@ -1471,7 +1550,14 @@ def main() -> None:
     for entry in entries:  # 安定性と判定は family 補正後にしか確定しない(§17-2)
         if entry.get("status") == "tested":
             entry["stability"] = _stability_flags(entry)
-        entry["disposition"] = _dev_disposition(entry) if args.stage == "dev" else None
+        if args.stage == "dev":
+            entry["disposition"] = _dev_disposition(entry)
+        else:
+            dev_entry = dev_cells.get(
+                (entry["set"], entry["horizon_bars"], entry["target"]), {}
+            )
+            entry["dev_dr2"] = dev_entry.get("dr2")
+            entry["disposition"] = _confirmation_disposition(entry, dev_entry)
 
     report = {
         "report": f"phase7_tier0_screening_{args.stage}_v1",

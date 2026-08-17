@@ -118,3 +118,4 @@ Phase 3 で確認された **LLM の研究資産**(DSL v2 でそのまま再利�
 | J4 | target 設計の見直し(方向符号以外) | active | Phase 7 protocol §5 に統合済み |
 | J5 | 執行モデルの horizon 整合性検証(cost と signal horizon の不整合) | hold | Phase 3 の代替仮説の1つ。**再開条件**: Phase 7 で有望 horizon が特定されたとき |
 | J6 | regime 差(research 窓のブル偏り)への対処 | hold | walk-forward 化や split 再設計は **freeze v2** を要する。安易に変更しない |
+| J7 | `log(0)` 汚染に強い Z20d(v2) | hold | **実測**: 2025年に `trade_count == 0` かつ `volume == 0` のバーが5本あり(2025-01-29 ×2 / 2025-08-29 ×3)、`log(0) = -inf` が20日窓に入って **後続120日の `z20d_log_trade_count` を NaN 化**。§7 の月次被覆ゲートが4暦月をブロック除外し、T0-A の confirmation OOS が 365日 → 245日 に減った。dev でも同じ機構で7ヶ月除外されている。**v1 では直さない**(凍結変換を dev の結果を見た後に変えると、dev と confirmation で手順が変わり §9.2 の交絡回避が崩れる)。v2 で `_positive_only` を `trade_count` / `volume` にも適用し、`log` の前に非正値を null 化する |

@@ -268,3 +268,86 @@ def test_resume_discards_a_torn_final_line():
 
 def test_load_checkpoint_without_a_file_is_empty():
     assert S.load_checkpoint(Path("/nonexistent/cp.jsonl")) == {}
+
+
+def test_confirmation_folds_are_four_quarters_trained_from_the_dev_start():
+    """事前登録 §9.2: confirmation は 2025Q1〜Q4 の4ブロック・学習は dev 開始から。"""
+    for info_set in P.INFORMATION_SETS:
+        folds = S.make_folds(
+            info_set.dev_start, P.CONFIRMATION_END, P.CONFIRMATION_START
+        )
+        assert len(folds) == 4, info_set.id
+        assert folds[0].test_start == P.CONFIRMATION_START
+        assert folds[-1].test_end == P.CONFIRMATION_END
+        # 学習は confirmation 窓の内側ではなく dev 開始から伸びる
+        for fold in folds:
+            assert fold.train_start == info_set.dev_start
+        assert {f.test_start.year for f in folds} == {2025}
+
+
+def test_dev_fold_geometry_is_unchanged_by_the_confirmation_support():
+    """dev の artifact は確定済みなので、fold 構成が変わってはならない。"""
+    folds = S.make_folds(
+        datetime(2021, 1, 1, tzinfo=UTC), datetime(2025, 1, 1, tzinfo=UTC)
+    )
+    assert len(folds) == 14
+    assert folds[0].test_start == datetime(2021, 7, 1, tzinfo=UTC)
+    assert len(S.make_folds(P.DEV_START_T0B2, P.DEV_END)) == 6
+
+
+def test_confirmation_placebo_shift_set_matches_the_frozen_resolution():
+    """§12.3 の表: conf の |S| = 306、最小 p = 3.26e-3。"""
+    days = (P.CONFIRMATION_END - P.CONFIRMATION_START).days
+    assert P.placebo_shift_count(days) == 306
+    assert len(S.placebo_shifts(days, None)) == 306
+    assert abs(1 / (1 + 306) - 3.26e-3) < 1e-5
+
+
+def _conf_entry(**over):
+    base = {
+        "set": "T0-B1",
+        "status": "tested",
+        "dr2": 2.0e-3,
+        "publication_delay": {"gate_passed": True},
+        "sham_s0": {"observed_beats_sham": True},
+    }
+    return base | over
+
+
+def test_confirmation_requires_sign_match_and_half_the_dev_magnitude():
+    dev = {"dr2": 3.0e-3}
+    assert S._confirmation_disposition(_conf_entry(dr2=2.0e-3), dev) == "go"
+    # 符号反転は即 NO-GO
+    assert (
+        S._confirmation_disposition(_conf_entry(dr2=-1.0e-3), dev)
+        == "no_go_sign_flipped_vs_dev"
+    )
+    # dev の半分未満は conditional hold(§17 CONDITIONAL HOLD)
+    assert (
+        S._confirmation_disposition(_conf_entry(dr2=1.0e-3), dev)
+        == "conditional_hold_magnitude_below_half_of_dev"
+    )
+    # ちょうど半分は通る
+    assert S._confirmation_disposition(_conf_entry(dr2=1.5e-3), dev) == "go"
+
+
+def test_confirmation_keeps_the_set_specific_gates():
+    dev = {"dr2": 3.0e-3}
+    assert (
+        S._confirmation_disposition(
+            _conf_entry(publication_delay={"gate_passed": False}), dev
+        )
+        == "no_go_failed_set_specific_gate"
+    )
+    assert (
+        S._confirmation_disposition(
+            _conf_entry(set="T0-A", sham_s0={"observed_beats_sham": False}), dev
+        )
+        == "no_go_failed_set_specific_gate"
+    )
+
+
+def test_cells_not_promoted_in_dev_are_reported_not_dropped():
+    """§18-4: 走らせなかった test も行として残り、理由が付く。"""
+    entry = {"set": "T0-C", "status": "not_promoted_from_dev"}
+    assert S._confirmation_disposition(entry, {}) == "no_go_not_promoted_from_dev"
