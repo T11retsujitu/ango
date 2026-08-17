@@ -1102,6 +1102,157 @@ L1/L2へ進む。
 
 ---
 
+## Phase 7 実行結果と終了記録(2026-08-17 確定。上記の設計記述は変更しない)
+
+**Phase 7 Tier 0 を economically negative result として閉じた。**
+総括: [docs/findings/2026-08-17-phase7-tier0-closeout-v1.md](docs/findings/2026-08-17-phase7-tier0-closeout-v1.md)
+
+### Result
+
+| 段階 | 観測 |
+|---|---|
+| dev | 27 test 中 **16 が Holm 有意** |
+| dev / 方向 Y1 | **9 test 中 0 が有意**(ΔR² は 8/9 で負) |
+| dev / 昇格 | 5 test(全て Y2/Y3) |
+| confirmation | 昇格5件中 **GO 2件**(T0-A h=12 Y2 / T0-B1 h=12 Y3) |
+| GO 2件の bootstrap CI | **どちらも 0 を含む** |
+| dev 最大効果(h=48 Y2/Y3) | confirmation で **符号反転** |
+| Y1 の十分位スプレッド(上限指標) | 全 cell で往復 10bps 未満 |
+| 独立再現 | 別環境・別ダウンロードで**全桁一致** |
+| **Final OOS** | **未開封のまま終了** |
+| Tier 1(aggTrades / bookDepth) | **未検証** |
+
+### Interpretation
+
+- Tier 0 の集約情報には **弱い incremental information が存在した**(検出された)。
+- ただし **方向情報は確認できなかった**。
+- **statistical GO ≠ economic usability**。GO 2件は Y2/Y3 で方向を含まず、
+  現行の執行設計(signal → `open[t+1]`、単一銘柄方向ポジション)へ接続できない。
+- **GO 2件は棄却ではなく保留**。昇格権を現時点では行使しないという決定である。
+- **Tier 1 へ進まない理由は研究 ROI 上の優先順位変更**であり、
+  microstructure 全体・aggTrades・板の否定ではない(未検証)。
+- **Final OOS を開けない**: 開封しても意思決定が変わらず、封印の価値は1回しか使えない。
+
+### 凍結・保留
+
+- Phase 7 Tier 0 の 27 test・artifact・事前登録は**凍結**。
+  seed / 閾値 / horizon の入れ替えによる救済・再集計を行わない。
+- Tier 1 / Tier 2 仮説は [research backlog](docs/research_backlog.md) に
+  `hold` として残す(**削除しない**)。
+- 再開条件は closeout §4 に4項目として明記した。
+
+---
+
+# Phase 8 — Literature-Driven Replication(2026-08-17 追加)
+
+> Phase 3(探索軸を3通り変えて survivor 0)と Phase 7(情報軸を広げて方向 null)は、
+> **独立に変えた2つの軸で同じ壁**に当たった。両者で固定されていたのは
+> **問題設定**である。次に変えるのは3つ目の軸、すなわち問題設定そのものである。
+
+## 8.0 Research Question
+
+> **限られた実験回数・計算資源・データ取得能力の中で、ango が次にどの先行研究を
+> 再実装・独立検証すべきか。**
+
+論文ランキングを作ることではない。**再現価値**(機序の明確さ・データ入手性・
+コストと約定の現実性・独立 confirmation の確保・実行可能性・エビデンス品質)で選ぶ。
+**報告収益率の高さには配点しない。**
+
+- 離れる対象: 「5分ごとに BTC の短期方向を当て、taker で売買する」問題設定
+- **捨てないもの**: 5分足データ(観測・執行シミュレーション用として維持)、Judge、
+  data contract、split 規約、manifest、Phase 7 の全 artifact と negative result
+
+### 8.0 成果物(2026-08-17)
+
+| 文書 | 内容 |
+|---|---|
+| [literature_review_2026-08-17](docs/phase8/literature_review_2026-08-17.md) | 検索方法・検索語・到達可否・採否理由。**verification status(VERIFIED-FULL / META / PARTIAL / UNVERIFIED)を全文献に付与** |
+| [replication_candidates_v1](docs/phase8/replication_candidates_v1.md) | 9候補の100点満点採点(正は [JSON](docs/phase8/replication_candidates_v1.json)) |
+| [phase8_selection_memo_v1](docs/phase8/phase8_selection_memo_v1.md) | 上位5件・第1位の選定理由・replication/extension 境界・失敗条件 |
+
+### 8.0 選定結果
+
+| 順位 | 候補 | 合計 |
+|---:|---|---:|
+| **1** | **BTC spot–perp funding carry / basis**(アンカー = *Fundamentals of Perpetual Futures*) | **81** |
+| 2 | hourly BTC ML + cost-aware execution filter | 64 |
+| 3 | crypto factor zoo | 57 |
+| 4 | funding timing と DEX の no-arbitrage 境界 | 54 |
+| 5 | 制約付き LLM エージェント + point-in-time factor DSL | 52 |
+
+### 8.0 で確立した新しい規律:external knowledge contamination
+
+**論文の結果を読み、その結果を理由に仮説を選んだ時点で、論文が使った期間は
+ango が価格データを直接見ていなくても完全な未知 OOS ではない。**
+
+```text
+layer 1  literature_in_sample      原論文のサンプル。再現性確認のみ。GO 判定に使わない
+layer 2  contaminated_confirmation 原論文外だが、調査で要約統計を知ってしまった期間。
+                                    機序の符号・形の確認に使う。効果量の発見には使わない
+layer 3  prospective_final          事前登録 freeze 日より後に初めて生成されるバー。
+                                    GO / NO-GO をここで判定する
+```
+
+- 調査中に取得した外部知識は **K1〜K7 の台帳**として凍結し、事前登録へ転記する。
+- **layer 3 は既存 `final_oos`(2026-01-01〜)の内側にあるため、
+  その採用は Final OOS firewall の改訂(freeze v2)に当たり、人間の明示的承認を要する。**
+- **本 Phase では `mce.backtest.splits` を変更していない。**
+
+## 8.1 — BTC spot–perp funding carry:再現プロトコル(**未凍結・v1.2**)
+
+- プロトコル: [docs/phase8/carry_replication_protocol_v1.md](docs/phase8/carry_replication_protocol_v1.md)
+- 凍結前 独立監査: [docs/phase8/carry_protocol_audit_v1.md](docs/phase8/carry_protocol_audit_v1.md)
+
+### 凍結前に訂正した重大な誤り(**一度も実行していない**)
+
+v1 は、**アンカー論文2本の全文取得**と **5レンズの独立敵対監査**により、
+凍結前に fatal 4件を含む多数の欠陥が判明し v1.2 へ改訂された。
+
+| 経路 | 主な発見 |
+|---|---|
+| 論文全文 | **A1 *Crypto Carry* は dated(固定満期)futures の論文で perpetual ではない** → アンカーから降格 |
+| 論文全文 | **A1 のサンプルは 2019-03〜2024-07**(bis.org 配信 PDF の版は "October 1, 2025"。cover date からの推定は誤り)→ layer 1/2 境界を 2023-11-19 → **2024-08-01** へ |
+| 論文全文 | **A2 の戦略は random-maturity arbitrage**(閾値 entry / 閾値 exit、保有期間は内生)。固定 horizon ではない |
+| 監査(leakage) | **固定 horizon × 連続グリッドは telescope して always_on へ縮退する**(戦略としての内容が無い) |
+| 監査(statistics) | **帰無仮説・検定統計量・p の作り方が定義されていなかった**のに Holm 補正を要求していた |
+| 監査(leakage) | **封印は正規化時に物理的に効く**ため、layer 3 のデータは生成すらされない。既存 cutoff の可変化は Phase 7 の再現性を壊す |
+| 実測 | **Binance `calc_time` は funding 決済時刻**(公式 REST `fundingTime` と全行一致)→ fatal blocker H4 解決 |
+
+> **教訓(Phase 8 の恒久ルールへ)**: **書誌ページと abstract だけでは、
+> 論文が何の商品を扱っているかすら分からない。** 再現アンカーに採用する論文は
+> **本文取得(`VERIFIED-FULL`)を必須**とする。working paper の cover date から
+> サンプル終端を推定してはならない。
+
+```text
+Q1 (replication) : 機序は ango のデータにも存在するか      → 符号と形で判定
+Q2 (extension)   : 個人スケールのコスト後に経済性が残るか  → 経済指標で判定
+```
+
+**Q1 成立 かつ Q2 不成立**は、この設計における**正常な結論**である
+(Phase 7 の「statistically positive, economically negative」と同型)。
+
+主要な設計点:
+
+- **方向を予測しない**(delta-neutral)。primary endpoint は方向正解率ではなく
+  **拘束資本あたりの年率換算 純リターン**(4約定コスト・funding 実受払・資金拘束・清算を含む)
+- **両脚とも `open[t+1]` 約定**。片脚だけ close 約定することを禁じる
+- **決定時点で確定していない funding を使わない**(次回 funding は forward-looking)
+- 候補 horizon 6個を事前登録し、**horizon 選択自体を探索として Holm 補正**する
+- baseline に **always_on_carry** と **exposure 一致 random** を必須で置く
+  (Phase 1A J3「net 改善が取引削減の機械的効果だった」の再発防止)
+- **negative result として閉じる条件 F1〜F8 を事前に凍結する**
+
+**凍結できない理由(freeze blocker)**: Binance `fundingRate.calc_time` の semantics(fatal)、
+layer 3 と firewall 改訂の可否(fatal)、A1 のサンプル期間、spot leg の執行前提。
+
+## 8.2 以降(未設計)
+
+Phase 8.1 が GO の場合にのみ設計する。GO の意味は
+「機序を執行の精緻化(collateral 制御・rebalancing)へ昇格させる」であって
+**実運用の許可ではない**。
+
+---
+
 # 7. Proposed Repository Structure
 
 ```text
