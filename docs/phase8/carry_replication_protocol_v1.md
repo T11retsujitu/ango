@@ -1,6 +1,6 @@
-# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.5**(**draft・未凍結**)
+# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.6**(**draft・未凍結**)
 
-- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5**)
+- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5** → **v1.6**)
 - 対象: [Phase 8.0 選定メモ](phase8_selection_memo_v1.md) が第1位に選んだ **P8-C1**
 - **再現アンカー(唯一)**: **A2** *Fundamentals of Perpetual Futures* —
   He, Manela, Ross, von Wachter. arXiv `2212.06888`(v6 2024-08-21)。**`VERIFIED-FULL`**
@@ -88,6 +88,19 @@ v1 は (i) アンカー論文2本の**全文取得**と (ii) **5レンズの独�
 | **Y43** | medium | §7.3 の「20bps(名目に対して)」がどの名目か未指定。exit 側の項は `S_out/S_in` に比例するので**往復コスト自体が確率変数** | §7.3 に「**entry 名目に対する比率、`S_out ≈ S_in` を仮定**」と明記し、**実現往復コストを artifact に記録**する |
 | **Y44** | low | §20 が B0..B4 に同一指標を要求しているが、**資本構造が違う**(B1 に perp leg は無く、B0 に拘束資本は無い) | **§12 に baseline ごとの分母を明記**: B1 は `q·S`(証拠金なし)、B0 は同一の `C`(「何もしない」が 0 または `r_f` になるように) |
 
+### v1.6 追加(`replication_fidelity` レンズ。**論文の主張と設計が本当に対応しているか**)
+
+| id | 深刻度 | v1.5 に残っていた欠陥 | v1.6 の対応 |
+|---|---|---|---|
+| **Y45** | high | **`basis_rel` を「A2 の ρ」と等号で結んでいたが誤り。** A2 の ρ は **`κ(1−e^{−(f−s)}) − (r−r′)`、`κ=1095` で年率化**され、**stablecoin 借入金利 `r` を含む**。単純な相対 basis ではない | **§4.2 に `rho` を別列として正しく定義**。`basis_rel` は記述統計用に残すが **entry/exit 判定には使わない** |
+| **Y46** | **fatal** | **A2 は2つの変種を検定している**。Table 7「Unrestricted」(両方向)と Table 8「Long-spot-only」。**Arm R は Table 8 の変種**だが、K8 に記録した Sharpe 1.8 は**別の表の数値**である | **§13.4 K8 を訂正**し、**Arm R がどちらの変種に対応するかを明示**する。比較相手を取り違えない |
+| **Y47** | high | **H11 を「未解決・fatal 相当」としていたが、A2 は Table 3 の caption に境界式を逐語で書いている** | **H11 解決**。`ρ_l = κ log(1−C)` / `ρ_u = κ log(1+C)` を §6.3 に明記 |
+| **Y48** | high | §3.1 R1 の帰属は正確だが、**A2 §4.2 は「funding はスプレッドを完全には追随しない」とも述べている**。§18.1 の R1 ゲートが厳しすぎると、A2 自身が認めている不完全さで replication 失敗になる | §18.1 の `RHO_MIN` は **A2 が認める不完全さを織り込んだ緩い値**にし、その根拠を併記する |
+| **Y49** | high | **layer 1 に下限が無い。** 意図は 2020-01 だが、`splits.assign` は `RESEARCH_START`(2023-11-19)より前を `None` にする | **layer 1 = `2020-01-01 <= ts < 2025-06-01` と明示**し、Y22 の loader 拡張とセットで扱う |
+| **Y50** | medium | **momentum 交絡。** A2 は「過去リターンの momentum が futures–spot ギャップを R² > 50% で説明する」と報告している。**`ρ > ρ_u` で建てることは、過去リターンが高い局面で建てることに近い** | **§2 non-goal 1(方向を予測しない)の但し書きとして明記**し、**過去リターンで条件付けた場合の感応度**を secondary に加える。**delta-neutral でも entry タイミングは方向性を帯びうる** |
+| **Y51** | medium | **comovement の主張(通貨間で乖離が共変動する)が BTC 単独では検定不能** | §3.2 N1 に**「A2 の3主張のうち comovement は検定しない」と明記**する(黙って落とさない) |
+| **Y52** | low | **K8 の表現が不正確。** 「最大 3.5」は BTC の**手数料ゼロ**の数値(Table 6: 3.53)であって「資産横断の最大値」ではない | K8 を**逐語に近い形へ訂正** |
+
 ---
 
 ## 1. Primary Research Question
@@ -133,6 +146,11 @@ Q2 (extension)   : 個人スケールのコスト後に経済性が残るか  �
 ## 2. Non-goals
 
 1. **方向予測をしない。** delta-neutral を維持する。
+   **ただし(Y50)**: A2 は「過去リターンの momentum が futures–spot ギャップを
+   **R² > 50%** で説明する」と報告している。したがって **`ρ > ρ_u` で建てる規則は、
+   過去リターンが高い局面で建てることに近い**。**保有中は delta-neutral でも、
+   entry タイミングは方向性を帯びうる。** これを隠さず、過去リターンで条件付けた
+   感応度を secondary として報告する(§17.2)。
 2. 新しい戦略を発明しない。A2 の機序の再現が出発点。
 3. execution optimizer / RL / maker queue simulator を実装しない。**maker fill を仮定しない。**
 4. cross-venue を扱わない(Binance 単独)。
@@ -209,7 +227,8 @@ A1 は **dated futures** の carry を 2019-03 〜 2024-07 で分析し、
 |---|---|---|
 | `spot_close` / `perp_close` | 各 5m バーの close | `close_of_bar` |
 | `basis_abs` | `perp_close − spot_close` | `close_of_bar` |
-| `basis_rel`(= A2 の ρ) | `(perp_close − spot_close) / spot_close` | `close_of_bar` |
+| `basis_rel` | `(perp_close − spot_close) / spot_close`。**A2 の ρ ではない**(下記 Y45) | `close_of_bar` |
+| **`rho`(= A2 の ρ)** | **`ρ = κ·(1 − e^{−(f−s)}) − (r − r′) ≈ κ·(f − s) − r`、`κ = 1095`**(= 年間の8時間区間数)。`f`,`s` は log 価格、`r` は **USDT/USDC/DAI の借入金利の平均**(spot ショート時は supply rate `r′`) | `close_of_bar` |
 | `funding_last_settled` | **決定時点以前に決済が確定した直近 funding**(§5.2) | `start_of_bar` |
 | `funding_interval_hours_last` | 同上の行の間隔(**8 とハードコードしない**。X5) | `start_of_bar` |
 | `basis_rel_ma_w` | `basis_rel` の**左閉窓**移動平均(現在バーを含まない)。窓 `w` は §14.2 で凍結。**窓完全性を満たさない行は null**(data_contract §5) | **`start_of_bar`**(Y20) |
@@ -295,8 +314,15 @@ PnL_gross = q(S_out − S_in) − q(P_out − P_in) + Funding
 | Arm B(baseline) | 期間開始で1回 | 期間終了で1回 | always_on carry |
 | Arm E(extension) | 固定 horizon の非重複グリッド | entry + h | **記述的 robustness のみ。promotion 対象外**(Y2) |
 
-- `arb_bound_upper(c)` はコスト階層 `c` の関数として **A2 の導出に従って実装**する。
-  **実装式は凍結前に `phase8_prereg.py` へ書き下し、A2 本文の該当式を引用する**(→ H11)。
+**A2 の境界式(H11 解決。Table 3 の caption に逐語で記載されている)**:
+
+```text
+ρ_l = κ · log(1 − C)
+ρ_u = κ · log(1 + C)        C = 往復コスト(spot + futures の合計)、κ = 1095
+```
+
+entry は `ρ > ρ_u`(または `ρ < ρ_l`)、exit は **`ρ` が 0 へ戻ったとき**
+(= コスト無しの理論関係)。**exit は境界ではなく 0 である**点に注意する。
 - **コスト階層 `c` の集合は事前登録で凍結し、後から増やさない**(§15)。
 
 ---
@@ -536,7 +562,7 @@ B2/B3/B4 は §11.1 の `C`。**同じ分母を機械的に当てはめない。
 ### 13.1 3層(**X2 / X3 で境界を修正**)
 
 ```text
-layer 1  literature_in_sample      ts <  2025-06-01
+layer 1  literature_in_sample      2020-01-01 <= ts < 2025-06-01      ← 下限を Y49 で明示
          = max(A2 2024-03-11, A1 2024-07, K11 2023-06-23, K12 2025-05-31) を月境界へ切り上げ
 layer 2  contaminated_confirmation 2025-06-01 <= ts < 2026-01-01   (7 ヶ月のみ)
 layer 3  prospective_final         ts >= PHASE8_PROSPECTIVE_START   ← H5
@@ -592,7 +618,7 @@ parquet を書く。したがって:
 |---|---|---|---|
 | K1 | **dated futures** carry は取引所横断平均 ≈ 7% p.a.、spike 時 40% 超 | 2019-03〜2024-07 | `VERIFIED-FULL` |
 | K2 | perpetual の理論価格からの乖離は通貨市場より大きく、**縮小する** | 2020-01-08〜2024-03-11 | `VERIFIED-FULL` |
-| **K8** | **A2 の BTC random-maturity arbitrage は Sharpe 1.8(リテール高コスト)/ 最大 3.5** | 2020-01-08〜2024-03-11 | `VERIFIED-FULL` |
+| **K8** | **A2 の BTC random-maturity arbitrage は「リテール投資家に典型的な高い取引コストの下で Sharpe 1.8、手数料を払わない高頻度 market maker では最大 3.5」**(Table 6 の BTC 手数料ゼロは 3.53)。**maker 手数料**・**稼働期間スケーリング**での年率化・**稼働率 20.06%**・平均保有 134.94 時間。**Table 9 の分解では total 13.70% = price convergence 8.64% + funding 5.06%** で、**funding 成分は 2022年 −1.94% / 2023年 −0.94%**(Y52 で表現を訂正) | 2020-01-08〜2024-03-11 | `VERIFIED-FULL` |
 | K7 | (**未検証**)Hyperliquid 単一 venue carry 17.9%(2024)/ 3.6%(2025) | 2024–2026 | `UNVERIFIED` |
 | **K9** | **ango 自身の在庫測定**(Y34): Binance BTCUSDT perp funding、**3,012決済**、**平均 +0.69 bps / 8h**、**85.4% が正**、2024-03 は年率 **+37%**、**2026-02〜04 は3ヶ月連続で負転** | **2023-11 〜 2026-07** | **在庫**([33ヶ月追試](../findings/2026-08-16-5m-tendencies-33mo-retest.md)) |
 
@@ -993,14 +1019,15 @@ external_knowledge : §13.4 の台帳を埋め込む
 | ~~H2~~ | A1 のサンプル期間 | **✅ 解決**(2019-03〜2024-07。dated futures。X1/X2) |
 | **H5** | layer 3 を設けるか / firewall 改訂(freeze v2)の可否 | **未解決・fatal** |
 | **H6** | spot leg の執行前提・fee 表・margin tier・`N0`・`L` | **未解決・高** |
-| **H11** | A2 の `arb_bound(c)` の実装式と、stablecoin 借入金利の代理 | **未解決・高**(新規) |
+| ~~H11~~ | A2 の `arb_bound(c)` の実装式 | **✅ 解決**(Table 3 caption: `ρ_l = κ log(1−C)` / `ρ_u = κ log(1+C)`。Y47) |
+| **H12** | **ρ の金利項 `r`(A2 は Aave の USDT/USDC/DAI 借入金利平均)の代理をどう置くか** | **未解決・高**(新規。Aave データは ango 未保有) |
 | H10 | 公式 REST `markPrice` を primary にするか | 未解決・中(**推奨: する**) |
 | H9 | BTC 単独か ETH を足すか | 未解決・中 |
 | H7 | ToS 上の利用可否 | 継続して要確認 |
 | H8 | *Alpha Illusion* P1–P6 を報告規準として採用するか | 未解決・低(**推奨: 採用**) |
 
-**H5 は依然として fatal である。** H11 が新たに fatal 相当に近い
-(A2 の境界式を実装できなければ Arm R が定義できない)。
+**H5 は依然として fatal である。** H11 は解決したが、**H12(金利項 `r` の代理)が新たに高**である
+(`ρ` は `r` を含むので、代理を決めないと Arm R の閾値が定義できない)。
 
 ---
 
