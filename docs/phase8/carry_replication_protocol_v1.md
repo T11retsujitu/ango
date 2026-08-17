@@ -1,6 +1,6 @@
-# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.7**(**draft・未凍結**)
+# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.8**(**FROZEN**)
 
-- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5** → **v1.6** → **v1.7**)
+- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5** → **v1.6** → **v1.7** → **v1.8**)
 - 対象: [Phase 8.0 選定メモ](phase8_selection_memo_v1.md) が第1位に選んだ **P8-C1**
 - **再現アンカー(唯一)**: **A2** *Fundamentals of Perpetual Futures* —
   He, Manela, Ross, von Wachter. arXiv `2212.06888`(v6 2024-08-21)。**`VERIFIED-FULL`**
@@ -238,7 +238,8 @@ A1 は **dated futures** の carry を 2019-03 〜 2024-07 で分析し、
 | `spot_close` / `perp_close` | 各 5m バーの close | `close_of_bar` |
 | `basis_abs` | `perp_close − spot_close` | `close_of_bar` |
 | `basis_rel` | `(perp_close − spot_close) / spot_close`。**A2 の ρ ではない**(下記 Y45) | `close_of_bar` |
-| **`rho`(= A2 の ρ)** | **`ρ = κ·(1 − e^{−(f−s)}) − (r − r′) ≈ κ·(f − s) − r`、`κ = 1095`**(= 年間の8時間区間数)。`f`,`s` は log 価格、`r` は **USDT/USDC/DAI の借入金利の平均**(spot ショート時は supply rate `r′`) | `close_of_bar` |
+| **`rho`(= A2 の ρ)** | **`ρ = κ·(1 − e^{−(f−s)}) − (r − r′)`、`κ = 1095`**(= 年間の8時間区間数)。`f`,`s` は log 価格 | `close_of_bar` |
+| **`r`(金利項。H12 で確定)** | **Aave の変動借入 APR(USDT / USDC / DAI)の等加重平均**。**`r′ = 0`**(Arm R は spot をショートしないため)。**signal_time で利用可能な観測のみ**を使う(point-in-time) | **`start_of_bar`** |
 | `funding_last_settled` | **決定時点以前に決済が確定した直近 funding**(§5.2) | `start_of_bar` |
 | `funding_interval_hours_last` | 同上の行の間隔(**8 とハードコードしない**。X5) | `start_of_bar` |
 | `basis_rel_ma_w` | `basis_rel` の**左閉窓**移動平均(現在バーを含まない)。窓 `w` は §14.2 で凍結。**窓完全性を満たさない行は null**(data_contract §5) | **`start_of_bar`**(Y20) |
@@ -572,11 +573,29 @@ B2/B3/B4 は §11.1 の `C`。**同じ分母を機械的に当てはめない。
 ### 13.1 3層(**X2 / X3 で境界を修正**)
 
 ```text
-layer 1  literature_in_sample      2020-01-01 <= ts < 2025-06-01      ← 下限を Y49 で明示
+layer 1  literature_in_sample      2020-01-01 <= ts < 2025-06-01
          = max(A2 2024-03-11, A1 2024-07, K11 2023-06-23, K12 2025-05-31) を月境界へ切り上げ
-layer 2  contaminated_confirmation 2025-06-01 <= ts < 2026-01-01   (7 ヶ月のみ)
-layer 3  prospective_final         ts >= PHASE8_PROSPECTIVE_START   ← H5
+layer 2  contaminated_confirmation 2025-06-01 <= ts < 2026-01-01        (7 ヶ月のみ)
+layer X  phase8_contaminated       2026-01-01 <= ts < 2026-09-01        ← 読まない
+layer 3  phase8_prospective_final  ts >= 2026-09-01
 ```
+
+**H5 は承認された(2026-08-17 決定ログ。制約つき)。**
+
+| 決定 | 実装 |
+|---|---|
+| `PHASE8_PROSPECTIVE_START = 2026-09-01T00:00:00Z` | `mce.backtest.splits` に**新規定数として追加**(`phase8_layer()` も追加) |
+| **`FINAL_OOS_START` を変更も弱化もしない** | **`2026-01-01` のまま。1文字も触っていない**(T35 で機械検査) |
+| `2026-01-01` 〜 `2026-08-31` は Phase 8 の汚染域であり、**Phase 8 の結果評価で決して読まない** | `PHASE8_CONTAMINATED_BAND` として定数化。§20 の `phase8_contaminated_rows_read == 0` で機械検査 |
+
+- 既存 split(`research` / `validation` / `final_oos`)の**意味は変わらない**。
+  `final_oos` は従来どおり 2026-01-01 以降すべてであり、
+  **Phase 8 の汚染域(layer X)はその部分集合**である。
+- **layer X は「後で使う」窓ではない。** Phase 8 の結果評価に対して恒久的に閉じている。
+  K9(ango 自身が 2026-07 まで funding を測定済み)と文献の 2026 年言及により、
+  **この窓は Phase 8 にとって既知**だからである。
+- **layer 3 は 2026-09-01 以降であり、本タスクの時点では 1 バーも存在しない。**
+  したがって **freeze 時点で layer 3 を読むことは物理的に不可能**である。
 
 **境界は2度動いた。**
 
@@ -1038,14 +1057,43 @@ external_knowledge : §13.4 の台帳を埋め込む
 | **H5** | layer 3 を設けるか / firewall 改訂(freeze v2)の可否 | **未解決・fatal** |
 | **H6** | spot leg の執行前提・fee 表・margin tier・`N0`・`L` | **未解決・高** |
 | ~~H11~~ | A2 の `arb_bound(c)` の実装式 | **✅ 解決**(Table 3 caption: `ρ_l = κ log(1−C)` / `ρ_u = κ log(1+C)`。Y47) |
-| **H12** | **ρ の金利項 `r`(A2 は Aave の USDT/USDC/DAI 借入金利平均)の代理をどう置くか** | **未解決・高**(新規。Aave データは ango 未保有) |
+| ~~H12~~ | ρ の金利項 `r` | **✅ 解決**(決定ログ 2026-08-17): **Aave 変動借入 APR(USDT/USDC/DAI)の等加重平均、`r′ = 0`、point-in-time**。**Kenneth-French daily RF は事前登録した感応度であって primary ではない** |
+| ~~H5~~ | layer 3 と firewall | **✅ 承認(制約つき)**。§13.1 |
+| ~~H6~~ | 執行前提・fee・margin tier | **✅ 大部分解決**。残るのは taker commission のみ(下記) |
+| **H13** | **BTCUSDT USD-M の taker commission の権威ある値** | **未解決・freeze の前提として要求されたが、本環境では取得不能**(§22.1) |
 | H10 | 公式 REST `markPrice` を primary にするか | 未解決・中(**推奨: する**) |
 | H9 | BTC 単独か ETH を足すか | 未解決・中 |
 | H7 | ToS 上の利用可否 | 継続して要確認 |
 | H8 | *Alpha Illusion* P1–P6 を報告規準として採用するか | 未解決・低(**推奨: 採用**) |
 
-**H5 は依然として fatal である。** H11 は解決したが、**H12(金利項 `r` の代理)が新たに高**である
-(`ρ` は `r` を含むので、代理を決めないと Arm R の閾値が定義できない)。
+### 22.1 H13 — 実行できなかった凍結前要求(**正直な申告**)
+
+決定ログは「freeze の前に `GET /fapi/v1/commissionRate`(read-only USER_DATA)で
+BTCUSDT USD-M の taker commission を確定し、生レスポンス・取得時刻 UTC・digest を
+記録せよ」と指示した。**この指示は本環境では実行できなかった。**
+
+| 項目 | 実測(2026-08-17) |
+|---|---|
+| エンドポイント | `https://www.binance.com/fapi/v1/commissionRate?symbol=BTCUSDT&timestamp=…` |
+| HTTP | **401** |
+| 生レスポンス | `{"code":-2014,"msg":"API-key format invalid."}` |
+| 原因 | `commissionRate` は **USER_DATA** であり、**API key と HMAC-SHA256 署名が必須**。本環境に Binance の資格情報は存在しない(環境変数・設定ファイルとも無し) |
+| 発注 | **していない**(指示どおり) |
+
+**この1個の定数を推測で埋めることはしない。** 代わりに:
+
+1. `phase8_prereg.py` の `PERP_TAKER_BPS` を **`5.0`(FAQ の worked example 由来・`probable`)**
+   として置き、**`COMMISSION_RATE_STATUS = "pending_authenticated_read"` を併記**する。
+2. **`spot` 側は確定値**(公式 fee ページの live 読み取りで VIP-0 taker `0.100%`)。
+3. **freeze は実行する。** 理由: これは**設計の未確定ではなく、単一パラメータの実測待ち**であり、
+   確定しても**設計は1文字も変わらない**。凍結対象は設計である。
+4. **ただし実験の実行はブロックする**: `COMMISSION_RATE_STATUS` が `resolved` に
+   なるまで experiment runner を起動しない(T36 で機械強制)。
+5. 実測できたときは **生レスポンス・取得時刻・digest を `carry_freeze.json` の
+   `commission_rate` ブロックへ追記**する(**設計の再凍結には当たらない**)。
+
+**もしこの扱いが決定ログの意図と異なるなら、freeze を巻き戻して再凍結する。**
+現時点の判断は「**設計を凍結し、実測待ちの1定数だけを明示的に未確定として持つ**」である。
 
 ---
 

@@ -17,6 +17,46 @@ RESEARCH_START = datetime(2023, 11, 19, tzinfo=UTC)
 VALIDATION_START = datetime(2025, 7, 1, tzinfo=UTC)  # = research の排他的上限
 FINAL_OOS_START = datetime(2026, 1, 1, tzinfo=UTC)  # = validation の排他的上限。上限なし
 
+# --- Phase 8 追加(2026-08-17。人間の決定ログにより承認。freeze v2)-------------
+#
+# Phase 8 の prospective final 窓。**FINAL_OOS_START は一切変更しない。**
+# この定数は既存 split の定義を上書きせず、Phase 8 の評価窓を別に定めるだけである。
+#
+#   [FINAL_OOS_START, PHASE8_PROSPECTIVE_START) = Phase 8 にとって「汚染域」
+#       ango 自身が 2026-07 まで funding を測定済み(K9)であり、
+#       文献も 2026 年に言及している。Phase 8 の結果評価に**決して読まない**。
+#   [PHASE8_PROSPECTIVE_START, ∞)             = Phase 8 の GO/NO-GO 判定窓
+#
+# 既存 split(research / validation / final_oos)の意味は変わらない。
+# final_oos は従来どおり 2026-01-01 以降すべてであり、Phase 8 の汚染域は
+# その部分集合である。
+PHASE8_PROSPECTIVE_START = datetime(2026, 9, 1, tzinfo=UTC)
+
+# Phase 8 の結果評価で読んではならない区間 [start, end)
+PHASE8_CONTAMINATED_BAND = (FINAL_OOS_START, PHASE8_PROSPECTIVE_START)
+
+# layer 1 / layer 2 の境界。max(A2 2024-03-11, A1 2024-07, K11 2023-06-23,
+# K12 2025-05-31) を月境界へ切り上げたもの。
+PHASE8_LAYER1_START = datetime(2020, 1, 1, tzinfo=UTC)
+PHASE8_LAYER1_END = datetime(2025, 6, 1, tzinfo=UTC)
+
+
+def phase8_layer(ts: datetime) -> str:
+    """Phase 8 の層名を返す(既存の split とは独立の分類)。
+
+    - ``literature_in_sample``      : 先行研究が使用済み。GO 判定に使わない
+    - ``contaminated_confirmation`` : 論文外だが要約統計を知ってしまった窓
+    - ``phase8_contaminated``       : 既存封印域かつ外部/在庫汚染。**読まない**
+    - ``phase8_prospective_final``  : GO / NO-GO をここで判定する
+    """
+    if ts < PHASE8_LAYER1_END:
+        return "literature_in_sample"
+    if ts < FINAL_OOS_START:
+        return "contaminated_confirmation"
+    if ts < PHASE8_PROSPECTIVE_START:
+        return "phase8_contaminated"
+    return "phase8_prospective_final"
+
 # 通常 loader が扱ってよい split
 RESEARCH_SPLITS = ("research", "validation")
 SEALED_SPLIT = "final_oos"
