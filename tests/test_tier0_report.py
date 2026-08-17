@@ -105,3 +105,16 @@ def test_main_rejects_an_artifact_that_lost_rows(tmp_path, monkeypatch):
     monkeypatch.setattr("sys.argv", ["tier0_report", "--stage", "dev"])
     with pytest.raises(SystemExit, match="family"):
         R.main()
+
+
+def test_summary_separates_not_promoted_from_insufficient_sample():
+    """走らせなかった test とサンプル不足の test を混同しない。"""
+    cells = [
+        _cell(),
+        _cell(target="Y2", status="not_promoted_from_dev"),
+        _cell(target="Y3", status="insufficient_sample"),
+    ]
+    s = R.summary(_report(cells))
+    assert s["tested"] == 1
+    assert s["not_promoted_from_dev"] == 1
+    assert s["insufficient"] == 1

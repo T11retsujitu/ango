@@ -1,0 +1,968 @@
+{
+  "cells": [
+    {
+      "bh_significant": false,
+      "dev_disposition": "no_go_not_significant_after_holm",
+      "dev_dr2": -0.0001240898160901338,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 1,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-A",
+      "status": "not_promoted_from_dev",
+      "target": "Y1"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "conditional_hold_unstable",
+      "dev_dr2": 0.0011754008836638574,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 1,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-A",
+      "status": "not_promoted_from_dev",
+      "target": "Y2"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "conditional_hold_unstable",
+      "dev_dr2": 0.0007654100999686664,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 1,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-A",
+      "status": "not_promoted_from_dev",
+      "target": "Y3"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "no_go_not_significant_after_holm",
+      "dev_dr2": -0.00016711123828017094,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 3,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-A",
+      "status": "not_promoted_from_dev",
+      "target": "Y1"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "conditional_hold_unstable",
+      "dev_dr2": 0.0019904751906595353,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 3,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-A",
+      "status": "not_promoted_from_dev",
+      "target": "Y2"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "conditional_hold_unstable",
+      "dev_dr2": 0.001172286916605536,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 3,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-A",
+      "status": "not_promoted_from_dev",
+      "target": "Y3"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "no_go_not_significant_after_holm",
+      "dev_dr2": -0.00033927919809828566,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 12,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-A",
+      "status": "not_promoted_from_dev",
+      "target": "Y1"
+    },
+    {
+      "bh_significant": true,
+      "bootstrap_days": 245,
+      "ci_high": 0.0034384705734289626,
+      "ci_low": -0.0005364042328826065,
+      "dev_dr2": 0.0024436610070841525,
+      "dic": 0.005453026235970548,
+      "disposition": "go",
+      "dr2": 0.001626316062673272,
+      "dr2_by_year": {
+        "2025": 0.001626316062673272
+      },
+      "dr2_without_most_influential_day": 0.0012880967401360799,
+      "excluded_months": [
+        "2021-03",
+        "2022-05",
+        "2022-06",
+        "2023-09",
+        "2023-11",
+        "2024-10",
+        "2024-11",
+        "2025-01",
+        "2025-02",
+        "2025-08",
+        "2025-09"
+      ],
+      "fold_dr2": [
+        0.011619793454702987,
+        0.0016385583080109623,
+        -0.00565607809093327,
+        -0.00042435577996335905
+      ],
+      "folds": 4,
+      "holm_significant": false,
+      "horizon_bars": 12,
+      "ic_a": 0.6279733475575054,
+      "ic_b": 0.633426373793476,
+      "ic_spearman_a": 0.7279646312359243,
+      "ic_spearman_b": 0.736248512982759,
+      "leave_one_block_out_dr2": [
+        -0.00028583342380528176,
+        0.0016205474848600687,
+        0.002472191736768603,
+        0.0030813133966818285
+      ],
+      "mde": 0.000710256379490487,
+      "n": 70521,
+      "n_eff": 5876.8,
+      "p": 0.003257328990228013,
+      "p_holm": 0.08794788273615635,
+      "p_stage1": 0.004975124378109453,
+      "p_stage2": 0.003257328990228013,
+      "placebo_bt": {
+        "exceed": 13,
+        "k": 200,
+        "mde": 0.0017652794572840733,
+        "note": "副次。corr(X,A) を壊すので反保守的。昇格判定には使わない(§12.2)",
+        "p": 0.06965174129353234
+      },
+      "placebo_exceed": 0,
+      "placebo_exceed_stage2": 0,
+      "placebo_k_stage1": 200,
+      "placebo_k_stage2": 306,
+      "placebo_mean": 8.676479789441491e-05,
+      "publication_delay": {
+        "extra_lag_12_bars": {
+          "dr2": -0.0011004471090838575,
+          "n": 70521
+        },
+        "extra_lag_1_bars": {
+          "dr2": 0.0014061459151601952,
+          "n": 70521
+        },
+        "gate_passed": true,
+        "note": "gate は +1 バーのみ(T0-B1/B2)。+12 バーは感度の報告(§17-6)"
+      },
+      "r2_a": 0.4990779767239263,
+      "r2_b": 0.5007042927865996,
+      "randomization_p": 0.07009649517524123,
+      "runtime_sec": 317.8,
+      "set": "T0-A",
+      "sham_s0": {
+        "dr2": -0.0006735250588755237,
+        "n": 70521,
+        "observed_beats_sham": true,
+        "rows_match": true
+      },
+      "sign": {
+        "dominant_sign": 1,
+        "partial_correlations": [
+          0.006903,
+          -0.017614,
+          0.009842,
+          0.008712
+        ],
+        "sign_agreement": 0.75
+      },
+      "stability": {
+        "all_passed": false,
+        "passed": {
+          "dic_sign_matches_dr2": true,
+          "drop_most_influential_day_still_positive": true,
+          "leave_one_block_out_all_positive": false,
+          "positive_calendar_years": false,
+          "positive_fold_fraction": false,
+          "sign_agreement": true
+        },
+        "values": {
+          "dic_sign_matches_dr2": true,
+          "drop_most_influential_day_still_positive": true,
+          "leave_one_block_out_all_positive": false,
+          "positive_calendar_years": 1,
+          "positive_fold_fraction": 0.5,
+          "sign_agreement": 0.75
+        }
+      },
+      "stage2_candidate": true,
+      "status": "tested",
+      "target": "Y2",
+      "test_window": [
+        "2025-01-01T00:00:00+00:00",
+        "2026-01-01T00:00:00+00:00"
+      ],
+      "utc_days": 245,
+      "window": [
+        "2021-01-01T00:00:00+00:00",
+        "2026-01-01T00:00:00+00:00"
+      ]
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "conditional_hold_unstable",
+      "dev_dr2": 0.0009219140235323664,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 12,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-A",
+      "status": "not_promoted_from_dev",
+      "target": "Y3"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "no_go_not_significant_after_holm",
+      "dev_dr2": -0.0001398144317954486,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 12,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-B1",
+      "status": "not_promoted_from_dev",
+      "target": "Y1"
+    },
+    {
+      "bh_significant": true,
+      "bootstrap_days": 365,
+      "ci_high": 0.0028925990648052233,
+      "ci_low": -0.0007964421300207073,
+      "dev_dr2": 0.003683781043616885,
+      "dic": 0.001447649159427744,
+      "disposition": "conditional_hold_magnitude_below_half_of_dev",
+      "dr2": 0.0011541471248229795,
+      "dr2_by_year": {
+        "2025": 0.0011541471248229795
+      },
+      "dr2_without_most_influential_day": 0.0006646696034474653,
+      "excluded_months": [
+        "2024-07"
+      ],
+      "fold_dr2": [
+        0.00279383119497989,
+        -0.0004381883951066756,
+        0.00027455287230027103,
+        0.0012376776445333082
+      ],
+      "folds": 4,
+      "holm_significant": false,
+      "horizon_bars": 12,
+      "ic_a": 0.6578514944614993,
+      "ic_b": 0.659299143620927,
+      "ic_spearman_a": 0.7462741939530338,
+      "ic_spearman_b": 0.7484465114115209,
+      "leave_one_block_out_dr2": [
+        0.00043546529821425484,
+        0.0015781934083843874,
+        0.0013924541796240808,
+        0.001122971228775027
+      ],
+      "mde": 0.0002704023416610357,
+      "n": 105012,
+      "n_eff": 8751.0,
+      "p": 0.003257328990228013,
+      "p_holm": 0.08794788273615635,
+      "p_stage1": 0.004975124378109453,
+      "p_stage2": 0.003257328990228013,
+      "placebo_bt": {
+        "exceed": 0,
+        "k": 200,
+        "mde": 0.00037830319539910984,
+        "note": "副次。corr(X,A) を壊すので反保守的。昇格判定には使わない(§12.2)",
+        "p": 0.004975124378109453
+      },
+      "placebo_exceed": 0,
+      "placebo_exceed_stage2": 0,
+      "placebo_k_stage1": 200,
+      "placebo_k_stage2": 306,
+      "placebo_mean": -0.00011287861377614682,
+      "publication_delay": {
+        "extra_lag_12_bars": {
+          "dr2": -0.0009729772230941958,
+          "n": 104984
+        },
+        "extra_lag_1_bars": {
+          "dr2": 0.0013643855373779434,
+          "n": 104993
+        },
+        "gate_passed": true,
+        "note": "gate は +1 バーのみ(T0-B1/B2)。+12 バーは感度の報告(§17-6)"
+      },
+      "r2_a": 0.5382751103851382,
+      "r2_b": 0.5394292575099612,
+      "randomization_p": 0.13169341532923354,
+      "runtime_sec": 392.8,
+      "set": "T0-B1",
+      "sham_s0": {
+        "dr2": -0.00046937340413322204,
+        "n": 105012,
+        "observed_beats_sham": true,
+        "rows_match": true
+      },
+      "sign": {
+        "dominant_sign": 1,
+        "partial_correlations": [
+          0.06772,
+          0.050052,
+          0.086046,
+          0.070919
+        ],
+        "sign_agreement": 1.0
+      },
+      "stability": {
+        "all_passed": false,
+        "passed": {
+          "dic_sign_matches_dr2": true,
+          "drop_most_influential_day_still_positive": true,
+          "leave_one_block_out_all_positive": true,
+          "positive_calendar_years": false,
+          "positive_fold_fraction": true,
+          "sign_agreement": true
+        },
+        "values": {
+          "dic_sign_matches_dr2": true,
+          "drop_most_influential_day_still_positive": true,
+          "leave_one_block_out_all_positive": true,
+          "positive_calendar_years": 1,
+          "positive_fold_fraction": 0.75,
+          "sign_agreement": 1.0
+        }
+      },
+      "stage2_candidate": true,
+      "status": "tested",
+      "target": "Y2",
+      "test_window": [
+        "2025-01-01T00:00:00+00:00",
+        "2026-01-01T00:00:00+00:00"
+      ],
+      "utc_days": 365,
+      "window": [
+        "2021-01-01T00:00:00+00:00",
+        "2026-01-01T00:00:00+00:00"
+      ]
+    },
+    {
+      "bh_significant": true,
+      "bootstrap_days": 365,
+      "ci_high": 0.0029284633835475237,
+      "ci_low": -0.0007715555703309731,
+      "dev_dr2": 0.001888053842495907,
+      "dic": 0.0017753056792486621,
+      "disposition": "go",
+      "dr2": 0.0010831956139425447,
+      "dr2_by_year": {
+        "2025": 0.0010831956139425447
+      },
+      "dr2_without_most_influential_day": 0.0008321569406875007,
+      "excluded_months": [
+        "2024-07"
+      ],
+      "fold_dr2": [
+        0.0021405863179744244,
+        0.0027260329100526892,
+        -0.0021432387955242493,
+        0.0005959864280338234
+      ],
+      "folds": 4,
+      "holm_significant": false,
+      "horizon_bars": 12,
+      "ic_a": 0.40745911163298876,
+      "ic_b": 0.4092344173122374,
+      "ic_spearman_a": 0.394953156107674,
+      "ic_spearman_b": 0.39574945601010425,
+      "leave_one_block_out_dr2": [
+        0.0005476196653098064,
+        0.0007116207918961281,
+        0.0016757359970088759,
+        0.0013168934746977667
+      ],
+      "mde": 0.0002776913111159074,
+      "n": 105012,
+      "n_eff": 8751.0,
+      "p": 0.003257328990228013,
+      "p_holm": 0.08794788273615635,
+      "p_stage1": 0.004975124378109453,
+      "p_stage2": 0.003257328990228013,
+      "placebo_bt": {
+        "exceed": 0,
+        "k": 200,
+        "mde": 0.0003911063436455085,
+        "note": "副次。corr(X,A) を壊すので反保守的。昇格判定には使わない(§12.2)",
+        "p": 0.004975124378109453
+      },
+      "placebo_exceed": 0,
+      "placebo_exceed_stage2": 0,
+      "placebo_k_stage1": 200,
+      "placebo_k_stage2": 306,
+      "placebo_mean": -0.00013508647327957525,
+      "publication_delay": {
+        "extra_lag_12_bars": {
+          "dr2": -2.121754737727244e-05,
+          "n": 104984
+        },
+        "extra_lag_1_bars": {
+          "dr2": 0.0011683090715350897,
+          "n": 104993
+        },
+        "gate_passed": true,
+        "note": "gate は +1 バーのみ(T0-B1/B2)。+12 バーは感度の報告(§17-6)"
+      },
+      "r2_a": 0.2403877939170317,
+      "r2_b": 0.24147098953097423,
+      "randomization_p": 0.1295935203239838,
+      "runtime_sec": 403.1,
+      "set": "T0-B1",
+      "sham_s0": {
+        "dr2": 0.00016455204380549926,
+        "n": 105012,
+        "observed_beats_sham": true,
+        "rows_match": true
+      },
+      "sign": {
+        "dominant_sign": -1,
+        "partial_correlations": [
+          -0.05072,
+          -0.069055,
+          -0.035901,
+          -0.03627
+        ],
+        "sign_agreement": 1.0
+      },
+      "stability": {
+        "all_passed": false,
+        "passed": {
+          "dic_sign_matches_dr2": true,
+          "drop_most_influential_day_still_positive": true,
+          "leave_one_block_out_all_positive": true,
+          "positive_calendar_years": false,
+          "positive_fold_fraction": true,
+          "sign_agreement": true
+        },
+        "values": {
+          "dic_sign_matches_dr2": true,
+          "drop_most_influential_day_still_positive": true,
+          "leave_one_block_out_all_positive": true,
+          "positive_calendar_years": 1,
+          "positive_fold_fraction": 0.75,
+          "sign_agreement": 1.0
+        }
+      },
+      "stage2_candidate": true,
+      "status": "tested",
+      "target": "Y3",
+      "test_window": [
+        "2025-01-01T00:00:00+00:00",
+        "2026-01-01T00:00:00+00:00"
+      ],
+      "utc_days": 365,
+      "window": [
+        "2021-01-01T00:00:00+00:00",
+        "2026-01-01T00:00:00+00:00"
+      ]
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "no_go_not_significant_after_holm",
+      "dev_dr2": 1.0220127015792002e-05,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 48,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-B1",
+      "status": "not_promoted_from_dev",
+      "target": "Y1"
+    },
+    {
+      "bh_significant": false,
+      "bootstrap_days": 365,
+      "ci_high": 0.002242569287480185,
+      "ci_low": -0.003345604224757772,
+      "dev_dr2": 0.005450432906910052,
+      "dic": 8.578109534562728e-05,
+      "disposition": "no_go_sign_flipped_vs_dev",
+      "dr2": -0.0005153737033138928,
+      "dr2_by_year": {
+        "2025": -0.0005153737033138928
+      },
+      "dr2_without_most_influential_day": -0.0008427652367215543,
+      "excluded_months": [
+        "2024-07"
+      ],
+      "fold_dr2": [
+        0.001262243814344477,
+        -0.0029100357617874995,
+        0.00048200038441581494,
+        -0.0014424129716603673
+      ],
+      "folds": 4,
+      "holm_significant": false,
+      "horizon_bars": 48,
+      "ic_a": 0.6232996202442423,
+      "ic_b": 0.623385401339588,
+      "ic_spearman_a": 0.713254157568883,
+      "ic_spearman_b": 0.7149135088525601,
+      "leave_one_block_out_dr2": [
+        -0.001230086006572817,
+        0.0001442445125046099,
+        -0.0008362243233187572,
+        -0.00019994271499645944
+      ],
+      "mde": 0.000828104088131369,
+      "n": 104868,
+      "n_eff": 2184.8,
+      "p": 0.746268656716418,
+      "p_holm": 1.0,
+      "p_stage1": 0.746268656716418,
+      "placebo_bt": {
+        "exceed": 154,
+        "k": 200,
+        "mde": 0.0012620265274436767,
+        "note": "副次。corr(X,A) を壊すので反保守的。昇格判定には使わない(§12.2)",
+        "p": 0.7711442786069652
+      },
+      "placebo_exceed": 149,
+      "placebo_k_stage1": 200,
+      "placebo_mean": -0.00019295552679748473,
+      "publication_delay": {
+        "extra_lag_12_bars": {
+          "dr2": -0.002026559561471686,
+          "n": 104840
+        },
+        "extra_lag_1_bars": {
+          "dr2": -0.00040682439822448124,
+          "n": 104849
+        },
+        "gate_passed": false,
+        "note": "gate は +1 バーのみ(T0-B1/B2)。+12 バーは感度の報告(§17-6)"
+      },
+      "r2_a": 0.536022804899903,
+      "r2_b": 0.5355074311965891,
+      "randomization_p": 0.6404679766011699,
+      "runtime_sec": 238.8,
+      "set": "T0-B1",
+      "sham_s0": {
+        "dr2": 0.0003450889628562326,
+        "n": 104868,
+        "observed_beats_sham": false,
+        "rows_match": true
+      },
+      "sign": {
+        "dominant_sign": 1,
+        "partial_correlations": [
+          0.058781,
+          0.033339,
+          0.086552,
+          0.039274
+        ],
+        "sign_agreement": 1.0
+      },
+      "stability": {
+        "all_passed": false,
+        "passed": {
+          "dic_sign_matches_dr2": false,
+          "drop_most_influential_day_still_positive": false,
+          "leave_one_block_out_all_positive": false,
+          "positive_calendar_years": false,
+          "positive_fold_fraction": false,
+          "sign_agreement": true
+        },
+        "values": {
+          "dic_sign_matches_dr2": false,
+          "drop_most_influential_day_still_positive": false,
+          "leave_one_block_out_all_positive": false,
+          "positive_calendar_years": 0,
+          "positive_fold_fraction": 0.5,
+          "sign_agreement": 1.0
+        }
+      },
+      "stage2_candidate": false,
+      "status": "tested",
+      "target": "Y2",
+      "test_window": [
+        "2025-01-01T00:00:00+00:00",
+        "2026-01-01T00:00:00+00:00"
+      ],
+      "utc_days": 365,
+      "window": [
+        "2021-01-01T00:00:00+00:00",
+        "2026-01-01T00:00:00+00:00"
+      ]
+    },
+    {
+      "bh_significant": false,
+      "bootstrap_days": 365,
+      "ci_high": 0.004034601778895436,
+      "ci_low": -0.004703930488006492,
+      "dev_dr2": 0.0026024858853936905,
+      "dic": 0.0003459316048116112,
+      "disposition": "no_go_sign_flipped_vs_dev",
+      "dr2": -0.00037626904920373683,
+      "dr2_by_year": {
+        "2025": -0.00037626904920373683
+      },
+      "dr2_without_most_influential_day": -0.0008851509158012139,
+      "excluded_months": [
+        "2024-07"
+      ],
+      "fold_dr2": [
+        0.002271920202512767,
+        5.638462112333986e-05,
+        -0.0012498232441339185,
+        -0.002829017420007296
+      ],
+      "folds": 4,
+      "holm_significant": false,
+      "horizon_bars": 48,
+      "ic_a": 0.3551886977950518,
+      "ic_b": 0.3555346293998634,
+      "ic_spearman_a": 0.3415269492673031,
+      "ic_spearman_b": 0.3430156598819452,
+      "leave_one_block_out_dr2": [
+        -0.0016662741169574113,
+        -0.0004748588227625472,
+        -0.00021477836126260197,
+        0.0008363499364428817
+      ],
+      "mde": 0.0007525584333103447,
+      "n": 104868,
+      "n_eff": 2184.8,
+      "p": 0.6169154228855721,
+      "p_holm": 1.0,
+      "p_stage1": 0.6169154228855721,
+      "placebo_bt": {
+        "exceed": 122,
+        "k": 200,
+        "mde": 0.0012039710864617356,
+        "note": "副次。corr(X,A) を壊すので反保守的。昇格判定には使わない(§12.2)",
+        "p": 0.6119402985074627
+      },
+      "placebo_exceed": 123,
+      "placebo_k_stage1": 200,
+      "placebo_mean": -0.00031599062083366826,
+      "publication_delay": {
+        "extra_lag_12_bars": {
+          "dr2": -0.001379523462744947,
+          "n": 104840
+        },
+        "extra_lag_1_bars": {
+          "dr2": -0.0004345188990482196,
+          "n": 104849
+        },
+        "gate_passed": false,
+        "note": "gate は +1 バーのみ(T0-B1/B2)。+12 バーは感度の報告(§17-6)"
+      },
+      "r2_a": 0.21110785864202375,
+      "r2_b": 0.21073158959282,
+      "randomization_p": 0.5634718264086795,
+      "runtime_sec": 251.9,
+      "set": "T0-B1",
+      "sham_s0": {
+        "dr2": -0.0001610170334407357,
+        "n": 104868,
+        "observed_beats_sham": false,
+        "rows_match": true
+      },
+      "sign": {
+        "dominant_sign": -1,
+        "partial_correlations": [
+          -0.043639,
+          -0.067267,
+          -0.009522,
+          -0.012222
+        ],
+        "sign_agreement": 1.0
+      },
+      "stability": {
+        "all_passed": false,
+        "passed": {
+          "dic_sign_matches_dr2": false,
+          "drop_most_influential_day_still_positive": false,
+          "leave_one_block_out_all_positive": false,
+          "positive_calendar_years": false,
+          "positive_fold_fraction": false,
+          "sign_agreement": true
+        },
+        "values": {
+          "dic_sign_matches_dr2": false,
+          "drop_most_influential_day_still_positive": false,
+          "leave_one_block_out_all_positive": false,
+          "positive_calendar_years": 0,
+          "positive_fold_fraction": 0.5,
+          "sign_agreement": 1.0
+        }
+      },
+      "stage2_candidate": false,
+      "status": "tested",
+      "target": "Y3",
+      "test_window": [
+        "2025-01-01T00:00:00+00:00",
+        "2026-01-01T00:00:00+00:00"
+      ],
+      "utc_days": 365,
+      "window": [
+        "2021-01-01T00:00:00+00:00",
+        "2026-01-01T00:00:00+00:00"
+      ]
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "no_go_not_significant_after_holm",
+      "dev_dr2": -0.0013419446041104122,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 12,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-B2",
+      "status": "not_promoted_from_dev",
+      "target": "Y1"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "no_go_not_significant_after_holm",
+      "dev_dr2": -0.0010323603293215244,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 12,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-B2",
+      "status": "not_promoted_from_dev",
+      "target": "Y2"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "conditional_hold_unstable",
+      "dev_dr2": 0.0021307217554281666,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 12,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-B2",
+      "status": "not_promoted_from_dev",
+      "target": "Y3"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "no_go_not_significant_after_holm",
+      "dev_dr2": -0.007211641350680864,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 48,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-B2",
+      "status": "not_promoted_from_dev",
+      "target": "Y1"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "no_go_not_significant_after_holm",
+      "dev_dr2": -0.002649333980096258,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 48,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-B2",
+      "status": "not_promoted_from_dev",
+      "target": "Y2"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "conditional_hold_unstable",
+      "dev_dr2": 0.0042490109124625475,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 48,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-B2",
+      "status": "not_promoted_from_dev",
+      "target": "Y3"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "no_go_not_significant_after_holm",
+      "dev_dr2": -0.001188765876921627,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 12,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-C",
+      "status": "not_promoted_from_dev",
+      "target": "Y1"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "conditional_hold_unstable",
+      "dev_dr2": 0.0014471624942758998,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 12,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-C",
+      "status": "not_promoted_from_dev",
+      "target": "Y2"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "conditional_hold_unstable",
+      "dev_dr2": 0.0009695686069759457,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 12,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-C",
+      "status": "not_promoted_from_dev",
+      "target": "Y3"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "no_go_not_significant_after_holm",
+      "dev_dr2": -0.00041141061523308764,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 48,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-C",
+      "status": "not_promoted_from_dev",
+      "target": "Y1"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "conditional_hold_unstable",
+      "dev_dr2": 0.0025618609527777725,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 48,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-C",
+      "status": "not_promoted_from_dev",
+      "target": "Y2"
+    },
+    {
+      "bh_significant": false,
+      "dev_disposition": "conditional_hold_unstable",
+      "dev_dr2": 0.002146477445417627,
+      "disposition": "no_go_not_promoted_from_dev",
+      "holm_significant": false,
+      "horizon_bars": 48,
+      "p": 1.0,
+      "p_holm": 1.0,
+      "set": "T0-C",
+      "status": "not_promoted_from_dev",
+      "target": "Y3"
+    }
+  ],
+  "cells_reused_from_checkpoint": 0,
+  "family_size": 27,
+  "freeze_record": {
+    "features_input": "data/features/binance_BTCUSDT_5m.parquet",
+    "frozen_at": "2026-08-16T16:20:36.208612+00:00",
+    "horizons_bars": [
+      1,
+      3,
+      12,
+      48
+    ],
+    "label_rows": 631296,
+    "labels_output": "data/labels/binance_BTCUSDT_5m.parquet",
+    "prereg_doc_sha256": "5ebe065ee9ea22839a781359b8b62a368245efaedf05d40981e664a8fd896b55",
+    "prereg_sha256": "3da8e1cc1a288d2eaff95cd747ee8d8b43515df2820ed6c09f017083f842abf2",
+    "protocol": "phase7_tier0_screening_v1",
+    "record": "phase7_tier0_freeze_v1",
+    "source_commit": "bc9fd3d1fa7e629837604f9133520ed4c8db52ee",
+    "targets": {
+      "Y1": "open[t+1+h] / open[t+1] - 1",
+      "Y2": "log(1 + sqrt(sum_{i=1..h} (log open[t+1+i] - log open[t+i])^2))",
+      "Y3": "min_{i=1..h}( low[t+i] / open[t+1] ) - 1"
+    }
+  },
+  "placebo": {
+    "k_stage1": 200,
+    "k_stage2": "exhaustive over S (|S| = window_days - 2*min_shift_days + 1)",
+    "min_shift_days": 30,
+    "null_rule": "recompute S_d = S ∩ {shifted X non-null}; re-evaluate BOTH A and B on S_d",
+    "p_rule": "(1 + #{placebo >= observed}) / (1 + K)",
+    "primary": "Bp: X_p = A @ Gamma_hat + circular_day_shift(E), E = X - A @ Gamma_hat, Gamma_hat fitted on TRAIN rows only",
+    "scheme": "circular day-shift (A is never shifted)",
+    "secondary_reported": "Bt: circular day-shift of the whole X block (anti-conservative; report only)",
+    "stage2_rule": "stage-1 rank only: #{placebo >= observed} <= 5 (never the effect size)",
+    "window_rule": "shifts are circular WITHIN the stage window (dev placebos never read confirmation X)"
+  },
+  "placebo_shift_rule": "S = {30 .. W_days-30}; 第1段階は np.linspace で等間隔に 200 個、第2段階は全数。乱数を使わないので K と窓から完全に再現できる",
+  "prereg_sha256": "3da8e1cc1a288d2eaff95cd747ee8d8b43515df2820ed6c09f017083f842abf2",
+  "protocol": "phase7_tier0_screening_v1",
+  "provenance": {
+    "lockfile_sha256": "4f187f1a8ed2d64e2e949b0e1f6b8e6b9252e81201a28dc60d898870ea2d8ca8",
+    "manifests": {
+      "binance_features_binance_BTCUSDT_5m": {
+        "manifest_sha256": "707e6f7659d8e302597d6cbe10f04735c4834ee3e19de88d03a027fc769a1139",
+        "rows": 631296,
+        "source_digest": null
+      },
+      "binance_klines_klines_BTCUSDT_5m": {
+        "manifest_sha256": "7b9a8261219d79a92d39ddb32d7135dca19c6a063a1aa652be530cd159466d81",
+        "rows": 631296,
+        "source_digest": null
+      },
+      "binance_metrics_metrics_BTCUSDT_5m": {
+        "manifest_sha256": "b6184a9c7e2fefa79ad1f4e39f14a6d4dc9c054cfcff3602be11acabb1329930",
+        "rows": 560388,
+        "source_digest": null
+      },
+      "binance_premium_index_premium_index_BTCUSDT_5m": {
+        "manifest_sha256": "4473d538e1d05ae367c116ea8b66b8a924a75e294638e982c79275ee046b4099",
+        "rows": 629246,
+        "source_digest": null
+      }
+    },
+    "prereg_module_sha256": "3da8e1cc1a288d2eaff95cd747ee8d8b43515df2820ed6c09f017083f842abf2",
+    "screening_module_sha256": "be2baa5d1109bae1e400f37610dfabc489d2c60e7756723b8ad9dbd1c35a73b5",
+    "source_commit": "bd111901f52361ebc2ae161e625bb040badaddf0",
+    "symbol": "BTCUSDT"
+  },
+  "report": "phase7_tier0_screening_confirmation_v1",
+  "resumed_from_checkpoint": false,
+  "runtime_sec": 1604.4,
+  "seeds": {
+    "confirmation": 20260818,
+    "dev": 20260817
+  },
+  "source_commit": "bd111901f52361ebc2ae161e625bb040badaddf0",
+  "stage": "confirmation",
+  "stage2_promotion_max_exceed": 5,
+  "workers": 4
+}

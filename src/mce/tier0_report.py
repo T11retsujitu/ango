@@ -128,11 +128,14 @@ def excluded_months_table(cells: list[dict]) -> str:
 def summary(report: dict) -> dict:
     cells = report["cells"]
     tested = [c for c in cells if c.get("status") == "tested"]
+    # 「走らせなかった(dev で非昇格)」と「走らせたがサンプル不足」は別物。混ぜない。
+    not_promoted = [c for c in cells if c.get("status") == "not_promoted_from_dev"]
     return {
         "family_size": report["family_size"],
         "reported_rows": len(cells),
         "tested": len(tested),
-        "insufficient": len(cells) - len(tested),
+        "not_promoted_from_dev": len(not_promoted),
+        "insufficient": len(cells) - len(tested) - len(not_promoted),
         "holm_significant": sum(1 for c in cells if c.get("holm_significant")),
         "bh_significant": sum(1 for c in cells if c.get("bh_significant")),
         "stage2_promoted": sum(1 for c in cells if c.get("placebo_k_stage2")),
