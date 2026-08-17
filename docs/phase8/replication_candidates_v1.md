@@ -31,13 +31,13 @@
 
 | 順位 | ID | 候補 | family | 機序15 | データ15 | コスト15 | 独立conf15 | 再実装10 | 資産10 | 個人10 | 証拠10 | **合計** |
 |---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | P8-C1 | **BTC spot–perp funding carry / basis** | A | 14 | 15 | 12 | 9 | 8 | 7 | 8 | 8 | **81** |
+| 1 | P8-C1 | **BTC spot–perp funding carry / basis** | A | 14 | 15 | 12 | **6** | 8 | 7 | 8 | 8 | **78** |
 | 2 | P8-C2 | hourly BTC ML + cost-aware execution filter | C | 5 | 15 | 10 | 3 | 7 | 8 | 9 | 7 | **64** |
 | 3 | P8-C3 | crypto factor zoo(反復 alpha 選択) | D | 9 | 6 | 10 | 8 | 6 | 4 | 5 | 9 | **57** |
 | 4 | P8-C4 | funding timing と DEX の no-arbitrage 境界 | B | 13 | 7 | 9 | 8 | 5 | 3 | 4 | 5 | **54** |
 | 5 | P8-C5 | 制約付き LLM エージェント + point-in-time factor DSL | F | 4 | 6 | 9 | 5 | 6 | 9 | 7 | 6 | **52** |
 | 6 | P8-C6 | L2 流動性状態 × order flow | E | 11 | 4 | 7 | 5 | 5 | 6 | 4 | 7 | **49** |
-| 7 | P8-C7 | cross-venue funding spread(Hyperliquid vs CEX) | B | 12 | 8 | 7 | 4 | 6 | 4 | 5 | **1** | **47** |
+| 7 | P8-C7 | cross-venue funding spread(Hyperliquid vs CEX) | B | 12 | 8 | 7 | 4 | 6 | 4 | 5 | **3** | **49** |
 | 8 | P8-C8 | ETF implied carry と分断された BTC 市場 | A | 12 | 3 | 8 | 7 | 4 | 2 | 3 | 7 | **46** |
 | 9 | P8-C9 | 清算カスケードの early-warning | E | 10 | 2 | 5 | 6 | 4 | 4 | 3 | 7 | **41** |
 
@@ -47,11 +47,15 @@
 
 ## 3. 候補別の要点(必要データ・再現難易度・減点理由)
 
-### P8-C1 — BTC spot–perp funding carry / basis 【81点・第1位】
+### P8-C1 — BTC spot–perp funding carry / basis 【78点・第1位】
 
-> **⚠ v1.1 訂正済み(2026-08-17)。** 当初 89点としたのは、A1 を perpetual の論文だと
-> 誤認していたためである。両論文の**全文を取得**して訂正した(JSON `corrections_applied` X1–X6)。
+> **⚠ 2段階の訂正済み(2026-08-17)。89 → 81 → 78点。**
 > **訂正後も第1位は変わらない**(2位 P8-C2 は 64点)。
+>
+> 1. **89 → 81**: A1 を perpetual の論文だと誤認していた。両論文の**全文を取得**して訂正
+>    (JSON `corrections_applied` X1–X6)。
+> 2. **81 → 78**: **prior art の掃き出しで、初版が見落としていた2本が出た**
+>    (K11 Christin et al. / K12 Borri et al.)。**独立窓が 17ヶ月 → 7ヶ月へ縮小した。**
 
 - **再現アンカー(唯一)**: **A2** *Fundamentals of Perpetual Futures*
   (He / Manela / Ross / von Wachter, arXiv `2212.06888` v6 2024-08-21)**`VERIFIED-FULL`**
@@ -77,11 +81,33 @@
   **A2 と同一 venue(Binance)で再現できる**のが大きい
 - **再現難易度**: **中**。ML なし。ただし A2 の no-arbitrage 境界と閾値 entry/exit の実装、
   および **two-leg 執行モデルの新規実装**(ango の engine は単一銘柄前提)が要る
+- **prior art(初版が見落としていた。掃き出しで判明)**:
+  - **K11 Christin / Routledge / Soska / Zetlin-Jones "The Crypto Carry Trade"**(2023-08-18, 57pp)
+    — **まさにこの trade を定義**(short perp / long spot、8時間 funding)。
+    Binance BTC 2020-08-11〜2023-06-23、N=3,138。**取引コストを明示的に除外**。
+    gross で Tether 建て年率 14.26% / Sharpe 8.763 だが、
+    **epoch 5(2022-05〜2023-06)では年率 1.03% へ崩落**
+  - **K12 Borri / Liu / Tsyvinski / Wu**(arXiv `2510.14435` v4, 2026-02、
+    *Annual Review of Financial Economics* Vol.18 向け)
+    — **同一 trade・同一 venue**(Binance BTC 8時間、2020-08-01〜2025-05-31)。
+    全期間 Sharpe 6.45 だが **「2024年から 4.06 へ低下し、2025年には負に転じる」**。**gross**
+  - **A2 自身の減衰証拠**: 高コスト tier の年別で **2022 年 return 0.28% / 2023 年 1.11%**、
+    **funding 成分単独では 2022 年 −1.94% / 2023 年 −0.94%**。`|ρ|` は年 11% 縮小
+- **⚠ 重要な機序の訂正**: A2 の Table 9 は BTC の総リターン 13.70% を
+  **price convergence 8.64% + funding 5.06%** に分解しており、
+  **funding ではなく price convergence が支配的**である。
+  「funding を収穫する戦略」という枠組み自体が誤り
+- **⚠ A2 は maker 手数料を使っている**(「機関は maker で執行するため」)。
+  spot/futures で Low 2.25/0.18 bps 〜 High 6.75/1.44 bps。
+  **ango の taker 前提は A2 の High tier の約4倍厳しい。**
+  差が出ても「再現失敗」と読んではならない(§ プロトコル §3.5)
 - **減点**: 唯一のアンカー A2 が **査読前 preprint**・追試なし / 著者コード非公開 /
   ango の cost モデルに margin・collateral 項が無い /
-  **独立窓が約17ヶ月しかない**(A2 は 2024-03、A1 は 2024-07 まで使用済み)
+  **独立窓が7ヶ月しかない**(A2 2024-03 / A1 2024-07 / Christin 2023-06 / **Borri 2025-05**)
 - **不採用にしなかった理由**: 訂正後も、機序の明確さ・データ入手可能性・証拠品質の
-  3軸で最上位を維持し、2位に 17点差をつけている
+  3軸で最上位を維持し、2位に 14点差をつけている。
+  **加えて、「taker コストを差し引いた形での検証は誰もやっていない」ことが掃き出しで確認された**
+  (A2 は maker、Christin と Borri は gross)。問いは本当に開いている
 
 ### P8-C2 — hourly BTC ML + cost-aware execution filter 【64点・第2位】
 
@@ -142,19 +168,29 @@
   bookTicker は 199 MB/日(backlog I8)
 - **減点**: 独立窓なし / tick L2 の多年スケールは個人に重い / コード非公開
 
-### P8-C7 — cross-venue funding spread 【47点・第7位】
+### P8-C7 — cross-venue funding spread 【49点・第7位】
 
-- **アンカー**: B1 SSRN `6993978`(seed S3)**`UNVERIFIED`**
-- **⚠ 一次資料に到達できず、タイトル検索でも当該 SSRN ID の論文を発見できなかった。**
-  検索スニペットには一致する内容(Hyperliquid の carry が Binance/Bybit を年率約7%上回る等)が
-  現れたが、**それをこの SSRN ID に帰属させる根拠を得られなかった**。
-  **これらの数値を ango の設計根拠にしない**
+> **⚠ 訂正(2026-08-17)。初版は `UNVERIFIED` として証拠品質 1点としたが、**
+> **追加調査で論文の実在が確認された。** 47 → 49点。
+
+- **アンカー**: B1 **SSRN `6993978` / DOI `10.2139/ssrn.6993978`**、
+  著者 **Tony Lau**(単著)、登録 **2026-07-29**。**`VERIFIED-META`**
+  - 正式タイトル: *The Funding Carry and a Cross-Venue Spread on Perpetual Futures:
+    A Significance-Tested Study of Hyperliquid and Centralized Venues*
+  - **Crossref・OpenAlex(W7171662028)・DOI 解決の3経路で独立に確認**
+- **ただし証拠品質は依然として低い(3/10)**:
+  **被引用 0・参照文献 0・Google Scholar 未収録・Semantic Scholar 未収録・
+  OA 全文なし・著者所属/ORCID なし・登録から3週間**。
+  **実在は確定したが、質は確定していない。**
+  初版が引用した数値(Hyperliquid が Binance/Bybit を年率約7%上回る等)は
+  **Crossref 収録の abstract に逐語的に存在する**ので「この論文の主張」ではあるが、
+  **主張が正しいかは未検証**である
 - **データ実測(2026-08-17)**: Hyperliquid `fundingHistory` は到達可(**1時間粒度**、
   BTC 履歴は 2023-05〜2023-08 のどこかで開始)。Binance Vision funding は到達可(**8時間**)。
   **Bybit の funding は本環境から取得経路が無い**(v5 REST 403 / public dump に funding 無し)
-- **減点(最大)**: **エビデンス品質 1/10** — 一次資料の存在を確認できなかった。
+- **減点**: **エビデンス品質 3/10**(実在は確認、質は未確認)。
   加えて venue 間の funding 間隔差、送金の即時性・無料性、二重の清算面
-- **機序自体は12/15と高い。** H1(人間による SSRN 確認)が解決すれば順位は大きく上がりうる
+- **機序自体は12/15と高い。** 全文が読めれば再評価する(**H1 は解決済み**)
 
 ### P8-C8 — ETF implied carry 【46点・第8位】
 
