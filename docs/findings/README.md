@@ -42,6 +42,9 @@ Phase 3 Alpha Search Bakeoff は **validation survivor 0/30 × 3 arm** で完了
 
 ## 台帳
 
+- [2026-08-17 Phase 7 Tier 0 incremental information test — dev](2026-08-17-phase7-tier0-screening-v1.md)
+  — 27 test 中 16 が Holm 有意。ただし有意性は Y2/Y3(値動きの大きさ)に集中し、
+  方向 Y1 は 9/9 非有意。confirmation へ進むのは 5 test。**GO はまだ0**。
 - [2026-08-16 Phase 3 bakeoff 総括](2026-08-16-phase3-bakeoff-summary-v1.md)
   — **主指標 validation survivors / evaluations = 0/30・0/30・0/30**(Random / Genetic / LLM)。
   探索手法間に survival の差は観測されず。ただし 0/30 の片側95%上限は 9.5% で
