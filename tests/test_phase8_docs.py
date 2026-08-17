@@ -220,10 +220,21 @@ def test_arm_r_trades_on_rho_not_on_raw_basis():
     """
     text = PROTOCOL_DOC.read_text(encoding="utf-8")
     assert "rho > arb_bound_upper" in text, "Arm R の entry が ρ 基準で書かれていない"
-    # v1.5 まで使われていた未定義トークンが復活していないこと
-    assert "theoretical_relation_no_cost" not in text
     # A2 の年率化係数が明記されていること
     assert "1095" in text
+    # v1.5 まで使われていた未定義トークンが Arm R の定義行へ戻っていないこと。
+    # 改訂表(Y55)は「かつてこう書かれていた」と記録するため出現してよい。
+    arm_r_rows = [
+        line
+        for line in text.splitlines()
+        if line.startswith("|") and "Arm R(replication)" in line
+    ]
+    assert arm_r_rows, "Arm R の定義行が見つからない"
+    for row in arm_r_rows:
+        assert "theoretical_relation_no_cost" not in row, (
+            "Arm R の定義行に未定義トークンが復活している"
+        )
+        assert "basis_rel" not in row, "Arm R の定義行が basis_rel を使っている"
 
 
 def test_protocol_records_the_long_spot_only_variant():
