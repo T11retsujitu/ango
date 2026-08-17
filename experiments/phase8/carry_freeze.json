@@ -32,7 +32,7 @@
     "path": "src/mce/backtest/splits.py",
     "sha256": "948668127d96e888de165b0d7f7ec8dcc946c458d7b666e1827781b91e045222"
   },
-  "source_commit": "3ec45928a7cb80b09600ed0207c910cfc3451d6b",
+  "source_commit": "f7d8019dc4fa0a85863307ca9ea9641067260cc2",
   "uv_lock_sha256": "4f187f1a8ed2d64e2e949b0e1f6b8e6b9252e81201a28dc60d898870ea2d8ca8",
   "seal_invariants": {
     "FINAL_OOS_START": "2026-01-01T00:00:00+00:00",
@@ -83,5 +83,6 @@
     "experiments_permitted": false,
     "final_oos_read_permitted": false,
     "note": "Per decision log: no further design audit before freeze, and any subsequent audit is conformance-only. two_leg.py may be implemented now that the frozen protocol exists."
-  }
+  },
+  "source_commit_note": "Corrected 2026-08-17. The record initially carried 3ec45928a7cb80b09600ed0207c910cfc3451d6b, which was HEAD while the record was being written and therefore did NOT yet contain the frozen artifacts (protocol was v1.7 and phase8_prereg.py did not exist there). The frozen artifacts are committed in f7d8019dc4fa0a85863307ca9ea9641067260cc2. File hashes were unaffected by this correction."
 }
