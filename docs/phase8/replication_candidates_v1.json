@@ -63,6 +63,18 @@
       "affected": [
         "data_availability_measured_2026_08_17"
       ]
+    },
+    {
+      "id": "X7",
+      "severity": "method",
+      "what": "The adversarial refutation pass overturned three claims that had already been written into the repository: (1) 'Google Scholar does not index SSRN 6993978' — it does; the first negative was an unstable Scholar response. (2) 'nobody has netted taker fees on this trade' — an unverifiable universal negative; scoped to 'among retrieved papers'. (3) 'no prior art releases code' — Krestenko et al. (A3) does, and is also cost-explicit, so the 'cost-explicit papers study only the threshold trade' dichotomy was wrong.",
+      "consequence": "Recorded as a standing methodological rule for Phase 8: a single negative search response is not evidence of absence, and universal negatives over a literature must be scoped to what was actually retrieved.",
+      "affected": [
+        "P8-C1 prior_art_note",
+        "P8-C7 anchor_papers",
+        "H1 resolution",
+        "A3 code_availability"
+      ]
     }
   ],
   "scoring_axes": {
@@ -221,12 +233,14 @@
           "publication_date": "2026-05-06",
           "verification_status": "VERIFIED-META",
           "role": "design reference for collateral / rebalancing, NOT a replication target",
-          "key_point": "required collateral rises with volatility and is lowest for BTC; realized execution wedges are material and worse when selling the basis; funding conditions dominate realized performance under fixed control rules"
+          "key_point": "required collateral rises with volatility and is lowest for BTC; realized execution wedges are material and worse when selling the basis; funding conditions dominate realized performance under fixed control rules",
+          "code_availability": "HAS CODE — the exception among all prior art. Full-text scan found two first-author repository pointers plus a DOI-minted code archive. All other retrieved prior art (He et al., Christin et al., Schmeling/Schrimpf/Todorov, Borri et al.) has no replication package.",
+          "note_after_refutation": "The initial sweep's dichotomy — 'cost-explicit papers study only the threshold convergence trade' — was REFUTED. Krestenko et al. is cost-explicit (it decomposes cost into fee + impact + gas + funding terms) AND studies spot-perp basis. It remains a design reference rather than a replication target, but its released code is a concrete reusable asset for the two-leg execution layer."
         }
       ],
       "ango_reproducible_scope": "AFTER CORRECTION: the replication target is A2's random-maturity arbitrage on BTC spot vs Binance USDT-M perpetual. Ango can reconstruct every required input (spot klines, perp klines, funding with settlement timestamps and mark price, index price, premium index) from sources verified reachable on 2026-08-17, on the same venue A2 uses (Binance). Ango CANNOT replicate A1, because A1 studies dated futures at one- and three-month constant maturities sourced from Skew and Coinmetrics, which ango does not have and has no route to obtain. A1 is retained as economic context for why carry persists (limits to arbitrage), not as a replication target.",
       "independent_confirmation_window": "2025-06-01 .. 2025-12-31 (SEVEN months). Lower bound is max over ALL prior art on this exact trade: A2 ends 2024-03-11, A1 ends 2024-07, Christin et al. end 2023-06-23, and Borri et al. end 2025-05-31. Revised twice: first from 2023-11-19 to 2024-08-01 (corrections X1/X2), then to 2025-06-01 once the prior-art sweep found K11 and K12.",
-      "prior_art_note": "The exact planned replication — long spot BTC / short BTC perpetual, funding collected, netted against TAKER fees on all four legs — has NOT been done. The literature splits into (a) A2, which applies explicit costs but to a threshold convergence trade and using MAKER fees, and (b) Christin et al. and Borri et al., which implement exactly this trade but GROSS of costs. The taker-netted question is genuinely open. However, all three sources independently document decay, and Borri et al. report the Sharpe turning NEGATIVE in 2025 gross of costs.",
+      "prior_art_note": "Among the papers that could be RETRIEVED, none nets TAKER fees on all four legs of an unlevered buy-and-hold long-spot/short-perp carry: A2 deliberately uses MAKER fees, and Christin et al. and Borri et al. are GROSS of costs. This is a scoped statement, not a universal negative over the 2023-2026 literature — an earlier draft's 'nobody has done this' claim was refuted as unverifiable. Note also that Krestenko et al. (A3) IS cost-explicit and does study spot-perp basis, so the literature does not split cleanly into two camps. All three retrieved sources independently document decay, and Borri et al. report the Sharpe turning NEGATIVE in 2025 gross of costs.",
       "operational_risks": [
         "two-leg execution: spot leg and perp leg fill at different times / venues",
         "spot leg funding cost is not zero (capital tied up, or borrow cost if levered)",
@@ -693,7 +707,7 @@
           "ssrn_id": "6993978",
           "primary_url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6993978",
           "verification_status": "VERIFIED-META",
-          "verification_note": "Existence CONFIRMED via Crossref, OpenAlex (W7171662028) and DOI resolution after the initial review could not find it. Full text still unreadable (SSRN is Cloudflare-blocked here and no OA copy exists). Zero citations, zero referenced works, not indexed by Google Scholar or Semantic Scholar, no affiliation or ORCID, three weeks old. The distinctive figures quoted in the initial review DO appear verbatim in the deposited Crossref abstract, so they are genuinely this paper's claims — but they remain unverified as findings.",
+          "verification_note": "Existence CONFIRMED via Crossref, OpenAlex (W7171662028) and DOI resolution after the initial review could not find it. Full text still unreadable (SSRN is Cloudflare-blocked here and no OA copy exists). Zero citations, zero referenced works, not indexed by Semantic Scholar (an initial report that Google Scholar also lacked it was REFUTED on recheck: Scholar does index it, one exact-phrase hit 'T Lau - 2026 - papers.ssrn.com'; the first negative was an unstable response), no affiliation or ORCID, three weeks old. The distinctive figures quoted in the initial review DO appear verbatim in the deposited Crossref abstract, so they are genuinely this paper's claims — but they remain unverified as findings.",
           "doi": "10.2139/ssrn.6993978",
           "publication_date": "2026-07-29",
           "venues": "Hyperliquid (decentralized, hourly funding, USDC-margined) vs Binance and Bybit (centralized); reference rates 3-month T-bill and Aave USDC supply rate",
@@ -999,7 +1013,7 @@
       ],
       "why_agent_cannot": "SSRN returns 403 from this environment and title search did not surface the paper",
       "status": "RESOLVED 2026-08-17",
-      "resolution": "The paper EXISTS. DOI 10.2139/ssrn.6993978, deposited 2026-07-29, sole author Tony Lau. Full title: 'The Funding Carry and a Cross-Venue Spread on Perpetual Futures: A Significance-Tested Study of Hyperliquid and Centralized Venues'. Confirmed independently via Crossref, OpenAlex (W7171662028) and DOI resolution. BUT: zero citations, zero referenced works, not indexed by Google Scholar or Semantic Scholar, no open-access full text, no author affiliation or ORCID recorded, and only three weeks old. Existence is established; quality is not."
+      "resolution": "The paper EXISTS. DOI 10.2139/ssrn.6993978, deposited 2026-07-29, sole author Tony Lau. Full title: 'The Funding Carry and a Cross-Venue Spread on Perpetual Futures: A Significance-Tested Study of Hyperliquid and Centralized Venues'. Confirmed independently via Crossref, OpenAlex (W7171662028) and DOI resolution. BUT: zero citations, zero referenced works, not indexed by Semantic Scholar (Google Scholar DOES index it — an initial negative was refuted on recheck), no open-access full text, no author affiliation or ORCID recorded, and only three weeks old. Existence is established; quality is not."
     },
     {
       "id": "H2",

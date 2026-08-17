@@ -106,8 +106,15 @@
   **独立窓が7ヶ月しかない**(A2 2024-03 / A1 2024-07 / Christin 2023-06 / **Borri 2025-05**)
 - **不採用にしなかった理由**: 訂正後も、機序の明確さ・データ入手可能性・証拠品質の
   3軸で最上位を維持し、2位に 14点差をつけている。
-  **加えて、「taker コストを差し引いた形での検証は誰もやっていない」ことが掃き出しで確認された**
-  (A2 は maker、Christin と Borri は gross)。問いは本当に開いている
+  加えて、**取得できた範囲の文献の中には、
+  「無レバレッジの buy-and-hold な spot–perp carry の4約定すべてに taker 手数料を課した」
+  研究が無い**(A2 は maker、K11 と K12 は gross)。問いは開いている
+  - **⚠ 表現の訂正(反証パス)**: 初回は「**誰も**やっていない」と書いたが、
+    これは 2023–2026 の全文献に対する**検証不能な全称否定**である。
+    **「取得できた範囲では」に限定する。**
+  - **⚠ 例外の記録**: **A3(Krestenko et al., arXiv `2605.05089`)は
+    コスト明示的であり、かつ spot–perp basis を扱っている。**
+    「コスト明示的な研究は閾値 convergence trade だけ」という二分法は誤りだった
 
 ### P8-C2 — hourly BTC ML + cost-aware execution filter 【64点・第2位】
 
@@ -179,9 +186,13 @@
     A Significance-Tested Study of Hyperliquid and Centralized Venues*
   - **Crossref・OpenAlex(W7171662028)・DOI 解決の3経路で独立に確認**
 - **ただし証拠品質は依然として低い(3/10)**:
-  **被引用 0・参照文献 0・Google Scholar 未収録・Semantic Scholar 未収録・
-  OA 全文なし・著者所属/ORCID なし・登録から3週間**。
+  **被引用 0・参照文献 0・Semantic Scholar 未収録・OA 全文なし・
+  著者所属/ORCID なし・登録から3週間**。
   **実在は確定したが、質は確定していない。**
+  - **⚠ 訂正**: 初回調査は「Google Scholar 未収録」と報告したが、**反証パスで覆った**。
+    Google Scholar は**収録している**(完全一致検索で1件、`T Lau - 2026 - papers.ssrn.com`)。
+    最初の「該当なし」は Scholar 側の不安定な応答だった。
+    **1回の否定的応答で「収録されていない」と結論してはいけない**という教訓として残す
   初版が引用した数値(Hyperliquid が Binance/Bybit を年率約7%上回る等)は
   **Crossref 収録の abstract に逐語的に存在する**ので「この論文の主張」ではあるが、
   **主張が正しいかは未検証**である
