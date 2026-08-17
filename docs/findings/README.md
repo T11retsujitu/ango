@@ -29,19 +29,49 @@
    - レジームは月ラベルでなく**バー時点のローリング量**で定義する
      (月単位は N=34 しかなく、表示用と割り切る)
 
-## 現在の研究軸(2026-08-16 更新)
+## 現在の研究軸(2026-08-17 更新)
+
+**Phase 7 Tier 0 は economically negative result として閉じた**
+([closeout](2026-08-17-phase7-tier0-closeout-v1.md))。Tier 0 の集約情報に弱い
+incremental information は検出されたが、方向情報は確認できず、GO 2件は Y2/Y3 で
+現行の執行設計へ接続できなかった。**Tier 1 へは進まない**(否定ではなく研究 ROI 上の
+優先順位変更。Tier 1 仮説は backlog に `hold` で残す)。**Final OOS は未開封のまま。**
+
+Phase 3(探索軸)と Phase 7(情報軸)が同じ壁に当たったため、次に変えるのは
+**問題設定そのもの**である。「5分ごとに短期方向を当て taker で売買する」から離れ、
+**先行研究から再実装・独立検証する価値の高い仮説を選ぶ**(Phase 8.0)。
+5分足は捨てず、観測・執行シミュレーション基盤として維持する。
+
+- Phase 7 総括: [Tier 0 closeout](2026-08-17-phase7-tier0-closeout-v1.md)
+- 文献調査: [Phase 8.0 literature review](../phase8/literature_review_2026-08-17.md)
+- 候補採点: [replication candidates v1](../phase8/replication_candidates_v1.md)
+- 選定: [Phase 8.0 selection memo](../phase8/phase8_selection_memo_v1.md)
+  — 第1位 **BTC spot–perp funding carry / basis**(**81**/100。訂正前 89)
+- 再現プロトコル(**未凍結・v1.2**):
+  [Phase 8.1 carry replication protocol](../phase8/carry_replication_protocol_v1.md)
+- 凍結前 独立監査: [carry protocol audit v1](../phase8/carry_protocol_audit_v1.md)
+  — 論文全文の取得で**アンカー論文の読み違い6件**、敵対監査で **fatal 4件を含む26件**を
+  **一度も実行しないまま**検出・訂正した
+
+### 履歴(2026-08-16 時点の研究軸。書き換えない)
 
 Phase 3 Alpha Search Bakeoff は **validation survivor 0/30 × 3 arm** で完了した。
 主軸を「OHLCV 空間で search algorithm を改善する」から
-**「OHLCV を超える incremental information を持つ情報集合はどれか」**へ移す。
+**「OHLCV を超える incremental information を持つ情報集合はどれか」**へ移した。
 
 - 総括: [Phase 3 bakeoff summary](2026-08-16-phase3-bakeoff-summary-v1.md)
-- 次の設計: [Phase 7 — Information-Space Expansion](../phase7/information_space_expansion_v1.md)
+- 当時の設計: [Phase 7 — Information-Space Expansion](../phase7/information_space_expansion_v1.md)
 - 既存 microstructure 資産の棚卸し: [microstructure v1 review](../phase7/microstructure_v1_review.md)
 - 保留項目(削除しない): [research backlog](../research_backlog.md)
 
 ## 台帳
 
+- [2026-08-17 Phase 7 Tier 0 — closeout(economically negative result)](2026-08-17-phase7-tier0-closeout-v1.md)
+  — Result と Interpretation を分離。**Tier 0 に弱い incremental information はあった**が
+  **方向情報は確認できず**、statistical GO と economic usability は別物。
+  **GO 2件は棄却ではなく保留**(昇格権を行使しないという決定)。Tier 1 へ進まないのは
+  研究 ROI 上の優先順位変更であり microstructure の否定ではない。**Final OOS 未開封のまま終了。**
+  再開条件4つと未検証仮説を明記。
 - [2026-08-17 Phase 7 Tier 0 incremental information test — confirmation(最終判定)](2026-08-17-phase7-tier0-confirmation-v1.md)
   — 昇格5件中 **GO 2件**。dev 最大効果(+5.45e-03・安定性6条件全通過)は
   **符号反転して脱落**。GO 2件はどちらも Y2/Y3 で方向を含まず、bootstrap CI は 0 を含む。

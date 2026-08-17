@@ -1,0 +1,1231 @@
+{
+  "schema_version": "1.0",
+  "document": "phase8 replication candidates",
+  "as_of": "2026-08-17",
+  "status": "draft — not frozen. No forward returns, no PnL, no backtest, no Final OOS opening.",
+  "authoritative": true,
+  "note": "This JSON is the machine-readable source of truth. docs/phase8/replication_candidates_v1.md renders the same numbers; tests/test_phase8_docs.py enforces agreement.",
+  "revision": "v1.1 (2026-08-17) — corrected after full-text retrieval of both P8-C1 anchor papers. See corrections_applied.",
+  "corrections_applied": [
+    {
+      "id": "X1",
+      "severity": "material",
+      "what": "Crypto Carry (A1) studies DATED (fixed-maturity) futures, NOT perpetual futures. Verified by extracting the text of https://www.bis.org/publ/work1087.pdf: 'Recent papers study so-called perpetual crypto futures instead of the standard fixed-term futures analyzed in our paper' and 'Our paper provides a different perspective on basis trades, since we study fixed-date contracts with proper price convergence of spot and futures on the settlement date.'",
+      "consequence": "A1 cannot anchor a spot-vs-PERPETUAL funding carry replication. A1 is demoted from anchor to economic context. A2 (Fundamentals of Perpetual Futures) becomes the sole replication anchor.",
+      "affected": [
+        "P8-C1 anchor_papers",
+        "P8-C1 scores",
+        "carry_replication_protocol_v1.md section 3"
+      ]
+    },
+    {
+      "id": "X2",
+      "severity": "material",
+      "what": "The PDF that bis.org currently serves for Working Paper 1087 carries an April 2023 cover but its title page states 'This version: October 1, 2025'. The earlier inference in literature_review_2026-08-17.md that A1's sample ends by early 2023 was WRONG.",
+      "consequence": "A1's actual sample is March 2019 to July 2024 (daily). This overlaps ango's research split (2023-11-19 onward), so ango's research window is NOT outside A1's sample.",
+      "affected": [
+        "P8-C1 independent_confirmation score",
+        "layer 1 / layer 2 boundary"
+      ]
+    },
+    {
+      "id": "X3",
+      "severity": "material",
+      "what": "A2's sample is 2020-01-08 to 2024-03-11 (1,495 days, daily), and the strategy it actually tests is 'random-maturity arbitrage': open when the futures-spot spread exceeds the theoretical bound for a given trading-cost tier, close when the spread returns to its theoretical relationship under no trading costs. It is NOT a fixed-holding-horizon carry trade.",
+      "consequence": "The protocol's fixed-horizon design was not a replication of A2. Threshold entry/exit becomes the replication arm; fixed horizons are demoted to an ango extension.",
+      "affected": [
+        "carry_replication_protocol_v1.md sections 6, 10, 14"
+      ]
+    },
+    {
+      "id": "X4",
+      "severity": "resolves-blocker",
+      "what": "Freeze blocker H4 is RESOLVED. Binance Vision fundingRate column calc_time is identical to the official REST field fundingTime, i.e. the funding SETTLEMENT timestamp. Verified directly: GET https://www.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT for 2024-01 returns fundingTime 1704067200000 / fundingRate 0.00037409, byte-identical to the Vision CSV row '1704067200000,8,0.00037409'.",
+      "consequence": "The as-of availability rule in protocol section 5.2 can be frozen. Additionally the REST endpoint supplies markPrice at settlement, removing the need for the perp_close proxy in section 8.1.",
+      "affected": [
+        "carry_replication_protocol_v1.md sections 5.2, 8.1, 22"
+      ]
+    },
+    {
+      "id": "X5",
+      "severity": "implementation",
+      "what": "Since 2025-05-02 Binance switches a contract to HOURLY funding permanently if a settlement hits the funding cap/floor, and does not revert. Implementations must read funding_interval_hours per row instead of hardcoding 8.",
+      "consequence": "New required behaviour and test in the protocol's implementation checklist.",
+      "affected": [
+        "carry_replication_protocol_v1.md sections 8.1, 21"
+      ]
+    },
+    {
+      "id": "X6",
+      "severity": "data-availability",
+      "what": "https://www.binance.com/fapi/v1/... returns HTTP 200 from this environment even though https://api.binance.com/api/v3/... returns 451.",
+      "consequence": "Official futures REST data (including markPrice at each funding settlement, and rateType) is reachable, not only the Vision bulk dumps.",
+      "affected": [
+        "data_availability_measured_2026_08_17"
+      ]
+    },
+    {
+      "id": "X7",
+      "severity": "method",
+      "what": "The adversarial refutation pass overturned three claims that had already been written into the repository: (1) 'Google Scholar does not index SSRN 6993978' — it does; the first negative was an unstable Scholar response. (2) 'nobody has netted taker fees on this trade' — an unverifiable universal negative; scoped to 'among retrieved papers'. (3) 'no prior art releases code' — Krestenko et al. (A3) does, and is also cost-explicit, so the 'cost-explicit papers study only the threshold trade' dichotomy was wrong.",
+      "consequence": "Recorded as a standing methodological rule for Phase 8: a single negative search response is not evidence of absence, and universal negatives over a literature must be scoped to what was actually retrieved.",
+      "affected": [
+        "P8-C1 prior_art_note",
+        "P8-C7 anchor_papers",
+        "H1 resolution",
+        "A3 code_availability"
+      ]
+    }
+  ],
+  "scoring_axes": {
+    "mechanism_clarity": 15,
+    "data_availability": 15,
+    "cost_execution_realism": 15,
+    "independent_confirmation": 15,
+    "reimplementability": 10,
+    "ango_asset_reuse": 10,
+    "solo_feasibility": 10,
+    "evidence_quality": 10
+  },
+  "scoring_rules": {
+    "no_points_for_reported_returns": true,
+    "explicit_deduction_triggers": [
+      "cannot_secure_data_outside_original_sample",
+      "missing_code_data_or_formulas",
+      "unrealistic_transaction_costs",
+      "optimistic_maker_fill_assumption",
+      "survivorship_bias",
+      "single_split",
+      "no_multiple_testing_correction",
+      "results_concentrated_in_few_periods",
+      "assumes_instant_free_inter_exchange_transfer",
+      "ignores_liquidation_margin_collateral",
+      "data_infeasible_for_individual_researcher",
+      "recent_preprint_without_replication"
+    ]
+  },
+  "verification_status_legend": {
+    "VERIFIED-FULL": "primary source full text retrieved and read",
+    "VERIFIED-META": "primary bibliographic page retrieved (arXiv abs / publisher / RePEc)",
+    "PARTIAL": "primary source unreachable (403 etc.); bibliographic data from secondary route only",
+    "UNVERIFIED": "existence of the primary source could not be confirmed; must not be used as evidence"
+  },
+  "environment_reachability_2026_08_17": {
+    "reachable": [
+      "arxiv.org",
+      "pubsonline.informs.org",
+      "ideas.repec.org",
+      "econpapers.repec.org",
+      "data.binance.vision",
+      "www.okx.com",
+      "api.hyperliquid.xyz",
+      "public.bybit.com"
+    ],
+    "blocked_403_or_unusable": [
+      "papers.ssrn.com",
+      "ssrn.com",
+      "sciencedirect.com",
+      "linkinghub.elsevier.com",
+      "onlinelibrary.wiley.com",
+      "mdpi.com",
+      "cepr.org"
+    ],
+    "bis_org": "HTTP ok but PDF text extraction failed",
+    "binance_rest_api": "HTTP 451 (geo-blocked)",
+    "bybit_v5_rest": "HTTP 403"
+  },
+  "candidates": [
+    {
+      "id": "P8-C1",
+      "rank": 1,
+      "family": "A. Crypto carry / basis",
+      "short_name": "spot-perp funding carry and basis on BTC",
+      "anchor_papers": [
+        {
+          "ref": "A1",
+          "title": "Crypto Carry",
+          "authors": [
+            "Maik Schmeling",
+            "Andreas Schrimpf",
+            "Karamfil Todorov"
+          ],
+          "status": "published (peer-reviewed)",
+          "venue": "Management Science, Articles in Advance",
+          "publication_date": "2026-05-06",
+          "acceptance_date": "2025-11-13",
+          "doi": "10.1287/mnsc.2024.05069",
+          "primary_url": "https://pubsonline.informs.org/doi/10.1287/mnsc.2024.05069",
+          "earlier_versions": [
+            "BIS Working Paper No. 1087 (2023-04)",
+            "CEPR DP20719",
+            "SSRN 4268371"
+          ],
+          "verification_status": "VERIFIED-FULL",
+          "verification_note": "Full text extracted from https://www.bis.org/publ/work1087.pdf (51 pages). The served PDF states 'This version: October 1, 2025' despite the April 2023 BIS cover.",
+          "role_after_correction": "ECONOMIC CONTEXT ONLY, NOT THE REPLICATION ANCHOR — see corrections_applied X1",
+          "asset_universe": "Bitcoin and Ether",
+          "venues": "Binance, OKEx, FTX, Huobi, BitMEX, Deribit, CME (CME described as the only regulated venue in the sample; OKEx used as the representative crypto-native exchange). Explicitly NOT in sample: CoinFlex, Bybit, Bitfinex",
+          "instruments": "spot BTC/ETH plus FIXED-MATURITY (dated) futures at constant maturities of one and three months. PERPETUAL FUTURES ARE NOT IN THE DATASET — they appear only in the literature review",
+          "sample_start": "March 2019 (BTC OKEx; ETH April 2019; CME BTC from August 2020; CME ETH from February 2021)",
+          "sample_end": "July 2024",
+          "data_frequency": "daily (weekly only for the CFTC investor-position regressions)",
+          "data_providers": "Skew and Coinmetrics",
+          "information_set": "futures-spot price differences (carry / basis) on dated futures, options characteristics, CFTC positions",
+          "target": "carry level, its time series and cross-exchange characteristics, and its drivers",
+          "strategy": "cash-and-carry framing on fixed-date contracts with price convergence at settlement",
+          "funding_treatment": "not applicable — dated futures have no funding leg",
+          "primary_result": "from April 2019 to July 2024 the average annualized carry across exchanges was approximately 7% p.a., can spike above 40% p.a., with strong time variation; attributed to leveraged demand from small trend-chasing investors and constrained arbitrage capital (regulatory and margin frictions)",
+          "code_availability": "none found",
+          "data_availability": "none found (Skew and Coinmetrics are commercial providers)"
+        },
+        {
+          "ref": "A2",
+          "title": "Fundamentals of Perpetual Futures",
+          "authors": [
+            "Songrun He",
+            "Asaf Manela",
+            "Omri Ross",
+            "Victor von Wachter"
+          ],
+          "status": "preprint (arXiv), also SSRN 4301150",
+          "arxiv_id": "2212.06888",
+          "primary_url": "https://arxiv.org/abs/2212.06888",
+          "publication_date": "2022-12-13",
+          "revision_date": "2024-08-21 (v6)",
+          "subject_categories": [
+            "q-fin.PR",
+            "q-fin.GN"
+          ],
+          "verification_status": "VERIFIED-FULL",
+          "verification_note": "Full text extracted from https://arxiv.org/pdf/2212.06888v6 (64 pages).",
+          "role_after_correction": "SOLE REPLICATION ANCHOR for P8-C1 — see corrections_applied X1 and X3",
+          "asset_universe": "cryptocurrencies (perpetual futures) with comparison to traditional currency markets; BTC reported separately",
+          "venues": "Binance (results reported for 'investors subject to the highest trading costs on Binance')",
+          "instruments": "perpetual futures and spot",
+          "sample_start": "2020-01-08",
+          "sample_end": "2024-03-11",
+          "sample_size": "1495 days",
+          "data_frequency": "daily",
+          "information_set": "perpetual price, spot price, funding rate, stablecoin borrow rates averaged across three stablecoins as the arbitrageur risk-free funding rate proxy",
+          "target": "deviation of the perpetual price from the no-arbitrage price (futures-spot spread rho)",
+          "strategy": "RANDOM-MATURITY ARBITRAGE: open the position when the futures-spot spread exceeds the theoretical bound under a given trading-cost tier, and close it when the spread returns to its theoretical relationship under no trading costs. Holding period is ENDOGENOUS, not a fixed horizon.",
+          "holding_period": "endogenous (threshold entry, threshold exit)",
+          "execution_assumption": "no-arbitrage bounds explicitly account for trading costs (a band, not a point price); strategy evaluated under several trading-cost tiers",
+          "fees_spread_slippage": "trading-cost tiers spanning retail through highly-active market maker, benchmarked to Binance fee tiers",
+          "funding_treatment": "core mechanism — funding paid every eight hours and approximately equal to the average futures-spot spread over the preceding eight hours",
+          "primary_result": "crypto deviations larger than in currency markets, comove across currencies, and diminish over time. For BITCOIN perpetual futures the random-maturity arbitrage strategy generates a Sharpe ratio of 1.8 under high trading costs typical of retail investors, and up to 3.5 for highly-active market makers",
+          "statistical_test": "Newey-West adjusted p-values (lag 120 days) on mean rho and |rho|",
+          "stated_caveat": "the paper states that funding-rate arbitrage 'is not risk-free even disregarding margin requirements and trading costs, simply because there is no predetermined expiration date when the trade would be unwound at a profit'",
+          "code_availability": "none found"
+        }
+      ],
+      "supporting_papers": [
+        {
+          "ref": "A3",
+          "title": "Dynamic Collateral Control for Permissionless Spot Perpetual Basis Trading",
+          "authors": [
+            "Anatoly Krestenko",
+            "Mikhail Butov",
+            "Rostislav Berezovskiy",
+            "Danila Bolotin"
+          ],
+          "arxiv_id": "2605.05089",
+          "publication_date": "2026-05-06",
+          "verification_status": "VERIFIED-META",
+          "role": "design reference for collateral / rebalancing, NOT a replication target",
+          "key_point": "required collateral rises with volatility and is lowest for BTC; realized execution wedges are material and worse when selling the basis; funding conditions dominate realized performance under fixed control rules",
+          "code_availability": "HAS CODE — the exception among all prior art. Full-text scan found two first-author repository pointers plus a DOI-minted code archive. All other retrieved prior art (He et al., Christin et al., Schmeling/Schrimpf/Todorov, Borri et al.) has no replication package.",
+          "note_after_refutation": "The initial sweep's dichotomy — 'cost-explicit papers study only the threshold convergence trade' — was REFUTED. Krestenko et al. is cost-explicit (it decomposes cost into fee + impact + gas + funding terms) AND studies spot-perp basis. It remains a design reference rather than a replication target, but its released code is a concrete reusable asset for the two-leg execution layer."
+        }
+      ],
+      "ango_reproducible_scope": "AFTER CORRECTION: the replication target is A2's random-maturity arbitrage on BTC spot vs Binance USDT-M perpetual. Ango can reconstruct every required input (spot klines, perp klines, funding with settlement timestamps and mark price, index price, premium index) from sources verified reachable on 2026-08-17, on the same venue A2 uses (Binance). Ango CANNOT replicate A1, because A1 studies dated futures at one- and three-month constant maturities sourced from Skew and Coinmetrics, which ango does not have and has no route to obtain. A1 is retained as economic context for why carry persists (limits to arbitrage), not as a replication target.",
+      "independent_confirmation_window": "2025-06-01 .. 2025-12-31 (SEVEN months). Lower bound is max over ALL prior art on this exact trade: A2 ends 2024-03-11, A1 ends 2024-07, Christin et al. end 2023-06-23, and Borri et al. end 2025-05-31. Revised twice: first from 2023-11-19 to 2024-08-01 (corrections X1/X2), then to 2025-06-01 once the prior-art sweep found K11 and K12.",
+      "prior_art_note": "Among the papers that could be RETRIEVED, none nets TAKER fees on all four legs of an unlevered buy-and-hold long-spot/short-perp carry: A2 deliberately uses MAKER fees, and Christin et al. and Borri et al. are GROSS of costs. This is a scoped statement, not a universal negative over the 2023-2026 literature — an earlier draft's 'nobody has done this' claim was refuted as unverifiable. Note also that Krestenko et al. (A3) IS cost-explicit and does study spot-perp basis, so the literature does not split cleanly into two camps. All three retrieved sources independently document decay, and Borri et al. report the Sharpe turning NEGATIVE in 2025 gross of costs.",
+      "operational_risks": [
+        "two-leg execution: spot leg and perp leg fill at different times / venues",
+        "spot leg funding cost is not zero (capital tied up, or borrow cost if levered)",
+        "margin and liquidation risk on the short perp leg during upward spot moves",
+        "collateral haircut and cross-margin rules differ per venue",
+        "funding schedule is discrete (8h on Binance) — entry timing relative to settlement matters",
+        "ToS / jurisdiction: Binance access for JP residents remains unresolved (docs/data_sources.md)"
+      ],
+      "scores": {
+        "mechanism_clarity": 14,
+        "data_availability": 15,
+        "cost_execution_realism": 12,
+        "independent_confirmation": 6,
+        "reimplementability": 8,
+        "ango_asset_reuse": 7,
+        "solo_feasibility": 8,
+        "evidence_quality": 8
+      },
+      "total_score": 78,
+      "score_history": [
+        {
+          "version": "v1.0",
+          "total": 89,
+          "basis": "A1 wrongly treated as a perpetual-carry anchor; A1 sample wrongly inferred to end by early 2023"
+        },
+        {
+          "version": "v1.1",
+          "total": 81,
+          "basis": "corrections X1-X6: A1 demoted to context, A2 sole anchor, window cut to 17 months"
+        },
+        {
+          "version": "v1.2",
+          "total": 78,
+          "basis": "prior-art sweep found K11 (Christin et al.) and K12 (Borri et al., exact trade on the exact venue through 2025-05-31), cutting the uncontaminated window to 7 months"
+        }
+      ],
+      "score_rationale": {
+        "mechanism_clarity": "Funding is a contractual cash flow, not a statistical artifact, and A2 derives explicit no-arbitrage bounds for it. Reduced from 15 to 14 after correction X1: the peer-reviewed economic account (A1) is about dated futures, a different instrument, so it supports the limits-to-arbitrage story only by analogy.",
+        "data_availability": "All required series verified retrievable 2026-08-17: Binance Vision spot klines (from 2017-08), futures klines, fundingRate monthly (2020-01 .. 2026-07), premiumIndexKlines, indexPriceKlines. Correction X4/X6 additionally confirmed the official futures REST endpoint is reachable and supplies markPrice at each settlement. Ango already has the fetch/verify machinery, and A2 uses the same venue.",
+        "cost_execution_realism": "Two legs, both taker-modellable with existing costs.py, and A2 itself frames results by trading-cost tier. Deducted 3 for: spot borrow/margin cost not in ango's cost model, and collateral haircut / liquidation not modelled.",
+        "independent_confirmation": "Reduced 13 -> 9 -> 6. The prior-art sweep found that Borri et al. (K12) already implement this exact trade on this exact venue through 2025-05-31, and Christin et al. (K11) through 2023-06-23. Combined with A1 (to 2024-07) and A2 (to 2024-03-11), ango's uncontaminated window is only SEVEN months (2025-06 .. 2025-12). On top of that, K9 shows ango has itself already measured the funding series into the sealed period. This is now the candidate's weakest axis by a wide margin.",
+        "reimplementability": "Reduced from 9 to 8 after correction X3: replicating A2 faithfully requires implementing its no-arbitrage bound and a threshold entry/exit rule, not just fixed-horizon arithmetic. Still no ML and no proprietary estimator. No author code.",
+        "ango_asset_reuse": "splits, manifest, data_contract, costs.py, experiments artifact all reusable. Deducted 3 because the backtest engine is single-instrument and needs a genuinely new two-leg execution path.",
+        "solo_feasibility": "No exotic data, no infrastructure beyond what exists. Deducted 2 for real-money two-leg margin requirements and jurisdiction/ToS uncertainty.",
+        "evidence_quality": "Reduced from 10 to 8. The sole replication anchor (A2) is an arXiv preprint, not peer-reviewed, although it is at v6 and is cited in A1's literature review. A1 remains peer-reviewed in Management Science but no longer anchors this candidate. Still the strongest evidence base among all candidates."
+      },
+      "deductions": [
+        "ignores_liquidation_margin_collateral (partially: ango's current cost model has no margin/collateral term — must be added, tracked as an implementation gap not a paper flaw)",
+        "missing_code_data_or_formulas (no author code or data release found for A1 or A2)",
+        "recent_preprint_without_replication (the sole anchor A2 is a preprint; this deduction was NOT applied before correction X1 because the peer-reviewed A1 was wrongly treated as an anchor)",
+        "cannot_secure_data_outside_original_sample (NOT triggered — ango retains about 17 months outside both samples, plus a prospective window)"
+      ]
+    },
+    {
+      "id": "P8-C2",
+      "rank": 2,
+      "family": "C. 1-24h BTC forecasting / cost-aware execution",
+      "short_name": "hourly BTC ML under transaction costs with cost-aware execution filter",
+      "anchor_papers": [
+        {
+          "ref": "C1",
+          "title": "Machine Learning-Based Bitcoin Trading Under Transaction Costs: Evidence From Walk-Forward Forecasting",
+          "authors": [
+            "Andrei Bysik",
+            "Robert Slepaczuk"
+          ],
+          "status": "preprint (arXiv)",
+          "arxiv_id": "2606.00060",
+          "primary_url": "https://arxiv.org/abs/2606.00060",
+          "publication_date": "2026 (arXiv ID implies June 2026; abs page reported 2026-05-19 — UNRESOLVED DISCREPANCY)",
+          "subject_categories": [
+            "q-fin.TR",
+            "cs.CE",
+            "cs.LG"
+          ],
+          "verification_status": "VERIFIED-FULL",
+          "asset_universe": "BTC/USDT",
+          "venues": "Binance",
+          "instruments": "USD-margined perpetual futures",
+          "sample_start": "2017-12-01",
+          "sample_end": "2026-01-01",
+          "sample_size": "70872 hourly bars",
+          "data_frequency": "1 hour",
+          "information_set": "three nested tiers: OHLCV; OHLCV+10 TA indicators selected per fold over 3-336h windows; OHLCV+TA+3 Student-t EGARCH conditional volatility features",
+          "target": "next-hour log return ln(P_t+1 / P_t)",
+          "strategy": "sign of forecast, with a cost-aware execution filter gating on forecast magnitude",
+          "holding_period": "1 hour, extended by the no-trade band",
+          "execution_assumption": "position from forecast sign; long-only in {0,1} or long-short in {-1,1}; long-short reversal needs |forecast| > 0.40%, long-only entry/exit needs > 0.20%",
+          "fees_spread_slippage": "single proportional cost c = 0.001 (10 bps per unit turnover), explicitly described as all-in (fees + spread crossing + slippage); order book depth, partial fills, maker-taker routing and time-varying spreads are NOT simulated",
+          "funding_treatment": "NOT included",
+          "leverage": "not stated; position bounded by +/-1",
+          "primary_result": "all three models positive gross in selected configurations; naive sign strategies fail at 10 bps; cost-aware filter restores profitability in selected configurations; strongest long-only XGBoost above 65% annualised with Sharpe above 1",
+          "author_caveat": "cost-aware strategies do NOT establish statistically significant Sharpe-ratio outperformance over buy-and-hold",
+          "statistical_test": "10000 bootstrap replications with block lengths 24/72/168 hours",
+          "train_val_oos_design": "non-anchored rolling: 12m train / 3m validation / 3m test, advancing 3m; retrained on train+validation before test",
+          "walk_forward": "yes, 27 folds",
+          "multiple_testing": "yes — Holm-Bonferroni FWER control on bootstrap tests",
+          "search_budget": "XGBoost 50 trials/fold (1350), LSTM 40/fold (1080), iTransformer 40/fold (1080), times 3 feature tiers times 2 loss functions",
+          "survivorship_bias_handling": "not applicable (single asset)",
+          "code_availability": "none stated",
+          "data_availability": "public Binance REST API",
+          "reported_limitations": [
+            "no order book / partial fill / maker-taker routing / time-varying spread simulation",
+            "returns near forward-filled gap timestamps may be mechanically smoothed",
+            "feature-tier effect and threshold-crossing-frequency effect cannot be separated under a fixed threshold",
+            "results specific to hourly BTC/USDT futures",
+            "no statistically significant Sharpe outperformance over buy-and-hold"
+          ]
+        }
+      ],
+      "ango_reproducible_scope": "Fully reproducible in principle: ango has Binance 5m klines 2020-01..2025-12 (aggregatable to 1h) and can fetch 1h klines directly. Ango already has cost scenarios, walk-forward fold machinery (mce.backtest.splits.walk_forward_folds) and a cost-aware abstention implementation from Phase 1A.",
+      "independent_confirmation_window": "NONE among ango's existing splits — the paper's sample 2017-12..2026-01 covers ango's entire research and validation windows. Only a prospective window (>= 2026-09) would be independent.",
+      "operational_risks": [
+        "the headline configuration is long-only in a structurally rising sample",
+        "ango already rejected a closely related mechanism at 5m (Phase 1A cost-aware abstention, finding J3: loses to an exposure-matched random control)",
+        "selecting the best of 3510 trials then reporting it is exactly the selection problem ango's Phase 3 was built to defeat"
+      ],
+      "scores": {
+        "mechanism_clarity": 5,
+        "data_availability": 15,
+        "cost_execution_realism": 10,
+        "independent_confirmation": 3,
+        "reimplementability": 7,
+        "ango_asset_reuse": 8,
+        "solo_feasibility": 9,
+        "evidence_quality": 7
+      },
+      "total_score": 64,
+      "score_rationale": {
+        "mechanism_clarity": "No economic mechanism is claimed — this is a statistical forecasting result. The paper's own conclusion is that the gain comes from turnover reduction, which is the same mechanism ango already rejected in Phase 1A.",
+        "data_availability": "Best possible: ango already holds the exact venue and instrument at finer granularity.",
+        "cost_execution_realism": "10 bps all-in is the same order as ango's stress scenario and is honestly declared. Deducted 5 because no book depth / partial fill / maker-taker routing and no funding.",
+        "independent_confirmation": "Severe deduction. The sample ends exactly at ango's seal boundary and covers every non-sealed bar ango has. No existing split gives an uncontaminated confirmation.",
+        "reimplementability": "XGBoost/LSTM/iTransformer plus 27-fold protocol is a substantial but well-specified build. No code released.",
+        "ango_asset_reuse": "splits, costs, artifact, and the Phase 1A abstention code apply directly.",
+        "solo_feasibility": "Cheap data, moderate compute.",
+        "evidence_quality": "arXiv preprint, no peer review, no code, no independent replication. Credit given for genuinely good internal discipline (27-fold walk-forward, Holm-Bonferroni, block bootstrap, explicit limitations)."
+      },
+      "deductions": [
+        "cannot_secure_data_outside_original_sample (no existing ango split is outside the paper's sample)",
+        "missing_code_data_or_formulas (no code release)",
+        "recent_preprint_without_replication",
+        "results_concentrated_in_few_periods (headline is a long-only configuration over a rising sample; author states no significant Sharpe edge over buy-and-hold)"
+      ]
+    },
+    {
+      "id": "P8-C3",
+      "rank": 3,
+      "family": "D. Crypto factor",
+      "short_name": "crypto factor zoo — iterative alpha-based factor selection",
+      "anchor_papers": [
+        {
+          "ref": "D1",
+          "title": "Crypto factor zoo (.Zip)",
+          "authors": [
+            "Aleksander Mercik",
+            "Adam Zaremba",
+            "Ender Demir"
+          ],
+          "status": "published (peer-reviewed)",
+          "venue": "International Review of Financial Analysis, Vol. 113 (2026)",
+          "doi": "10.1016/j.irfa.2026.105137",
+          "pii": "S1057521926000645",
+          "primary_url": "https://ideas.repec.org/a/eee/finana/v113y2026ics1057521926000645.html",
+          "verification_status": "VERIFIED-META",
+          "user_supplied_doi_was_wrong": "10.1016/j.irfa.2026.104962 returns HTTP 404 (measured 2026-08-17)",
+          "asset_universe": "cryptocurrencies (count not stated on retrievable page)",
+          "sample_start": "unknown",
+          "sample_end": "unknown",
+          "data_frequency": "unknown",
+          "information_set": "36 return-predictive factors including liquidity, turnover volatility, bid-ask spread, and on-chain metrics such as new-address-to-price ratio",
+          "target": "cross-sectional returns / portfolio alpha",
+          "strategy": "alpha-based iterative factor selection",
+          "primary_result": "two to three factors eliminate all significant portfolio alphas; liquidity-related variables dominate across specifications",
+          "code_availability": "none found",
+          "data_availability": "none found",
+          "reported_limitations": "unknown (full text not retrieved)"
+        }
+      ],
+      "ango_reproducible_scope": "Not reproducible with ango's current assets. Requires a multi-asset crypto universe with point-in-time membership (including delisted coins), plus on-chain address data. Ango is single-asset BTC.",
+      "independent_confirmation_window": "unknown until H3 resolves the paper's sample period",
+      "operational_risks": [
+        "survivorship bias is the dominant risk in any crypto cross-section rebuilt after the fact",
+        "on-chain factors need a separate provider with its own availability semantics",
+        "liquidity factors are exactly the factors most sensitive to the cost model"
+      ],
+      "scores": {
+        "mechanism_clarity": 9,
+        "data_availability": 6,
+        "cost_execution_realism": 10,
+        "independent_confirmation": 8,
+        "reimplementability": 6,
+        "ango_asset_reuse": 4,
+        "solo_feasibility": 5,
+        "evidence_quality": 9
+      },
+      "total_score": 57,
+      "score_rationale": {
+        "mechanism_clarity": "Liquidity-based pricing is a well-founded mechanism, but 'the zoo collapses to 2-3 factors' is a statistical selection result rather than a tradable mechanism.",
+        "data_availability": "Needs a universe ango does not have, with point-in-time membership and on-chain data. Heavy new collection.",
+        "cost_execution_realism": "The paper's own finding centres on liquidity and spreads, which forces cost realism.",
+        "independent_confirmation": "Likely obtainable once the sample end is known, since ango would build its own universe.",
+        "reimplementability": "Method is standard but universe construction is the hard part.",
+        "ango_asset_reuse": "Ango's single-asset pipeline, splits and Judge are largely inapplicable to a cross-section.",
+        "solo_feasibility": "Universe construction plus delisting handling is a multi-week solo effort with real bias risk.",
+        "evidence_quality": "Peer-reviewed in a recognised journal."
+      },
+      "deductions": [
+        "survivorship_bias (unavoidable risk when rebuilding a crypto cross-section retrospectively)",
+        "data_infeasible_for_individual_researcher (partially: point-in-time universe with delisted coins and on-chain metrics)",
+        "missing_code_data_or_formulas (no code or data release found)"
+      ]
+    },
+    {
+      "id": "P8-C4",
+      "rank": 4,
+      "family": "B. Cross-venue / DEX funding",
+      "short_name": "funding timing and no-arbitrage bounds in decentralized perpetual markets",
+      "anchor_papers": [
+        {
+          "ref": "B2",
+          "title": "Funding Timing and No-Arbitrage Bounds in Decentralized Perpetual Markets",
+          "authors": [
+            "Erce Erez",
+            "Mikhail Smirnov"
+          ],
+          "status": "preprint (SSRN)",
+          "ssrn_id": "6805838",
+          "primary_url": "https://ssrn.com/abstract=6805838",
+          "publication_date": "2026-05-20",
+          "verification_status": "PARTIAL",
+          "verification_note": "SSRN returns HTTP 403 from this environment. Authors, date and thesis come from search results only; the full text has NOT been read.",
+          "venues": "Drift Protocol, dYdX v4",
+          "instruments": "decentralized perpetual futures",
+          "sample_start": "unknown",
+          "sample_end": "unknown",
+          "information_set": "protocol funding rules, EMA-TWAP state variables, premium samples",
+          "target": "empirical content of no-arbitrage bounds",
+          "primary_result": "the empirical content of no-arbitrage bounds depends on whether protocol funding is known at trade entry; Drift is the observable-funding case (funding determined from entry-time EMA-TWAP state, so realized funding tightens the bound even when the cap does not bind); dYdX is forward-looking (funding computed from subsequent premium samples, so the argument has empirical content only in clamped regimes)",
+          "code_availability": "unknown",
+          "data_availability": "unknown",
+          "reported_limitations": "unknown"
+        }
+      ],
+      "ango_reproducible_scope": "The conceptual contribution — separating funding that is observable at decision time from funding that is only known ex post — maps directly onto ango's data_contract section 3 availability discipline and is reusable regardless of venue. The empirical part needs Drift and dYdX v4 on-chain data ango does not have.",
+      "independent_confirmation_window": "unknown (paper sample period not verified)",
+      "operational_risks": [
+        "on-chain venue operations (wallet, gas, oracle risk) are outside ango's current infrastructure",
+        "DEX liquidity and slippage are not modellable from the data ango can currently reach"
+      ],
+      "scores": {
+        "mechanism_clarity": 13,
+        "data_availability": 7,
+        "cost_execution_realism": 9,
+        "independent_confirmation": 8,
+        "reimplementability": 5,
+        "ango_asset_reuse": 3,
+        "solo_feasibility": 4,
+        "evidence_quality": 5
+      },
+      "total_score": 54,
+      "score_rationale": {
+        "mechanism_clarity": "The observable-vs-forward-looking funding distinction is unusually crisp and is a real contract property, not an estimated effect. Highest mechanism score after C1.",
+        "data_availability": "Hyperliquid funding is reachable (hourly, from roughly 2023-07) but Drift and dYdX v4 data are not in ango's reach today.",
+        "cost_execution_realism": "No-arbitrage bounds are explicitly cost-aware by construction.",
+        "independent_confirmation": "Plausible but unquantified while the sample period is unknown.",
+        "reimplementability": "Requires protocol-specific funding rule implementations.",
+        "ango_asset_reuse": "Little reuse beyond the availability discipline itself.",
+        "solo_feasibility": "On-chain data engineering plus wallet operations.",
+        "evidence_quality": "PARTIAL verification only, recent preprint, no known replication."
+      },
+      "deductions": [
+        "recent_preprint_without_replication",
+        "missing_code_data_or_formulas (full text unread; code/data status unknown)",
+        "data_infeasible_for_individual_researcher (partially: Drift / dYdX v4 on-chain history)"
+      ]
+    },
+    {
+      "id": "P8-C5",
+      "rank": 5,
+      "family": "F. LLM quantitative research",
+      "short_name": "constrained LLM agents with point-in-time factor DSL",
+      "anchor_papers": [
+        {
+          "ref": "F1",
+          "title": "From Hypotheses to Factors: Constrained LLM Agents in Cryptocurrency Markets",
+          "authors": [
+            "Yikuan Huang",
+            "Zheqi Fan",
+            "Kaiqi Hu",
+            "Yifan Ye"
+          ],
+          "status": "preprint (arXiv)",
+          "arxiv_id": "2604.26747",
+          "primary_url": "https://arxiv.org/abs/2604.26747",
+          "publication_date": "2026-04-29",
+          "subject_categories": [
+            "q-fin.PM",
+            "q-fin.GN",
+            "q-fin.TR"
+          ],
+          "verification_status": "VERIFIED-META",
+          "asset_universe": "cryptocurrencies (cross-sectional factor portfolios)",
+          "sample_start": "2020",
+          "sample_end": "2026",
+          "train_val_oos_design": "trained only on 2020-2022; pure out-of-sample 2024-2026",
+          "information_set": "point-in-time factor DSL restricted action space",
+          "target": "cross-sectional factor returns",
+          "strategy": "sequential hypothesis search; agent reads an append-only experiment trace, proposes falsifiable hypotheses, maps them to executable recipes; deterministic engine enforces fixed splits, selection gates, transaction costs and portfolio tests; ridge-combined portfolio",
+          "fees_spread_slippage": "5 basis points one-way trading cost",
+          "funding_treatment": "not stated",
+          "primary_result": "44.55% annualized return, Sharpe 1.55 in the 2024-2026 out-of-sample period after 5 bps one-way cost",
+          "multiple_testing": "selection gates enforced by the deterministic engine; explicit correction not stated",
+          "code_availability": "none found",
+          "reported_limitations": "unknown (full text not retrieved)"
+        }
+      ],
+      "supporting_papers": [
+        {
+          "ref": "F2",
+          "title": "The Alpha Illusion: Reported Alpha from LLM Trading Agents Should Not Be Treated as Deployment Evidence",
+          "arxiv_id": "2605.16895",
+          "publication_date": "2026-05-16",
+          "verification_status": "VERIFIED-META",
+          "code_availability": "https://github.com/hj1650782738/Trading",
+          "role": "reporting standard to ADOPT, not a replication target",
+          "six_validity_tests": [
+            "temporal integrity",
+            "real-world frictions",
+            "counterfactual robustness",
+            "predictive calibration",
+            "numerical execution",
+            "multi-agent disaggregation"
+          ]
+        },
+        {
+          "ref": "F3",
+          "title": "Beyond Agent Architecture: Execution Assumptions and Reproducibility in LLM-Based Trading Systems",
+          "authors": [
+            "Junyi Yao",
+            "Zihao Zheng"
+          ],
+          "arxiv_id": "2606.08285",
+          "publication_date": "2026-06-06",
+          "verification_status": "VERIFIED-META",
+          "role": "reporting standard to ADOPT, not a replication target",
+          "key_point": "across 30 studies, architecture reporting is clearer than the evaluation assumptions needed to judge whether a trading result is economically interpretable or reproducible"
+        }
+      ],
+      "ango_reproducible_scope": "Ango already has the architecture: frozen DSL + AST + whitelist compiler + deterministic Judge + append-only artifacts + search budget accounting (Phase 2/3). F1 is therefore best read as EXTERNAL VALIDATION of ango's existing design, not as something to build. The genuinely new parts are the cross-sectional universe, the point-in-time factor DSL vocabulary, and ridge factor combination.",
+      "independent_confirmation_window": "2023 only (narrow) — F1 trains on 2020-2022 and tests on 2024-2026, which straddles ango's validation window and part of its sealed period",
+      "operational_risks": [
+        "needs a cross-sectional universe ango does not have (same problem as C3)",
+        "an agent-driven search is exactly the setting where Phase 3 found research-gate passage to be a deceptive metric"
+      ],
+      "scores": {
+        "mechanism_clarity": 4,
+        "data_availability": 6,
+        "cost_execution_realism": 9,
+        "independent_confirmation": 5,
+        "reimplementability": 6,
+        "ango_asset_reuse": 9,
+        "solo_feasibility": 7,
+        "evidence_quality": 6
+      },
+      "total_score": 52,
+      "score_rationale": {
+        "mechanism_clarity": "This is a research methodology, not a market mechanism. Lowest mechanism score.",
+        "data_availability": "Same cross-sectional universe problem as C3.",
+        "cost_execution_realism": "5 bps one-way is stated and matches ango's base_taker scenario.",
+        "independent_confirmation": "The 2024-2026 out-of-sample window overlaps ango's validation split and reaches into ango's sealed period.",
+        "reimplementability": "Most of the harness already exists in ango.",
+        "ango_asset_reuse": "Highest reuse of any candidate — near-identical architecture to Phase 2/3.",
+        "solo_feasibility": "Compute-light apart from universe construction.",
+        "evidence_quality": "Recent preprint, no code, no replication; credited for an unusually disciplined protocol description."
+      },
+      "deductions": [
+        "recent_preprint_without_replication",
+        "missing_code_data_or_formulas (no code release found)",
+        "survivorship_bias (inherits the cross-sectional universe risk)"
+      ]
+    },
+    {
+      "id": "P8-C6",
+      "rank": 6,
+      "family": "E. Derivatives / market structure",
+      "short_name": "state-dependent L2 liquidity transitions and order flow",
+      "anchor_papers": [
+        {
+          "ref": "E2",
+          "title": "When Does Order Flow Matter? State-Dependent L2 Liquidity-State Transitions in Crypto Futures",
+          "authors": [
+            "Joohyoung Jeon"
+          ],
+          "status": "preprint (arXiv)",
+          "arxiv_id": "2607.09230",
+          "primary_url": "https://arxiv.org/abs/2607.09230",
+          "publication_date": "2026-07-10",
+          "subject_categories": [
+            "q-fin.TR",
+            "cs.LG"
+          ],
+          "verification_status": "VERIFIED-META",
+          "asset_universe": "BTCUSDT and ETHUSDT futures",
+          "venues": "Binance",
+          "sample_start": "2023",
+          "sample_end": "2026",
+          "data_frequency": "tick level (top-20 L2 order book, trade flow records)",
+          "target": "discrete liquidity-state transitions",
+          "primary_result": "pre-event L2 liquidity state is the primary predictor; order flow adds incremental value only layered on top of the state model; ETH shows consistent gains, BTC shows limited isolated improvements",
+          "statistical_test": "rolling monthly out-of-sample validation with blocked permutation testing",
+          "fees_spread_slippage": "not specified in abstract",
+          "code_availability": "no statement",
+          "reported_limitations": "unknown (full text not retrieved)"
+        }
+      ],
+      "ango_reproducible_scope": "Partially. Binance Vision bookDepth (0.55 MB/day) exists but its column specification is unverified (backlog I5); bookTicker is 199 MB/day (~200 GB for the window, backlog I8). Ango's Tier 2 OKX prospective collector exists but cannot backfill.",
+      "independent_confirmation_window": "effectively none (2023-2026 covers ango's usable range)",
+      "operational_risks": [
+        "the paper's own finding is that BTC — ango's only asset — shows the weaker, more isolated improvement",
+        "tick L2 storage and processing is the largest data-engineering lift of any candidate"
+      ],
+      "scores": {
+        "mechanism_clarity": 11,
+        "data_availability": 4,
+        "cost_execution_realism": 7,
+        "independent_confirmation": 5,
+        "reimplementability": 5,
+        "ango_asset_reuse": 6,
+        "solo_feasibility": 4,
+        "evidence_quality": 7
+      },
+      "total_score": 49,
+      "score_rationale": {
+        "mechanism_clarity": "Conditioning order flow on liquidity state is a genuine microstructure mechanism, and it independently matches what ango's own ROADMAP Branch C predicted.",
+        "data_availability": "Tick L2 top-20 is the heaviest requirement here; bookDepth column spec unverified.",
+        "cost_execution_realism": "Costs not specified in the retrievable material.",
+        "independent_confirmation": "Sample covers ango's whole usable range.",
+        "reimplementability": "Discrete state modelling is tractable but the data layer is not.",
+        "ango_asset_reuse": "The Tier 2 collector and microstructure normalizer exist.",
+        "solo_feasibility": "Hundreds of GB and tick processing.",
+        "evidence_quality": "Recent preprint, no code; credited for blocked permutation testing and rolling OOS."
+      },
+      "deductions": [
+        "recent_preprint_without_replication",
+        "cannot_secure_data_outside_original_sample",
+        "data_infeasible_for_individual_researcher (partially: tick-level L2 at multi-year scale)",
+        "missing_code_data_or_formulas"
+      ]
+    },
+    {
+      "id": "P8-C7",
+      "rank": 7,
+      "family": "B. Cross-venue funding spread",
+      "short_name": "cross-venue funding spread (Hyperliquid vs centralized venues)",
+      "anchor_papers": [
+        {
+          "ref": "B1",
+          "title": "The Funding Carry and a Cross-Venue Spread on Perpetual Futures: A Significance-Tested Study of Hyperliquid and Centralized Venues",
+          "authors": [
+            "Tony Lau"
+          ],
+          "status": "unknown",
+          "ssrn_id": "6993978",
+          "primary_url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6993978",
+          "verification_status": "VERIFIED-META",
+          "verification_note": "Existence CONFIRMED via Crossref, OpenAlex (W7171662028) and DOI resolution after the initial review could not find it. Full text still unreadable (SSRN is Cloudflare-blocked here and no OA copy exists). Zero citations, zero referenced works, not indexed by Semantic Scholar (an initial report that Google Scholar also lacked it was REFUTED on recheck: Scholar does index it, one exact-phrase hit 'T Lau - 2026 - papers.ssrn.com'; the first negative was an unstable response), no affiliation or ORCID, three weeks old. The distinctive figures quoted in the initial review DO appear verbatim in the deposited Crossref abstract, so they are genuinely this paper's claims — but they remain unverified as findings.",
+          "doi": "10.2139/ssrn.6993978",
+          "publication_date": "2026-07-29",
+          "venues": "Hyperliquid (decentralized, hourly funding, USDC-margined) vs Binance and Bybit (centralized); reference rates 3-month T-bill and Aave USDC supply rate",
+          "sample_start": "unknown (abstract says a three-year sample covering 2024, 2025 and part of 2026)",
+          "sample_end": "roughly mid-2026"
+        }
+      ],
+      "ango_reproducible_scope": "Partially. Hyperliquid fundingHistory is reachable (hourly, coin/fundingRate/premium/time; BTC history begins between 2023-05 and 2023-08). Binance Vision fundingRate is reachable (8h). Bybit funding has NO reachable route from this environment (v5 REST is 403 and public.bybit.com has no funding dump).",
+      "independent_confirmation_window": "essentially none if the paper indeed runs through 2026",
+      "operational_risks": [
+        "funding intervals differ across venues (Binance 8h vs Hyperliquid 1h) — naive spread comparison is wrong without interval normalisation",
+        "capital must sit on both venues; inter-venue transfer is neither instant nor free",
+        "DEX leg needs wallet, gas and oracle-risk handling",
+        "two independent liquidation surfaces"
+      ],
+      "scores": {
+        "mechanism_clarity": 12,
+        "data_availability": 8,
+        "cost_execution_realism": 7,
+        "independent_confirmation": 4,
+        "reimplementability": 6,
+        "ango_asset_reuse": 4,
+        "solo_feasibility": 5,
+        "evidence_quality": 3
+      },
+      "total_score": 49,
+      "score_rationale": {
+        "mechanism_clarity": "Venue segmentation and differing funding rules are a plausible and specific mechanism.",
+        "data_availability": "Hyperliquid and Binance reachable; Bybit not; Hyperliquid history is only about 3 years.",
+        "cost_execution_realism": "Cross-venue capital, transfers and two liquidation surfaces are hard to model honestly.",
+        "independent_confirmation": "Reported window appears to run to the present, leaving nothing independent.",
+        "reimplementability": "Two-venue funding accounting with interval normalisation.",
+        "ango_asset_reuse": "Little.",
+        "solo_feasibility": "Requires live capital on a DEX and a CEX.",
+        "evidence_quality": "MINIMUM SCORE. The primary source could not be confirmed to exist. This is the single largest deduction in the whole exercise and is why this candidate ranks below its mechanism quality."
+      },
+      "deductions": [
+        "recent_preprint_without_replication",
+        "missing_code_data_or_formulas (primary source unreachable and unconfirmed)",
+        "assumes_instant_free_inter_exchange_transfer (cannot verify whether the paper handles this — treated as unverified risk)",
+        "ignores_liquidation_margin_collateral (cannot verify)",
+        "cannot_secure_data_outside_original_sample"
+      ]
+    },
+    {
+      "id": "P8-C8",
+      "rank": 8,
+      "family": "A. Crypto carry / basis (regulated venues)",
+      "short_name": "implied ETF carry rates and segmented bitcoin markets",
+      "anchor_papers": [
+        {
+          "ref": "A4",
+          "title": "Implied ETF Carry Rates and the Limits of Arbitrage in Segmented Bitcoin Markets",
+          "authors": [
+            "Mindy L. Mallory"
+          ],
+          "status": "preprint (arXiv)",
+          "arxiv_id": "2605.29309",
+          "primary_url": "https://arxiv.org/abs/2605.29309",
+          "publication_date": "2026-05-28",
+          "subject_categories": [
+            "q-fin.PR"
+          ],
+          "verification_status": "VERIFIED-META",
+          "instruments": "IBIT options, CME bitcoin futures, spot bitcoin (BRRNY reference rate)",
+          "information_set": "put-call parity implied forwards from IBIT options; BlackRock daily holdings to convert shares to bitcoin units",
+          "sample_size": "386 date-bucket observations",
+          "primary_result": "mean carry wedge 2.58% and median 2.52% annually between the two products; consistent with frictions limiting cross-margining between spot/ETF exposure and CME futures",
+          "code_availability": "no statement",
+          "reported_limitations": "unknown (full text not retrieved)"
+        }
+      ],
+      "ango_reproducible_scope": "Not reproducible. Ango has none of IBIT options, CME futures, BlackRock holdings, or BRRNY, and no established route to obtain them.",
+      "independent_confirmation_window": "not applicable while the data is unobtainable",
+      "operational_risks": [
+        "requires US-regulated brokerage access and paid options data"
+      ],
+      "scores": {
+        "mechanism_clarity": 12,
+        "data_availability": 3,
+        "cost_execution_realism": 8,
+        "independent_confirmation": 7,
+        "reimplementability": 4,
+        "ango_asset_reuse": 2,
+        "solo_feasibility": 3,
+        "evidence_quality": 7
+      },
+      "total_score": 46,
+      "score_rationale": {
+        "mechanism_clarity": "Segmented collateral and margin systems is a clean limits-to-arbitrage mechanism and complements C1.",
+        "data_availability": "Ango has none of the four required series.",
+        "cost_execution_realism": "Carry wedges are inherently cost-framed.",
+        "independent_confirmation": "Possible in principle but moot without data.",
+        "reimplementability": "Put-call parity extraction is simple; getting the inputs is not.",
+        "ango_asset_reuse": "Almost none.",
+        "solo_feasibility": "Options data and regulated venue access.",
+        "evidence_quality": "Recent preprint; small sample (386 observations)."
+      },
+      "deductions": [
+        "data_infeasible_for_individual_researcher",
+        "recent_preprint_without_replication",
+        "results_concentrated_in_few_periods (386 date-bucket observations)",
+        "missing_code_data_or_formulas"
+      ]
+    },
+    {
+      "id": "P8-C9",
+      "rank": 9,
+      "family": "E. Derivatives / market structure",
+      "short_name": "liquidation cascade early-warning signals",
+      "anchor_papers": [
+        {
+          "ref": "E1",
+          "title": "Where does the criticality live? Early-warning signals are event-heterogeneous across seven crypto-perpetual liquidation cascades",
+          "authors": [
+            "Ramon Marc Garcia Seuma"
+          ],
+          "status": "preprint (arXiv)",
+          "arxiv_id": "2607.27070",
+          "primary_url": "https://arxiv.org/abs/2607.27070",
+          "publication_date": "2026-07-29",
+          "subject_categories": [
+            "q-fin.ST",
+            "physics.soc-ph"
+          ],
+          "verification_status": "VERIFIED-META",
+          "sample_start": "2022",
+          "sample_end": "2025",
+          "data_frequency": "minute-level price; 5-minute leverage and order-flow",
+          "information_set": "rolling variance and lag-1 autocorrelation across 39 configurations per variable",
+          "primary_result": "price shows critical-slowing-down in 5 of 7 events but not in the 2 sudden-news shocks; taker order-flow variance compression is common to all events and passes a 300-onset placebo test, but is a population-level indicator rather than a per-event warning",
+          "statistical_test": "300-onset placebo test",
+          "code_availability": "no statement",
+          "reported_limitations": "unknown (full text not retrieved)"
+        }
+      ],
+      "ango_reproducible_scope": "Blocked. Ango's liquidation data path is unavailable: Binance Vision liquidationSnapshot returned 404 on 2026-08-16 (backlog I7) and OKX liquidation ingestion is not implemented.",
+      "independent_confirmation_window": "not applicable while the data is blocked",
+      "operational_risks": [
+        "a 7-event sample cannot support a trading rule regardless of statistics"
+      ],
+      "scores": {
+        "mechanism_clarity": 10,
+        "data_availability": 2,
+        "cost_execution_realism": 5,
+        "independent_confirmation": 6,
+        "reimplementability": 4,
+        "ango_asset_reuse": 4,
+        "solo_feasibility": 3,
+        "evidence_quality": 7
+      },
+      "total_score": 41,
+      "score_rationale": {
+        "mechanism_clarity": "Forced deleveraging is a real mechanism, but the paper's own conclusion is that warnings are event-heterogeneous.",
+        "data_availability": "Liquidation data is blocked for ango (backlog I7).",
+        "cost_execution_realism": "No tradable execution design is offered.",
+        "independent_confirmation": "Ango could add 2026 events, but N would still be tiny.",
+        "reimplementability": "Method is simple; the events are not obtainable.",
+        "ango_asset_reuse": "5m leverage/order-flow analogues exist in Tier 0.",
+        "solo_feasibility": "Blocked by data.",
+        "evidence_quality": "Recent preprint with a genuine placebo test, credited accordingly."
+      },
+      "deductions": [
+        "data_infeasible_for_individual_researcher (liquidation snapshots return 404)",
+        "results_concentrated_in_few_periods (seven events)",
+        "recent_preprint_without_replication",
+        "missing_code_data_or_formulas"
+      ]
+    }
+  ],
+  "excluded_from_scoring": [
+    {
+      "ref": "E3",
+      "title": "The Quarter-Hour Effect: Periodic Algorithmic Trading and Return Predictability in Cryptocurrency Futures",
+      "authors": [
+        "Chan Kim",
+        "Peter Reinhard Hansen"
+      ],
+      "arxiv_id": "2607.09426",
+      "verification_status": "VERIFIED-META",
+      "reason": "already independently tested by ango in Phase 1B (no directional effect; activity structure confirmed cross-exchange). Replication is complete, not pending."
+    },
+    {
+      "ref": "F2/F3",
+      "title": "The Alpha Illusion (2605.16895) and Beyond Agent Architecture (2606.08285)",
+      "reason": "reporting standards, not trading hypotheses. Recommended for ADOPTION as Phase 8 reporting discipline rather than replication."
+    },
+    {
+      "ref": "C2",
+      "title": "Bitcoin Price Prediction: Peer-Reviewed Evidence and Social Media Discourse (2606.00071)",
+      "verification_status": "PARTIAL",
+      "reason": "survey, not a replication target. Useful as a methodological-standards reference (walk-forward, multi-regime holdout, naive baseline, Diebold-Mariano)."
+    },
+    {
+      "ref": "A5/B3/B4/B5",
+      "title": "Ackerer Perpetual Futures Pricing (10.1111/mafi.70018); MDPI IJFS 14(5) 103; MDPI Mathematics 14(2) 346; ScienceDirect S2096720925000818",
+      "verification_status": "PARTIAL",
+      "reason": "publisher sites returned 403 from this environment; content unverified, so they are recorded but not scored."
+    }
+  ],
+  "external_knowledge_contamination": {
+    "principle": "Selecting a hypothesis because of a paper's reported result contaminates that paper's sample period for ango, even though ango never looked at the price data.",
+    "ango_sealed_split": "final_oos = ts >= 2026-01-01T00:00Z (mce.backtest.splits.FINAL_OOS_START) — NOT opened by this task",
+    "knowledge_acquired_during_this_review": [
+      {
+        "id": "K1",
+        "fact": "crypto DATED-FUTURES carry averaged about 7% p.a. across exchanges and can spike above 40% p.a., with strong time variation, driven by leveraged retail demand and constrained arbitrage capital",
+        "period": "2019-03 .. 2024-07",
+        "source_status": "VERIFIED-FULL",
+        "note": "period corrected by X2; instrument corrected by X1 (dated futures, not perpetuals)"
+      },
+      {
+        "id": "K2",
+        "fact": "perpetual deviations from no-arbitrage prices are larger than in currency markets, comove, and diminish over time",
+        "period": "2020-01-08 .. 2024-03-11",
+        "source_status": "VERIFIED-FULL",
+        "note": "period established by full-text extraction (X3)"
+      },
+      {
+        "id": "K8",
+        "fact": "A2's random-maturity arbitrage on BITCOIN perpetual futures reports a Sharpe ratio of 1.8 under high trading costs typical of retail investors, and up to 3.5 for highly-active market makers, on Binance",
+        "period": "2020-01-08 .. 2024-03-11",
+        "source_status": "VERIFIED-FULL",
+        "note": "This is the single most contaminating number for P8-C1: ango now knows the anchor paper's reported risk-adjusted magnitude before running anything. It must NOT be used to set any threshold."
+      },
+      {
+        "id": "K3",
+        "fact": "hourly BTC ML sign strategies fail at 10 bps; a cost-aware filter restores profitability in selected configurations but does not significantly beat buy-and-hold",
+        "period": "2017-12 .. 2026-01",
+        "source_status": "VERIFIED-FULL"
+      },
+      {
+        "id": "K4",
+        "fact": "in the crypto cross-section, two to three factors eliminate all significant portfolio alphas; liquidity dominates",
+        "period": "unverified",
+        "source_status": "VERIFIED-META"
+      },
+      {
+        "id": "K5",
+        "fact": "a constrained LLM agent's ridge-combined portfolio reported 44.55% annualized and Sharpe 1.55 after 5 bps one-way",
+        "period": "2024 .. 2026",
+        "source_status": "VERIFIED-META"
+      },
+      {
+        "id": "K6",
+        "fact": "for BTC, L2 liquidity state dominates and order flow adds only limited incremental value",
+        "period": "2023 .. 2026",
+        "source_status": "VERIFIED-META"
+      },
+      {
+        "id": "K7",
+        "fact": "claimed Hyperliquid single-venue carry roughly 17.9% (2024) and 3.6% (2025); cross-venue spread 14.7% (2024) and 4.6% (2025)",
+        "period": "2024 .. 2026",
+        "source_status": "UNVERIFIED",
+        "note": "search snippets only; must not be used as design evidence"
+      },
+      {
+        "id": "K9",
+        "fact": "ango's OWN committed finding already measures Binance BTCUSDT perpetual funding: 3,012 settlements, mean +0.69 bps per 8h, 85.4% positive, 2024-03 annualising to +37%, and three consecutive negative months in 2026-02..04",
+        "period": "2023-11 .. 2026-07",
+        "source_status": "IN-HOUSE",
+        "source": "docs/findings/2026-08-16-5m-tendencies-33mo-retest.md",
+        "note": "MORE contaminating than any external item: the numbers are precise, already committed, and the window extends SEVEN MONTHS INTO the existing seal (2026-01 onward). Consequence: phase8_prospective_final_start must be later than 2026-08, and the justification is ango's own prior measurement, not the literature."
+      },
+      {
+        "id": "K10",
+        "fact": "A2 (He et al.) uses MAKER fees, not taker ('We consider trading costs for makers instead of takers because institutions typically trade maker orders'), with spot/futures tiers Low 2.25/0.18 bps, Medium 4.5/0.72 bps, High 6.75/1.44 bps. BTC results at the High tier: Sharpe 1.80, return 6.38%, volatility 3.55%, active 20.06% of the time, average open-to-close 134.94 hours. Sharpe is annualised with Lucca-Moench active-period scaling, NOT calendar. Crucially, Table 9 decomposes BTC total return 13.70% into price convergence 8.64% + funding 5.06% — price convergence dominates, and the FUNDING component alone was NEGATIVE in 2022 (-1.94%) and 2023 (-0.94%). Table 7 by year at the High tier: 2022 Sharpe 0.70 / return 0.28%, 2023 Sharpe 1.32 / return 1.11%. |rho| shrinks about 11% per year.",
+        "period": "2020-01-08 .. 2024-03-11",
+        "source_status": "VERIFIED-FULL",
+        "note": "Two consequences. (1) ango's taker assumption is roughly 4x A2's High maker tier, so ango's replication is deliberately far harsher than the original and any shortfall must NOT be read as failure to replicate. (2) framing the trade as a funding harvest is wrong — A2's own decomposition says price convergence dominates."
+      },
+      {
+        "id": "K11",
+        "fact": "Christin, Routledge, Soska, Zetlin-Jones, 'The Crypto Carry Trade' (working paper 2023-08-18, 57pp) defines EXACTLY the planned trade (short perpetual, long spot, 8-hour funding) on Binance BTC 2020-08-11 to 2023-06-23, N=3138 eight-hour periods, 18 cryptocurrencies. It EXPLICITLY EXCLUDES transaction costs. Gross results: Tether-margined mean 14.26%/yr, Sharpe 8.763. But epoch 5 (2022-05-09 to 2023-06-23) collapses to mean 1.03%/yr, Sharpe 1.312 — below plausible round-trip taker cost.",
+        "period": "2020-08-11 .. 2023-06-23",
+        "source_status": "VERIFIED-FULL",
+        "source_url": "https://gerbil.life/papers/CarryTrade.v1.0.pdf",
+        "note": "Exact-trade prior art that ango's initial literature review MISSED entirely. Gross of costs, so it does not answer the economic question, but it establishes the trade and its decay."
+      },
+      {
+        "id": "K12",
+        "fact": "Borri, Liu, Tsyvinski, Wu, 'Cryptocurrency as an Investable Asset Class: Coming of Age', arXiv 2510.14435v4 (Feb 2026, for Annual Review of Financial Economics Vol 18) implements short-perpetual + long-spot carry on Binance BTC at 8-hour frequency, 2020-08-01 to 2025-05-31. Full-sample annualized Sharpe 6.45; 'Beginning in 2024, the Sharpe ratio falls to 4.06, and it turns NEGATIVE in 2025.' Their stylized fact 6 is titled 'When the funding dries up, we finally learn the worth of futures'. GROSS of transaction costs.",
+        "period": "2020-08-01 .. 2025-05-31",
+        "source_status": "VERIFIED-FULL",
+        "source_url": "https://arxiv.org/pdf/2510.14435",
+        "note": "MOST CONSEQUENTIAL ITEM. The exact trade, the exact venue, and it is documented to have turned NEGATIVE in 2025 gross of costs. This moves ango's uncontaminated window to 2025-06 onward and changes the research question from 'does the carry exist' to 'can ango independently confirm the carry has died'."
+      }
+    ],
+    "proposed_layers": {
+      "layer_1_literature_in_sample": "period used by the original paper. Reproducibility check only. Never counted as independent OOS.",
+      "layer_2_contaminated_confirmation": "outside the paper's sample but covered by summary statistics learned in this review. Use for sign/shape reproduction of the mechanism, NOT for effect-size discovery.",
+      "layer_3_prospective_final": "bars first generated after the Phase 8 preregistration freeze date. Phase 8 GO/NO-GO decided here.",
+      "proposed_layer_3_start": "2026-09-01T00:00Z",
+      "explicit_note": "This does NOT open, move, or replace the existing final_oos seal at 2026-01-01. The window 2026-01-01 .. 2026-08-31 stays sealed AND is now externally contaminated, so it is doubly off-limits."
+    }
+  },
+  "human_decisions_required": [
+    {
+      "id": "H1",
+      "item": "Confirm whether SSRN 6993978 exists and obtain its full text",
+      "blocking_for": [
+        "P8-C7"
+      ],
+      "why_agent_cannot": "SSRN returns 403 from this environment and title search did not surface the paper",
+      "status": "RESOLVED 2026-08-17",
+      "resolution": "The paper EXISTS. DOI 10.2139/ssrn.6993978, deposited 2026-07-29, sole author Tony Lau. Full title: 'The Funding Carry and a Cross-Venue Spread on Perpetual Futures: A Significance-Tested Study of Hyperliquid and Centralized Venues'. Confirmed independently via Crossref, OpenAlex (W7171662028) and DOI resolution. BUT: zero citations, zero referenced works, not indexed by Semantic Scholar (Google Scholar DOES index it — an initial negative was refuted on recheck), no open-access full text, no author affiliation or ORCID recorded, and only three weeks old. Existence is established; quality is not."
+    },
+    {
+      "id": "H2",
+      "item": "Determine the exact sample period of Crypto Carry (A1)",
+      "blocking_for": [
+        "P8-C1 independent confirmation window definition"
+      ],
+      "status": "RESOLVED 2026-08-17",
+      "resolution": "March 2019 to July 2024, daily, dated futures only. Extracted from https://www.bis.org/publ/work1087.pdf, which states 'This version: October 1, 2025'. See corrections X1 and X2."
+    },
+    {
+      "id": "H3",
+      "item": "Determine sample period and universe size of Crypto factor zoo (D1)",
+      "blocking_for": [
+        "P8-C3"
+      ],
+      "why_agent_cannot": "not on IDEAS page; publisher 403",
+      "status": "open"
+    },
+    {
+      "id": "H4",
+      "item": "Confirm Binance fundingRate calc_time semantics (settlement time vs calculation time)",
+      "blocking_for": [
+        "P8-C1 availability declaration"
+      ],
+      "status": "RESOLVED 2026-08-17",
+      "resolution": "calc_time is the funding SETTLEMENT timestamp, identical to the official REST field fundingTime. Verified by direct comparison of the Vision CSV against https://www.binance.com/fapi/v1/fundingRate for 2024-01. See correction X4."
+    },
+    {
+      "id": "H10",
+      "item": "Decide whether to use official REST markPrice at settlement (now known reachable) instead of the perp_close proxy for funding cash flows",
+      "blocking_for": [
+        "P8-C1 funding accounting"
+      ],
+      "why_agent_cannot": "introduces a second data source with its own availability and reproducibility properties; a data-contract decision",
+      "status": "open",
+      "recommendation": "use markPrice as primary and report the perp_close proxy as a sensitivity"
+    },
+    {
+      "id": "H5",
+      "item": "Decide whether to adopt phase8_prospective_final_start and on what date",
+      "blocking_for": [
+        "Phase 8 GO/NO-GO design"
+      ],
+      "why_agent_cannot": "trades research latency against contamination; a researcher time-budget decision"
+    },
+    {
+      "id": "H6",
+      "item": "Fix the spot leg execution assumptions (cash purchase vs borrow, margin, collateral haircut)",
+      "blocking_for": [
+        "P8-C1 cost model"
+      ],
+      "why_agent_cannot": "depends on the researcher's actual account terms",
+      "status": "PARTIALLY RESOLVED 2026-08-17",
+      "resolution": "Confirmed from official Binance sources on 2026-08-17: SPOT VIP-0 taker = 0.100% (live fee page); BTCUSDT USDT-M perpetual LOT_SIZE stepSize = 0.001 BTC and MIN_NOTIONAL = 50 USDT (exchangeInfo); SPOT BTCUSDT LOT_SIZE stepSize = 0.00001 BTC; margin tier 1 (notional 0-300,000 USDT) maintenance margin rate = 0.40% with zero maintenance amount; BTC usable as USDT-M collateral via Multi-Assets Mode at a 5% haircut; spot margin USDT borrow VIP-0 = 4.0701% simple annual. STILL UNKNOWN: the authoritative live USDT-M VIP-0 taker rate (the official fee table is a JS-rendered SPA and its data endpoint requires login); the FAQ states 0.05% taker / 0.02% maker as a worked example, which is probable but not authoritative."
+    },
+    {
+      "id": "H7",
+      "item": "Terms-of-service position for Binance Vision and exchange data as a JP resident",
+      "blocking_for": [
+        "all candidates"
+      ],
+      "why_agent_cannot": "legal judgement; unchanged from docs/data_sources.md"
+    },
+    {
+      "id": "H8",
+      "item": "Adopt Alpha Illusion P1-P6 (F2) as ango's reporting standard",
+      "blocking_for": [
+        "Phase 8 reporting"
+      ],
+      "why_agent_cannot": "research policy decision",
+      "recommendation": "adopt"
+    }
+  ],
+  "data_availability_measured_2026_08_17": {
+    "method": "HTTP range GET (first 1024 bytes) per URL; POST for Hyperliquid info endpoint. No labels, no forward returns, no PnL computed.",
+    "binance_vision": {
+      "spot_klines_5m": {
+        "reachable": true,
+        "earliest_probed_ok": "2017-08"
+      },
+      "spot_klines_1h": {
+        "reachable": true,
+        "latest_probed_ok": "2026-07"
+      },
+      "futures_um_klines_1h": {
+        "reachable": true,
+        "latest_probed_ok": "2026-07"
+      },
+      "futures_um_fundingRate_monthly": {
+        "reachable": true,
+        "earliest_probed_ok": "2020-01",
+        "latest_probed_ok": "2026-07",
+        "columns": [
+          "calc_time",
+          "funding_interval_hours",
+          "last_funding_rate"
+        ],
+        "funding_interval_hours": 8,
+        "example_row": "1704067200000,8,0.00037409 (= 2024-01-01T00:00:00Z)"
+      },
+      "futures_um_premiumIndexKlines_5m": {
+        "reachable": true,
+        "latest_probed_ok": "2026-07"
+      },
+      "futures_um_indexPriceKlines_5m": {
+        "reachable": true,
+        "probed_ok": "2024-01"
+      },
+      "futures_um_metrics_daily": {
+        "reachable": true,
+        "latest_probed_ok": "2026-07-01"
+      },
+      "futures_um_liquidationSnapshot": {
+        "reachable": false,
+        "note": "404 measured 2026-08-16 (backlog I7)"
+      }
+    },
+    "exchange_apis": {
+      "okx_funding_rate_history": {
+        "http": 200,
+        "note": "about 3 months of history only"
+      },
+      "binance_rest_api_host": {
+        "http": 451,
+        "note": "https://api.binance.com/api/v3/... is geo-blocked"
+      },
+      "binance_futures_rest_www_host": {
+        "http": 200,
+        "endpoint": "https://www.binance.com/fapi/v1/fundingRate",
+        "fields": [
+          "symbol",
+          "fundingTime",
+          "fundingRate",
+          "markPrice",
+          "rateType"
+        ],
+        "note": "REACHABLE despite api.binance.com being 451 (correction X6). Supplies markPrice at each funding settlement, which the Vision dump does not carry."
+      },
+      "bybit_v5_rest": {
+        "http": 403
+      },
+      "bybit_public_dump": {
+        "http": 200,
+        "directories": [
+          "kline_for_metatrader4",
+          "premium_index",
+          "spot_index",
+          "trading",
+          "spot"
+        ],
+        "btcusdt_trading_earliest": "2020-03-25",
+        "funding_dump_present": false
+      },
+      "hyperliquid_info_post": {
+        "http": 200,
+        "endpoint_tested": "fundingHistory",
+        "fields": [
+          "coin",
+          "fundingRate",
+          "premium",
+          "time"
+        ],
+        "interval_hours": 1,
+        "history_start_bracket": "after 2023-05-03 and on or before 2023-08-01"
+      }
+    },
+    "ango_local_state": {
+      "note": "Only data/manifests/*.json are in git. Parquet files are gitignored and absent from this container; Phase 8 execution requires re-fetch.",
+      "manifests": [
+        {
+          "name": "binance_klines_klines_BTCUSDT_5m",
+          "rows": 631296,
+          "ts_min": "2020-01-01T00:00:00+00:00",
+          "ts_max": "2025-12-31T23:55:00+00:00"
+        },
+        {
+          "name": "binance_premium_index_premium_index_BTCUSDT_5m",
+          "rows": 629246,
+          "ts_min": "2020-01-01T00:00:00+00:00",
+          "ts_max": "2025-12-31T23:55:00+00:00"
+        },
+        {
+          "name": "binance_metrics_metrics_BTCUSDT_5m",
+          "rows": 560388,
+          "ts_min": "2020-09-01T00:00:00+00:00",
+          "ts_max": "2025-12-31T23:55:00+00:00"
+        },
+        {
+          "name": "ohlcv_okx_BTC-USDT-SWAP_5m",
+          "rows": 288124,
+          "ts_min": "2023-11-19T17:40:00+00:00",
+          "ts_max": "2026-08-16T03:55:00+00:00"
+        },
+        {
+          "name": "funding_rate_okx_BTC-USDT-SWAP",
+          "rows": 280,
+          "ts_min": "2026-05-14T16:00:00+00:00",
+          "ts_max": "2026-08-15T16:00:00+00:00"
+        },
+        {
+          "name": "open_interest_okx_BTC-USDT-SWAP_5m",
+          "rows": 1441,
+          "ts_min": "2026-08-10T17:15:00+00:00",
+          "ts_max": "2026-08-15T17:15:00+00:00"
+        }
+      ],
+      "missing_for_phase8": [
+        "BTC spot OHLCV",
+        "Binance fundingRate",
+        "Binance indexPriceKlines"
+      ]
+    }
+  }
+}
