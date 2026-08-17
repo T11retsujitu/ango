@@ -48,16 +48,17 @@ __all__ = [
 ]
 
 # ---------------------------------------------------------------------------
-# 凍結プロトコルに値が無いパラメータ(実装が露出させた仕様の穴)
+# 凍結プロトコル v1.8.1 に値が**まだ**無いパラメータ(H14)
 #
-# これらは **既定値を持たない**。呼び出し側が明示的に渡さなければならない。
-# 黙って既定値を埋めると「凍結済みの仕様に従った」と誤認されるため。
-# 詳細は docs/phase8/two_leg_conformance_notes_v1.md。
+# v1.8 では 3件(reserve / funding-margin / post-liquidation)が未凍結だったが、
+# **v1.8.1 §24.1–24.3 ですべて凍結された**。残るのは H14(清算コスト)だけである。
+#
+# H14 は既定値を持たない。呼び出し側が明示的に渡さなければならない。
+# `liquidation_slippage_bps = 0.0` を黙って維持しないため(§24.6)。
 # ---------------------------------------------------------------------------
 UNFROZEN_PARAMETERS: tuple[str, ...] = (
-    "reserve_usdt",  # §11.4 は予備資金を要求するが §11.1 は C を使い切る
-    "funding_counts_toward_margin",  # §9 M7 が「明示的に凍結する」と述べたが未凍結
-    "post_liquidation",  # §11.3 が「どちらかを事前に選ぶ」と述べたが未凍結
+    "liquidation_clearance_fee_rate",  # §24.6 H14: rate の数値が取得できていない
+    "liquidation_slippage_bps",  # §24.6 H14: 成行 IOC の滑りが未凍結
 )
 
 
@@ -101,24 +102,25 @@ class FundingEvent:
 
 @dataclass(frozen=True)
 class TwoLegConfig:
-    """執行器の設定。凍結値は `phase8_prereg` から既定を取る。
+    """執行器の設定。凍結値は `phase8_prereg` から既定を取る(v1.8.1)。
 
-    `reserve_usdt` / `funding_counts_toward_margin` / `post_liquidation` は
-    **凍結プロトコルに値が無い**ため既定を置かない(`UNFROZEN_PARAMETERS`)。
+    `liquidation_clearance_fee_rate` / `liquidation_slippage_bps` だけは
+    **既定を持たない**(H14 未解決。`UNFROZEN_PARAMETERS`)。
     """
 
     cost: TwoLegCostConfig
-    reserve_usdt: float
-    funding_counts_toward_margin: bool
-    post_liquidation: PostLiquidationRule
+    liquidation_clearance_fee_rate: float | None
+    liquidation_slippage_bps: float | None
     capital_base_usdt: float = P.CAPITAL_BASE_USDT
+    reserve_usdt: float = P.MARGIN_RESERVE_USDT
+    funding_counts_toward_margin: bool = P.FUNDING_COUNTS_TOWARD_MARGIN
+    post_liquidation: PostLiquidationRule = P.POST_LIQUIDATION_RULE
     leverage: float = P.LEVERAGE
     lot_step: float = P.PERP_LOT_STEP
     min_notional_usdt: float = P.PERP_MIN_NOTIONAL_USDT
     maint_margin_rate: float = P.MAINT_MARGIN_RATE_TIER1
     topup_trigger: float = P.MARGIN_TOPUP_TRIGGER
     topup_target: float = P.MARGIN_TOPUP_TARGET
-    liquidation_slippage_bps: float = 0.0
     execution: ExecutionConfig = field(default_factory=ExecutionConfig)
 
     def __post_init__(self) -> None:
@@ -134,18 +136,40 @@ class TwoLegConfig:
             raise ValueError(
                 "維持証拠金率 >= 追証トリガでは、追証が発火する前に清算される"
             )
+        if self.post_liquidation != "unwind":
+            raise ValueError(
+                "v1.8.1 §24.3 は POST_LIQUIDATION_RULE = 'unwind' を凍結している。"
+                "再ヘッジは実装しない。"
+            )
+
+    @property
+    def liquidation_cost_is_resolved(self) -> bool:
+        """H14 が解決済みか。未解決なら experiment runner を起動してはならない。"""
+        return (
+            self.liquidation_clearance_fee_rate is not None
+            and self.liquidation_slippage_bps is not None
+        )
+
+    def require_liquidation_cost(self) -> tuple[float, float]:
+        """H14 の値を取り出す。未解決なら明示的に落とす。"""
+        if not self.liquidation_cost_is_resolved:
+            raise ValueError(
+                "H14 未解決: 清算清算手数料率と成行滑りが凍結されていない(§24.6)。"
+                "清算経路を評価するには両方を明示的に与えること。"
+            )
+        return (
+            float(self.liquidation_clearance_fee_rate),  # type: ignore[arg-type]
+            float(self.liquidation_slippage_bps),  # type: ignore[arg-type]
+        )
 
     @property
     def position_capital_usdt(self) -> float:
-        """建玉に充てる資本。予備資金を差し引いた残り。
-
-        `reserve_usdt == 0` のとき §11.1 の `q_i = C·L/((L+1)·S_in,i)` に一致する。
-        """
+        """建玉に充てる資本 `C − R`(§24.1)。primary では 8000。"""
         return self.capital_base_usdt - self.reserve_usdt
 
     @property
     def deployed_capital_usdt(self) -> float:
-        """§11.1: 全 trade・全 layer で同一。予備資金を含む(§11.4)。"""
+        """§11.1 / §24.1: 予備資金を含む。全 trade・全 layer で同一。"""
         return self.capital_base_usdt
 
 
@@ -208,7 +232,14 @@ class BarState:
 
 @dataclass
 class TradeResult:
-    """1 trade の結果。**恒等式の検算に必要な項をすべて保持する**。"""
+    """1 trade の結果。**恒等式の検算に必要な項をすべて保持する**。
+
+    v1.8.1 §24.5: 清算経路では
+      - perp 脚は **清算約定**で終了する(予定 exit 価格を使わない)
+      - 通常の `cost_perp_out` は**計上しない**
+      - 価格損失は `q(P_in − P_liq)` に**一度だけ**現れる
+      - `liquidation_fee_usdt` は **clearance fee のみ**を表す(PnL を二重計上しない)
+    """
 
     opened: bool
     reject_reason: str | None = None
@@ -225,8 +256,14 @@ class TradeResult:
     cost_perp_in: float = 0.0
     cost_spot_out: float = 0.0
     cost_perp_out: float = 0.0
-    liquidation_loss: float = 0.0
+    # --- v1.8.1 G5: 清算経路の明示フィールド ---
     liquidated: bool = False
+    liquidation_ts: datetime | None = None
+    liquidation_fill: float | None = None
+    liquidation_fee_usdt: float = 0.0
+    spot_unwind_ts: datetime | None = None
+    spot_unwind_fill: float | None = None
+    naked_spot_bars: int = 0
     topup_count: int = 0
     topup_total_usdt: float = 0.0
     lot_residual_btc: float = 0.0
@@ -234,6 +271,7 @@ class TradeResult:
 
     @property
     def cost_total(self) -> float:
+        """4約定の手数料。**清算時は cost_perp_out を含まない**(§24.5 b)。"""
         return (
             self.cost_spot_in + self.cost_perp_in + self.cost_spot_out + self.cost_perp_out
         )
@@ -245,6 +283,11 @@ class TradeResult:
 
     @property
     def basis_out(self) -> float:
+        """D_out = P_exit_actual − S_exit_actual。
+
+        清算経路では `perp_out` が清算約定、`spot_out` が巻き戻し約定になる
+        (脚が別時刻でも恒等式は保たれる。§24.5)。
+        """
         return self.perp_out - self.spot_out
 
     @property
@@ -254,14 +297,15 @@ class TradeResult:
 
     @property
     def pnl_gross_by_legs(self) -> float:
-        """脚ごとに積み上げた同じ量。T3 はこの2つの一致を検査する。"""
+        """脚ごとに積み上げた同じ量。T3 / T35 はこの2つの一致を検査する。"""
         spot_leg = self.q_btc * (self.spot_out - self.spot_in)
         perp_leg = -self.q_btc * (self.perp_out - self.perp_in)
         return spot_leg + perp_leg + self.funding_total
 
     @property
     def pnl_net(self) -> float:
-        return self.pnl_gross - self.cost_total - self.liquidation_loss
+        """手数料と清算手数料を引く。**価格損失は pnl_gross に一度だけ入っている**。"""
+        return self.pnl_gross - self.cost_total - self.liquidation_fee_usdt
 
     def net_return_on_capital(self, deployed_capital: float) -> float:
         """§17.1 の r_i。分母は全 trade 共通の拘束資本。"""
@@ -287,9 +331,10 @@ def round_to_lot(qty: float, lot_step: float) -> float:
 def size_position(spot_in: float, cfg: TwoLegConfig) -> tuple[float, float]:
     """§11.1 のサイジング。戻り値は (丸め後 q, 丸め残差)。
 
-        q_raw = position_capital · L / ((L + 1) · S_in)
+        q_raw = (C − R) · L / ((L + 1) · S_in)          … v1.8.1 §24.1
 
-    `reserve_usdt == 0` なら §11.1 の式そのものである。
+    丸め前は `q_raw · S_in · (1 + 1/L) == POSITION_CAPITAL_USDT` が**全ての L で厳密**。
+    基準は `C` ではなく `C − R` である(T16 の修正。§24.1)。
     """
     if spot_in <= 0:
         raise ValueError("spot_in は正でなければならない")
@@ -362,6 +407,20 @@ def _liquidation_price(entry_price: float, margin_usdt: float, q_btc: float, mmr
     return (margin_usdt + q_btc * entry_price) / (q_btc * (1.0 + mmr))
 
 
+def _first_executable_spot_open(
+    bars: Sequence[Bar], after_ts: datetime
+) -> tuple[datetime, float] | None:
+    """清算バーより**後**で最初に因果的に執行可能な spot open(§24.3)。
+
+    §9 M6b の roll-forward 意味論をそのまま使う(両脚が揃うことは要求しない —
+    perp 脚は既に消えているので spot open があれば足りる)。
+    """
+    for bar in bars:
+        if bar.ts > after_ts and bar.spot_open is not None:
+            return bar.ts, float(bar.spot_open)
+    return None
+
+
 def simulate_trade(
     bars: Sequence[Bar],
     funding: Sequence[FundingEvent],
@@ -371,15 +430,16 @@ def simulate_trade(
 ) -> TradeResult:
     """1 trade を決定的に会計する。
 
-    **シグナルは与えられる。** 本関数は閾値も ρ も評価しない(それは runner の仕事)。
-    ここで実装するのは §5.1 / §6 / §7.1 / §8.1 / §9 / §11 の会計だけである。
+    **シグナルは与えられる。** 本関数は閾値も ρ も評価しない(runner の責務)。
 
-    バー内の処理順序(**保守側に固定**):
-        1. 清算判定(mark の不利側 intrabar 極値)
-        2. 追証(予備資金から)
-        3. funding の受払
-    funding を先に入れると、その分だけ清算が起きにくくなる。short の funding は
-    平均的に受取なので、**清算判定を先に置くのが保守側**である。
+    バー内の処理順序(**v1.8.1 §24.4 で凍結**):
+        1. 適格な funding を先物ウォレットへ適用する
+        2. 不利側 mark 経路で証拠金を評価する
+        3. TOPUP_TRIGGER(維持証拠金より上)を先に処理する
+        4. 追証の後、なお維持証拠金以下なら清算する
+
+    v1.8 の実装と note は「清算 → 追証 → funding」と書いていたが誤りであり、
+    §24.4 が上記の順序を正とした。
     """
     result = TradeResult(opened=False)
 
@@ -397,7 +457,6 @@ def simulate_trade(
         result.reject_reason = "quantity_rounds_to_zero"
         return result
     if q * perp_in < cfg.min_notional_usdt:
-        # §11.1: 丸め後の名目が MIN_NOTIONAL を割る trade は棄却する
         result.reject_reason = "below_min_notional"
         result.q_btc = q
         result.lot_residual_btc = residual
@@ -410,91 +469,83 @@ def simulate_trade(
     result.perp_in = perp_in
     result.lot_residual_btc = residual
 
-    # --- 開始時のウォレット(**分離して持つ**。A3 レビュー S5) -----------------
+    # --- ウォレットは**分離**して持つ(A3 レビュー S5) ------------------------
     spot_w = SpotWallet(btc=q, cash_usdt=0.0)
-    initial_margin = q * perp_in / cfg.leverage
-    fut_w = FuturesWallet(margin_usdt=initial_margin, position_btc=-q, entry_price=perp_in)
+    fut_w = FuturesWallet(
+        margin_usdt=q * perp_in / cfg.leverage, position_btc=-q, entry_price=perp_in
+    )
     reserve = cfg.reserve_usdt
-    funding_outside_margin = 0.0
 
     result.cost_spot_in = q * spot_in * cfg.cost.spot_fraction()
     result.cost_perp_in = q * perp_in * cfg.cost.perp_fraction()
 
-    exit_bar = _next_fill_bar(bars, exit_signal_ts, cfg)
-    # M6b: exit 側で両脚が揃わなくても **entry を遡って無効化しない**。
-    # roll-forward で見つからなければ、最後に両脚が揃ったバーで決済する。
-    if exit_bar is None:
+    scheduled_exit = _next_fill_bar(bars, exit_signal_ts, cfg)
+    if scheduled_exit is None:
         candidates = [b for b in bars if b.both_legs_present and b.ts > entry_bar.ts]
         if not candidates:
             result.reject_reason = "no_exit_fill_bar_with_both_legs"
-            exit_bar = entry_bar
+            scheduled_exit = entry_bar
         else:
-            exit_bar = candidates[-1]
+            scheduled_exit = candidates[-1]
 
     cum_funding = 0.0
     applied: set[datetime] = set()
 
     for bar in bars:
-        if bar.ts < entry_bar.ts or bar.ts > exit_bar.ts:
+        if bar.ts < entry_bar.ts or bar.ts > scheduled_exit.ts:
             continue
+        if result.liquidated:
+            break
         mark = bar.mark_close if bar.mark_close is not None else bar.perp_close
         mark_adverse = bar.mark_high if bar.mark_high is not None else mark
         if mark is None or mark_adverse is None:
             continue
 
+        bar_funding = 0.0
         topped = 0.0
-        liquidated_here = False
 
-        if not result.liquidated:
-            # 1. 清算判定。**mark の不利側 intrabar 極値**で行う(§11.3 / Y38)
-            ratio_adverse = fut_w.margin_ratio(float(mark_adverse))
-
-            # 2. 追証(§11.4)。予備資金から topup_target まで戻す
-            if ratio_adverse < cfg.topup_trigger and reserve > 0:
-                notional = fut_w.notional(float(mark_adverse))
-                needed = cfg.topup_target * notional - fut_w.equity(float(mark_adverse))
-                topped = min(max(needed, 0.0), reserve)
-                fut_w.margin_usdt += topped
-                reserve -= topped
-                result.topup_count += 1 if topped > 0 else 0
-                result.topup_total_usdt += topped
-                ratio_adverse = fut_w.margin_ratio(float(mark_adverse))
-
-            # 予備資金が尽きて維持証拠金を割れば清算を受け入れる(§11.4)
-            if ratio_adverse <= cfg.maint_margin_rate:
-                liquidated_here = True
-
-        if liquidated_here:
-            trigger = _liquidation_price(
-                fut_w.entry_price, fut_w.margin_usdt, q, cfg.maint_margin_rate
-            )
-            # 強制決済はトリガー価格 + スリッページより良い価格では約定しない(§11.3)
-            fill = trigger * (1.0 + cfg.liquidation_slippage_bps * 1e-4)
-            result.liquidated = True
-            result.liquidation_loss = max(
-                0.0, -(fut_w.margin_usdt + fut_w.unrealized_pnl(fill))
-            )
-            fut_w.margin_usdt = max(0.0, fut_w.margin_usdt + fut_w.unrealized_pnl(fill))
-            fut_w.position_btc = 0.0
-            if cfg.post_liquidation == "rehedge":
-                raise NotImplementedError(
-                    "post_liquidation='rehedge' の再建玉規則は凍結プロトコルに無い"
-                    "(§11.3 は『どちらかを事前に選ぶ』と述べるが値が凍結されていない)。"
-                    "UNFROZEN_PARAMETERS を参照。"
-                )
-
-        # 3. funding(§8.1)。entry < s <= bar.ts のうち未適用のもの
+        # --- 1. funding を先に適用する(§24.4)-------------------------------
         for ev in _funding_in_window(funding, entry_bar.ts, bar.ts):
-            if ev.settlement_ts in applied or result.liquidated:
+            if ev.settlement_ts in applied:
                 continue
             applied.add(ev.settlement_ts)
             cash = _funding_cashflow(ev, q)
             cum_funding += cash
+            bar_funding += cash
             result.funding_events_applied += 1
             if cfg.funding_counts_toward_margin:
+                # 正負いずれも先物ウォレットを動かす(§24.2)
                 fut_w.margin_usdt += cash
-            else:
-                funding_outside_margin += cash
+
+        # --- 2/3. 不利側 mark で証拠金を評価し、追証を先に処理する ------------
+        ratio = fut_w.margin_ratio(float(mark_adverse))
+        if ratio < cfg.topup_trigger and reserve > 0:
+            notional = fut_w.notional(float(mark_adverse))
+            needed = cfg.topup_target * notional - fut_w.equity(float(mark_adverse))
+            topped = min(max(needed, 0.0), reserve)
+            if topped > 0:
+                fut_w.margin_usdt += topped
+                reserve -= topped
+                result.topup_count += 1
+                result.topup_total_usdt += topped
+                ratio = fut_w.margin_ratio(float(mark_adverse))
+
+        # --- 4. 追証の後、なお維持証拠金以下なら清算する ----------------------
+        if ratio <= cfg.maint_margin_rate:
+            fee_rate, slip_bps = cfg.require_liquidation_cost()
+            trigger = _liquidation_price(
+                fut_w.entry_price, fut_w.margin_usdt, q, cfg.maint_margin_rate
+            )
+            # 成行 IOC。short にとってトリガー価格より良い約定はしない(§24.6)
+            fill = trigger * (1.0 + slip_bps * 1e-4)
+            result.liquidated = True
+            result.liquidation_ts = bar.ts
+            result.liquidation_fill = fill
+            # clearance fee のみ。価格損失は q(P_in − P_liq) に既に入っている(§24.5 c)
+            result.liquidation_fee_usdt = fee_rate * q * fill
+            result.perp_out = fill  # 予定 exit 価格は使わない(§24.5 a)
+            fut_w.margin_usdt = max(0.0, fut_w.margin_usdt + fut_w.unrealized_pnl(fill))
+            fut_w.position_btc = 0.0
 
         spot_px = bar.spot_close if bar.spot_close is not None else spot_in
         perp_val = abs(fut_w.position_btc) * float(mark)
@@ -509,10 +560,9 @@ def simulate_trade(
                 mark_price=float(mark),
                 futures_margin_usdt=fut_w.margin_usdt,
                 reserve_usdt=reserve,
-                leverage_t=(perp_val / balance) if balance > 0 else float("inf"),
+                leverage_t=(perp_val / balance) if balance > 0 else 0.0,
                 margin_ratio=fut_w.margin_ratio(float(mark)),
-                funding_cashflow=cum_funding
-                - (result.bar_states[-1].cum_funding_cashflow if result.bar_states else 0.0),
+                funding_cashflow=bar_funding,
                 cum_funding_cashflow=cum_funding,
                 tracking_error=tracking,
                 topped_up_usdt=topped,
@@ -520,10 +570,35 @@ def simulate_trade(
             )
         )
 
-    result.exit_fill_ts = exit_bar.ts
-    result.spot_out = float(exit_bar.spot_open)  # type: ignore[arg-type]
-    result.perp_out = float(exit_bar.perp_open)  # type: ignore[arg-type]
     result.funding_total = cum_funding
+
+    if result.liquidated:
+        # --- G3/§24.3: 清算バーの後、最初に因果的に執行可能な spot open で巻き戻す
+        unwind = _first_executable_spot_open(bars, result.liquidation_ts)  # type: ignore[arg-type]
+        if unwind is None:
+            result.reject_reason = "no_spot_unwind_bar_after_liquidation"
+            result.spot_unwind_ts = result.liquidation_ts
+            result.spot_out = float(
+                next(b.spot_close for b in bars if b.ts == result.liquidation_ts)  # type: ignore[arg-type]
+            )
+        else:
+            result.spot_unwind_ts, result.spot_out = unwind
+        result.spot_unwind_fill = result.spot_out
+        result.exit_fill_ts = result.spot_unwind_ts
+        # naked spot(perp 消失〜spot 解消)の本数を記録する(§24.3)
+        result.naked_spot_bars = sum(
+            1
+            for b in bars
+            if result.liquidation_ts < b.ts < result.spot_unwind_ts  # type: ignore[operator]
+        )
+        # spot 側の手数料は通常どおり。**perp 側の cost_perp_out は計上しない**(§24.5 b)
+        result.cost_spot_out = q * result.spot_out * cfg.cost.spot_fraction()
+        result.cost_perp_out = 0.0
+        return result
+
+    result.exit_fill_ts = scheduled_exit.ts
+    result.spot_out = float(scheduled_exit.spot_open)  # type: ignore[arg-type]
+    result.perp_out = float(scheduled_exit.perp_open)  # type: ignore[arg-type]
     result.cost_spot_out = q * result.spot_out * cfg.cost.spot_fraction()
     result.cost_perp_out = q * result.perp_out * cfg.cost.perp_fraction()
     return result

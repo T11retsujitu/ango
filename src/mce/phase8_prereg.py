@@ -1,11 +1,12 @@
 """Phase 8.1 carry replication — 凍結パラメータの機械可読定義。
 
-正は docs/phase8/carry_replication_protocol_v1.md(v1.8)。本モジュールは
+正は docs/phase8/carry_replication_protocol_v1.md(v1.8.1)。本モジュールは
 その数値を実行器が読める形へ書き写したものであり、**結果を見た後に変更しない**。
 
 凍結の作法(Phase 7 と同じ):
     このモジュールと事前登録文書の sha256 を experiments/phase8/carry_freeze.json
-    へ記録し、実行時の artifact と照合する。不一致は凍結違反である。
+    へ記録し(v1.8.1 は carry_freeze_v1_8_1.json)、実行時の artifact と照合する。
+    不一致は凍結違反である。
 
 参照:
     A2 = arXiv 2212.06888v6 (Fundamentals of Perpetual Futures) — 再現アンカー
@@ -21,7 +22,7 @@ from typing import Final
 UTC = timezone.utc
 
 PROTOCOL: Final = "phase8_carry_replication_v1"
-PROTOCOL_VERSION: Final = "v1.8"
+PROTOCOL_VERSION: Final = "v1.8.1"
 FROZEN_AT: Final = "2026-08-17"
 
 # ---------------------------------------------------------------------------
@@ -99,6 +100,14 @@ COST_TIERS: Final = ("maker_low", "base_taker", "stress")
 # 4. 資本・数量・証拠金(§11)
 # ---------------------------------------------------------------------------
 CAPITAL_BASE_USDT: Final = 10_000.0  # C
+
+# --- v1.8.1 G1: 予備資金(§24.1)-------------------------------------------
+# R = (C − R)/(L + 1) すなわち「初期証拠金1トランシェ分」として導出した:
+#     R(L + 2) = C  ⇒  R = C/(L + 2) = 10000/5 = 2000
+# **leverage 感応度をまたいで 2000 に固定する**(L を変えても動かさない)。
+MARGIN_RESERVE_USDT: Final = 2_000.0
+POSITION_CAPITAL_USDT: Final = CAPITAL_BASE_USDT - MARGIN_RESERVE_USDT  # = 8000
+
 LEVERAGE: Final = 3.0  # L(primary)
 LEVERAGE_SENSITIVITY: Final = (1.0, 2.0, 3.0, 5.0)
 
@@ -113,6 +122,23 @@ MAINT_MARGIN_TIER1_CAP_USDT: Final = 300_000.0
 # **A3 の REL_REBAL_THRESHOLD は採用していない**(a3_source_review_v1 N1)。
 MARGIN_TOPUP_TRIGGER: Final = 0.010  # 維持証拠金率がこれを割ったら追加
 MARGIN_TOPUP_TARGET: Final = 0.020  # ここまで戻す
+
+# --- v1.8.1 G2 / G3 / G4(§24.2 / §24.3 / §24.4)---------------------------
+# 正負いずれの funding も先物ウォレット残高を動かす。
+FUNDING_COUNTS_TOWARD_MARGIN: Final = True
+
+# 清算後は巻き戻す。再ヘッジは実装しない。
+POST_LIQUIDATION_RULE: Final = "unwind"
+
+# イベント順序。TOPUP_TRIGGER は維持証拠金より上にあるので追証が先に到達する。
+EVENT_ORDER: Final = "funding_then_margin_then_topup_then_liquidation"
+
+# --- v1.8.1 H14: 清算コスト(§24.6。**未解決。実験をブロックする**)---------
+# Liquidation Clearance Fee の存在と算定方式(rate × 名目)は公式 FAQ で確認したが、
+# rate の数値は取得できなかった(brackets payload に fee 項目なし / trading-rules は
+# JS 描画 / leverageBracket は 401)。**ゼロを黙って維持しない。**
+LIQUIDATION_CLEARANCE_FEE_RATE: Final = None
+LIQUIDATION_FEE_STATUS: Final = "pending_authoritative_read"
 
 # 無リスク金利ハードル(§14.1 a。Y39)
 RISK_FREE_SOURCE: Final = "aave_variable_borrow_apr_usdt"  # decision-time observable

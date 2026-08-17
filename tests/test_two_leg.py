@@ -31,11 +31,15 @@ BAR = timedelta(minutes=5)
 
 
 def _cfg(**kw) -> TwoLegConfig:
+    """H14 は未凍結なので**テストが明示的に値を与える**(既定に頼らない)。
+
+    ここで渡す 0.0 は「凍結値」ではなくテスト用の既知入力である。
+    実験実行は `liquidation_cost_is_resolved` で別途ブロックされる。
+    """
     base = dict(
         cost=TwoLegCostConfig("base_taker", P.SPOT_TAKER_BPS, P.PERP_TAKER_BPS),
-        reserve_usdt=0.0,
-        funding_counts_toward_margin=True,
-        post_liquidation="unwind",
+        liquidation_clearance_fee_rate=0.0,
+        liquidation_slippage_bps=0.0,
     )
     base.update(kw)
     return TwoLegConfig(**base)  # type: ignore[arg-type]
@@ -231,7 +235,8 @@ def test_t31_lot_step_rounds_down_and_records_residual():
 
 
 def test_t31_below_min_notional_is_rejected_with_a_reason():
-    cfg = _cfg(capital_base_usdt=100.0)  # 名目 75 USDT、BTC 10万で q→0.000 に丸まる
+    # C を小さくする。R も同じ導出 C/(L+2) でスケールさせる(20)
+    cfg = _cfg(capital_base_usdt=100.0, reserve_usdt=20.0)
     bars = _bars(6, spot=100_000.0, perp=100_050.0)
     r = simulate_trade(bars, [], T0, T0 + BAR * 3, cfg)
     assert not r.opened
@@ -253,11 +258,11 @@ def test_t32_margin_topup_fires_and_consumes_reserve():
     highs = [100_050.0] * n
     highs[3] = 132_500.0  # ratio 0.0068: 追証トリガ 0.01 を割るが mmr 0.004 の手前
     bars = _bars(n, spot=100_000.0, perp=100_050.0, mark_high=highs)
-    r = simulate_trade(bars, [], T0, T0 + BAR * 6, _cfg(reserve_usdt=3_000.0))
+    r = simulate_trade(bars, [], T0, T0 + BAR * 6, _cfg())
     assert r.topup_count >= 1, "維持証拠金率が閾値を割ったら追証が発火すること"
     assert r.topup_total_usdt > 0
     assert not r.liquidated
-    assert r.bar_states[-1].reserve_usdt < 3_000.0
+    assert r.bar_states[-1].reserve_usdt < P.MARGIN_RESERVE_USDT
 
 
 def test_t32_liquidation_when_reserve_is_exhausted():
@@ -265,15 +270,34 @@ def test_t32_liquidation_when_reserve_is_exhausted():
     highs = [100_050.0] * n
     highs[3] = 133_000.0  # 清算水準超え。予備資金ゼロでは支えられない
     bars = _bars(n, spot=100_000.0, perp=100_050.0, mark_high=highs)
+    # 予備資金を明示的に空にした対照(凍結値 2000 ではなくテスト用の 0)
     r = simulate_trade(bars, [], T0, T0 + BAR * 6, _cfg(reserve_usdt=0.0))
     assert r.liquidated
 
 
-def test_t32_reserve_is_part_of_deployed_capital():
-    """§11.4: 予備資金は deployed_capital に含める(含めなければ資本の過少申告)。"""
-    cfg = _cfg(reserve_usdt=2_000.0)
-    assert cfg.deployed_capital_usdt == cfg.capital_base_usdt
-    assert cfg.position_capital_usdt == cfg.capital_base_usdt - 2_000.0
+def test_t32_reserve_is_frozen_and_part_of_deployed_capital():
+    """§24.1: R = C/(L+2) = 2000。deployed_capital は C のまま。"""
+    cfg = _cfg()
+    assert P.MARGIN_RESERVE_USDT == pytest.approx(
+        P.CAPITAL_BASE_USDT / (P.LEVERAGE + 2)
+    ), "R は初期証拠金1トランシェ分として導出される"
+    assert cfg.reserve_usdt == 2_000.0
+    assert cfg.deployed_capital_usdt == P.CAPITAL_BASE_USDT == 10_000.0
+    assert cfg.position_capital_usdt == 8_000.0
+    # 内訳が C を過不足なく使い切ること
+    spot_notional = cfg.position_capital_usdt * cfg.leverage / (cfg.leverage + 1)
+    init_margin = spot_notional / cfg.leverage
+    assert spot_notional + init_margin + cfg.reserve_usdt == pytest.approx(
+        cfg.capital_base_usdt
+    )
+
+
+def test_reserve_is_constant_across_leverage_sensitivities():
+    """§24.1: R は L を変えても 2000 のまま。"""
+    for lev in P.LEVERAGE_SENSITIVITY:
+        cfg = _cfg(leverage=lev)
+        assert cfg.reserve_usdt == 2_000.0
+        assert cfg.position_capital_usdt == 8_000.0
 
 
 # --------------------------------------------------------------------------
@@ -294,7 +318,9 @@ def test_t16_leverage_invariance_is_exact_before_lot_rounding():
         q_raw = cfg.position_capital_usdt * lev / ((lev + 1.0) * spot_in)
         exact.append(q_raw * spot_in * (1.0 + 1.0 / lev))
     assert max(exact) - min(exact) < 1e-9, exact
-    assert exact[0] == pytest.approx(P.CAPITAL_BASE_USDT)
+    # §24.1: 基準は C ではなく C − R
+    assert exact[0] == pytest.approx(P.POSITION_CAPITAL_USDT)
+    assert P.POSITION_CAPITAL_USDT == pytest.approx(8_000.0)
 
 
 def test_t16_leverage_invariance_holds_up_to_lot_quantisation():
@@ -352,14 +378,20 @@ def test_wallets_stay_separate_and_leverage_is_a_time_series():
     assert any(b.funding_cashflow != 0 for b in r.bar_states)
 
 
-def test_funding_can_be_excluded_from_margin_when_configured():
-    """§9 M7 が『明示的に凍結する』とした選択肢が両方実装されていること。"""
+def test_g2_funding_moves_the_futures_wallet_in_both_signs():
+    """§24.2: 正負いずれの funding も先物ウォレット残高を動かす。"""
     bars = _bars(10, spot=100_000.0, perp=100_050.0)
-    ev = FundingEvent(T0 + BAR * 3, 0.005, 100_050.0, 8.0)
-    inc = simulate_trade(bars, [ev], T0, T0 + BAR * 7, _cfg(funding_counts_toward_margin=True))
-    exc = simulate_trade(bars, [ev], T0, T0 + BAR * 7, _cfg(funding_counts_toward_margin=False))
-    assert inc.funding_total == pytest.approx(exc.funding_total)
-    assert inc.bar_states[-1].futures_margin_usdt > exc.bar_states[-1].futures_margin_usdt
+    base = simulate_trade(bars, [], T0, T0 + BAR * 7, _cfg())
+    pos = simulate_trade(
+        bars, [FundingEvent(T0 + BAR * 3, 0.005, 100_050.0, 8.0)], T0, T0 + BAR * 7, _cfg()
+    )
+    neg = simulate_trade(
+        bars, [FundingEvent(T0 + BAR * 3, -0.005, 100_050.0, 8.0)], T0, T0 + BAR * 7, _cfg()
+    )
+    b0 = base.bar_states[-1].futures_margin_usdt
+    assert pos.bar_states[-1].futures_margin_usdt > b0
+    assert neg.bar_states[-1].futures_margin_usdt < b0
+    assert pos.funding_total > 0 > neg.funding_total
 
 
 def test_tracking_error_is_recorded_every_bar_without_threshold_exclusion():
@@ -370,24 +402,25 @@ def test_tracking_error_is_recorded_every_bar_without_threshold_exclusion():
     assert len(r.bar_states) == 8
 
 
-def test_unfrozen_parameters_have_no_defaults():
-    """凍結プロトコルに値が無いものを黙って既定値で埋めていないこと。"""
+def test_only_h14_remains_unfrozen_and_has_no_default():
+    """v1.8.1 §24.1–24.3 で3件が凍結され、残るのは H14 だけ。"""
     assert set(UNFROZEN_PARAMETERS) == {
-        "reserve_usdt",
-        "funding_counts_toward_margin",
-        "post_liquidation",
+        "liquidation_clearance_fee_rate",
+        "liquidation_slippage_bps",
     }
     with pytest.raises(TypeError):
         TwoLegConfig(cost=TwoLegCostConfig("x", 1.0, 1.0))  # type: ignore[call-arg]
+    # v1.8.1 で凍結された3件は既定で入る
+    cfg = _cfg()
+    assert cfg.reserve_usdt == P.MARGIN_RESERVE_USDT
+    assert cfg.funding_counts_toward_margin is P.FUNDING_COUNTS_TOWARD_MARGIN is True
+    assert cfg.post_liquidation == P.POST_LIQUIDATION_RULE == "unwind"
 
 
-def test_rehedge_rule_is_refused_because_it_is_not_frozen():
-    n = 8
-    highs = [100_050.0] * n
-    highs[3] = 200_000.0
-    bars = _bars(n, spot=100_000.0, perp=100_050.0, mark_high=highs)
-    with pytest.raises(NotImplementedError, match="凍結プロトコルに無い"):
-        simulate_trade(bars, [], T0, T0 + BAR * 6, _cfg(post_liquidation="rehedge"))
+def test_rehedge_is_rejected_because_v1_8_1_froze_unwind():
+    """§24.3: POST_LIQUIDATION_RULE = 'unwind'。再ヘッジは実装しない。"""
+    with pytest.raises(ValueError, match="unwind"):
+        _cfg(post_liquidation="rehedge")
 
 
 def test_config_rejects_incoherent_margin_thresholds():
@@ -395,3 +428,165 @@ def test_config_rejects_incoherent_margin_thresholds():
         _cfg(topup_trigger=0.05, topup_target=0.01)
     with pytest.raises(ValueError):
         _cfg(maint_margin_rate=0.02, topup_trigger=0.01)
+
+
+# ==========================================================================
+# v1.8.1 §24.7 — 修正条項のテスト(T35–T41)
+# ==========================================================================
+
+
+def _liq_bars(n: int = 10, spike_at: int = 3, spike: float = 200_000.0) -> list[Bar]:
+    highs = [100_050.0] * n
+    highs[spike_at] = spike
+    return _bars(n, spot=100_000.0, perp=100_050.0, mark_high=highs)
+
+
+def test_t35_pnl_identity_holds_on_the_liquidation_path():
+    """§24.5: 脚が別時刻で終了しても恒等式は保たれる。"""
+    bars = _liq_bars()
+    r = simulate_trade(bars, [], T0, T0 + BAR * 8, _cfg(reserve_usdt=0.0))
+    assert r.liquidated
+    assert r.perp_out == r.liquidation_fill
+    assert r.spot_out == r.spot_unwind_fill
+    assert r.pnl_gross == pytest.approx(r.pnl_gross_by_legs, rel=1e-12, abs=1e-9)
+
+
+def test_t35_identity_holds_on_liquidation_path_with_funding():
+    bars = _liq_bars()
+    ev = FundingEvent(T0 + BAR * 2, 0.0003, 100_050.0, 8.0)
+    r = simulate_trade(bars, [ev], T0, T0 + BAR * 8, _cfg(reserve_usdt=0.0))
+    assert r.liquidated and r.funding_events_applied == 1
+    assert r.pnl_gross == pytest.approx(r.pnl_gross_by_legs, rel=1e-12, abs=1e-9)
+
+
+def test_t36_scheduled_perp_exit_price_is_not_used_after_liquidation():
+    """§24.5 a: 清算後に予定 perp exit 価格を使わない。"""
+    bars = _liq_bars()
+    scheduled = bars[9].perp_open
+    r = simulate_trade(bars, [], T0, T0 + BAR * 8, _cfg(reserve_usdt=0.0))
+    assert r.liquidated
+    assert r.perp_out != scheduled
+    assert r.perp_out == pytest.approx(r.liquidation_fill)
+
+
+def test_t36_no_ordinary_perp_exit_fee_after_forced_close():
+    """§24.5 b: 強制決済に通常の taker 手数料を掛けない。"""
+    bars = _liq_bars()
+    r = simulate_trade(bars, [], T0, T0 + BAR * 8, _cfg(reserve_usdt=0.0))
+    assert r.liquidated
+    assert r.cost_perp_out == 0.0
+    assert r.cost_spot_out > 0.0, "spot 側は通常どおり掛かる"
+    assert r.cost_total == pytest.approx(
+        r.cost_spot_in + r.cost_perp_in + r.cost_spot_out
+    )
+
+
+def test_t37_liquidation_fee_does_not_double_count_price_pnl():
+    """§24.5 c: 価格損失は q(P_in − P_liq) に一度だけ現れる。"""
+    bars = _liq_bars()
+    free = simulate_trade(bars, [], T0, T0 + BAR * 8, _cfg(reserve_usdt=0.0))
+    assert free.liquidation_fee_usdt == 0.0, "fee rate 0 なら手数料は 0"
+    # 価格損失は gross に含まれている(ショートが逆行しているので負)
+    assert free.pnl_gross < 0
+    assert free.pnl_net == pytest.approx(free.pnl_gross - free.cost_total)
+
+    # fee rate を入れた分だけ、ちょうど net が下がる(二重計上しない)
+    fee_rate = 0.0050
+    paid = simulate_trade(
+        bars, [], T0, T0 + BAR * 8, _cfg(reserve_usdt=0.0, liquidation_clearance_fee_rate=fee_rate)
+    )
+    assert paid.pnl_gross == pytest.approx(free.pnl_gross)
+    assert paid.liquidation_fee_usdt == pytest.approx(
+        fee_rate * paid.q_btc * paid.liquidation_fill
+    )
+    assert paid.pnl_net == pytest.approx(free.pnl_net - paid.liquidation_fee_usdt)
+
+
+def test_t38_spot_unwinds_at_first_causal_open_after_liquidation():
+    """§24.3: 清算バーより後の最初に因果的に執行可能な spot open。"""
+    bars = _liq_bars(spike_at=3)
+    r = simulate_trade(bars, [], T0, T0 + BAR * 8, _cfg(reserve_usdt=0.0))
+    assert r.liquidation_ts == bars[3].ts
+    assert r.spot_unwind_ts == bars[4].ts, "清算バーの次のバー"
+    assert r.spot_unwind_ts > r.liquidation_ts, "因果順序を守ること"
+    assert r.spot_out == bars[4].spot_open
+
+
+def test_t38_spot_unwind_rolls_forward_over_a_missing_spot_bar():
+    """欠損 spot バーは §9 M6b の roll-forward で飛ばす。"""
+    bars = _liq_bars(spike_at=3)
+    bars[4] = Bar(bars[4].ts, None, None, 100_050.0, 100_050.0, 100_050.0, 100_050.0)
+    r = simulate_trade(bars, [], T0, T0 + BAR * 8, _cfg(reserve_usdt=0.0))
+    assert r.liquidated
+    assert r.spot_unwind_ts == bars[5].ts
+    assert r.naked_spot_bars == 1, "飛ばした 1 本が naked spot 期間"
+
+
+def test_t39_naked_spot_exposure_appears_in_tracking_error():
+    """§24.3: perp が消えてから spot を解消するまでの裸エクスポージャ。"""
+    bars = _liq_bars(spike_at=3)
+    r = simulate_trade(bars, [], T0, T0 + BAR * 8, _cfg(reserve_usdt=0.0))
+    liq_state = [b for b in r.bar_states if b.ts == r.liquidation_ts][0]
+    assert liq_state.perp_btc == 0.0, "perp 脚が消えている"
+    assert liq_state.tracking_error == pytest.approx(1.0), (
+        "perp が 0 なら spot がまるごと裸。tracking_error は 1.0 になる"
+    )
+
+
+def test_t40_event_order_is_funding_then_margin_then_topup_then_liquidation():
+    """§24.4: funding を先に適用すると、その分だけ清算が回避されうる。"""
+    assert P.EVENT_ORDER == "funding_then_margin_then_topup_then_liquidation"
+    n = 8
+    highs = [100_050.0] * n
+    highs[3] = 132_900.0  # funding が無ければ維持証拠金割れ寸前
+    bars = _bars(n, spot=100_000.0, perp=100_050.0, mark_high=highs)
+
+    without = simulate_trade(bars, [], T0, T0 + BAR * 6, _cfg(reserve_usdt=0.0))
+    big = FundingEvent(T0 + BAR * 3, 0.010, 100_050.0, 8.0)  # 同じバーで大きな受取
+    with_funding = simulate_trade(bars, [big], T0, T0 + BAR * 6, _cfg(reserve_usdt=0.0))
+
+    assert without.liquidated, "funding 無しでは清算される水準に置いた"
+    assert not with_funding.liquidated, (
+        "funding を先に適用する順序なら、同じバーで清算を免れる"
+    )
+    assert with_funding.funding_events_applied == 1
+
+
+def test_t40_topup_is_processed_before_liquidation():
+    """TOPUP_TRIGGER は維持証拠金より上にあるので必ず先に到達する。"""
+    assert P.MARGIN_TOPUP_TRIGGER > P.MAINT_MARGIN_RATE_TIER1
+    n = 8
+    highs = [100_050.0] * n
+    highs[3] = 133_500.0
+    bars = _bars(n, spot=100_000.0, perp=100_050.0, mark_high=highs)
+    no_reserve = simulate_trade(bars, [], T0, T0 + BAR * 6, _cfg(reserve_usdt=0.0))
+    with_reserve = simulate_trade(bars, [], T0, T0 + BAR * 6, _cfg())
+    assert no_reserve.liquidated
+    assert with_reserve.topup_count >= 1
+    assert not with_reserve.liquidated, "追証が清算より先に処理されること"
+
+
+def test_t41_h14_unresolved_blocks_the_liquidation_path():
+    """§24.6: H14 未解決なら清算経路を評価できない(既定のゼロを黙って使わない)。"""
+    cfg = TwoLegConfig(
+        cost=TwoLegCostConfig("base_taker", P.SPOT_TAKER_BPS, P.PERP_TAKER_BPS),
+        liquidation_clearance_fee_rate=None,
+        liquidation_slippage_bps=None,
+        reserve_usdt=0.0,
+    )
+    assert not cfg.liquidation_cost_is_resolved
+    assert P.LIQUIDATION_CLEARANCE_FEE_RATE is None
+    assert P.LIQUIDATION_FEE_STATUS == "pending_authoritative_read"
+    with pytest.raises(ValueError, match="H14 未解決"):
+        simulate_trade(_liq_bars(), [], T0, T0 + BAR * 8, cfg)
+
+
+def test_t41_non_liquidating_path_still_runs_with_h14_unresolved():
+    """清算しない限り H14 は必要ない(不必要に止めない)。"""
+    cfg = TwoLegConfig(
+        cost=TwoLegCostConfig("base_taker", P.SPOT_TAKER_BPS, P.PERP_TAKER_BPS),
+        liquidation_clearance_fee_rate=None,
+        liquidation_slippage_bps=None,
+    )
+    r = simulate_trade(_bars(10, 100_000.0, 100_050.0), [], T0, T0 + BAR * 7, cfg)
+    assert r.opened and not r.liquidated

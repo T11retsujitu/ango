@@ -1,8 +1,9 @@
-# two_leg.py — 凍結プロトコル v1.8 への適合メモ
+# two_leg.py — 凍結プロトコル v1.8.1 への適合メモ
 
 - 実装日: 2026-08-17
 - 対象: `src/mce/backtest/two_leg.py` / `tests/test_two_leg.py`
-- 凍結仕様: [carry_replication_protocol_v1](carry_replication_protocol_v1.md) **v1.8(FROZEN)**
+- 凍結仕様: [carry_replication_protocol_v1](carry_replication_protocol_v1.md) **v1.8.1(FROZEN)**
+- 凍結記録: `experiments/phase8/carry_freeze_v1_8_1.json`(v1.8 は `carry_freeze.json` に不変保存)
 - 前提レビュー: [a3_source_review_v1](a3_source_review_v1.md)(実装より先に完了済み)
 - **凍結ファイルは1バイトも変更していない**(freeze 記録の6ハッシュを再照合済み)
 - **実験は実行していない。** すべて合成データによる会計の単体・適合テストである。
@@ -38,75 +39,78 @@ diagnostic threshold(`REL_REBAL_THRESHOLD` / `BUFFER_GRID_BPS` / `CALIBRATION`)�
 
 ---
 
-## 2. 実装が露出させた**凍結仕様の穴**(3件)
+## 2. v1.8 で露出した穴 → **v1.8.1 ですべて凍結された**
 
-**いずれも既定値を置かず、呼び出し側に明示を強制した**(`UNFROZEN_PARAMETERS`)。
-黙って埋めると「凍結仕様に従った」と誤認されるため。
+v1.8 実装が露出させた3件は、決定ログにより v1.8.1 §24.1–24.3 で確定した。
+**本モジュールの必須引数から外れ、凍結既定値になった。**
 
-### 2.1 【重要】予備資金と拘束資本が両立しない(§11.1 × §11.4)
+| # | v1.8 での状態 | v1.8.1 の凍結値 |
+|---|---|---|
+| G1 予備資金 | §11.1 が C を使い切り §11.4 と非両立 | **`MARGIN_RESERVE_USDT = 2000.0`**。`R = (C−R)/(L+1)` すなわち初期証拠金1トランシェ分として導出(`R = C/(L+2)`)。`POSITION_CAPITAL = 8000`。**L を変えても R は 2000 のまま** |
+| G2 funding と証拠金 | 未凍結 | **`True`**。正負いずれの funding も先物ウォレットを動かす |
+| G3 清算後 | 未凍結(`rehedge` は拒否していた) | **`"unwind"`**。再ヘッジは実装しない |
+
+**内訳の検算**(primary `C=10000, L=3`): spot 名目 6000 + 初期証拠金 2000 + 予備資金 2000 = **10000**。
+
+**T16 の基準変更**: 丸め前の厳密不変量は `C` ではなく **`POSITION_CAPITAL_USDT`(8000)**
+に対して成立する。実測で全 `L` について 8000.000000(差 < 1e-9)。
+
+## 2A. 【訂正】イベント順序(v1.8 の記述は誤りだった)
+
+**v1.8 の docstring と本メモ §4 は「清算判定 → 追証 → funding」と書いていた。これは誤り。**
+v1.8.1 §24.4 が正しい順序を凍結した。
 
 ```text
-§11.1: q = C·L/((L+1)·S_in)、deployed_capital = C
-       → spot 名目 C·L/(L+1) + 初期証拠金 C/(L+1) = C  …… C を使い切る
-§11.4: 「予備資金は deployed_capital に含める」
-       → しかし C には余りが無いので、予備資金は 0 にしかなり得ない
-       → 追証は原理的に発火せず、§11.4 も Y35(always_on は追証なしでは存在し得ない)も
-          満たせない
+EVENT_ORDER = "funding_then_margin_then_topup_then_liquidation"
+
+1. 適格な funding を先物ウォレットへ適用する
+2. 不利側 mark 経路で証拠金を評価する
+3. TOPUP_TRIGGER(0.010)は維持証拠金(0.004)より上なので、清算より先に処理する
+4. 追証の後、なお維持証拠金以下なら清算する
 ```
 
-**これは実装で解決できない。** 本モジュールは `reserve_usdt` を**必須引数**にし、
-`position_capital = C − reserve` として建玉を縮めることで両立させたが、
-**`reserve` の値は凍結プロトコルに存在しない**。
+実装・docstring・テスト(T40)をこの順序に揃えた。
+**T40 は「funding を先に入れると同じバーで清算を免れる」ことを合成データで示す**ので、
+順序が逆戻りしたら落ちる。
 
-**推奨する最小の修正(v1.8.1)**: `MARGIN_RESERVE_USDT` を凍結し、
-§11.1 の式を `q = (C − R)·L/((L+1)·S_in)`、`deployed_capital = C` と明記する。
-`R = 0` は §11.4 を空文にするので選べない。
+## 3. G5 — 清算会計の修正(v1.8 実装の誤りの是正)
 
-### 2.2 累積 funding を維持証拠金に含めるか(§9 M7)
+| # | v1.8 の欠陥 | v1.8.1 の修正 | テスト |
+|---|---|---|---|
+| a | 清算後も予定 perp exit 価格を使っていた | `perp_out = 清算約定` | T36 |
+| b | 清算後も通常の `cost_perp_out` を計上 | **0 にする**(spot 側は通常どおり) | T36 |
+| c | `liquidation_loss` が価格 PnL を二重計上しうる | 価格損失は `q(P_in − P_liq)` に**一度だけ**。`liquidation_fee_usdt` は **clearance fee のみ** | T37 |
+| d | 清算/巻き戻しの時刻・価格が記録されない | `liquidation_ts` / `liquidation_fill` / `spot_unwind_ts` / `spot_unwind_fill` / `naked_spot_bars` を追加 | T38 |
 
-§9 M7 は「**累積 funding を維持証拠金計算に含めるかを明示的に凍結する**」と述べているが、
-`phase8_prereg.py` に値が無い。→ `funding_counts_toward_margin` を必須引数にした。
-(実務上 Binance は funding を先物ウォレット残高に反映するので `True` が自然だが、
-**自然さは凍結ではない**。)
+**恒等式の一般化**: `D_out := P_exit_actual − S_exit_actual`。
+脚が別時刻で終了しても `PnL = q(D_in − D_out) + Funding` は保たれる(**T35** が清算経路で検算)。
 
-### 2.3 清算後の規則(§11.3)
+**spot 巻き戻し**: 清算バーより**後**で最初に因果的に執行可能な spot open。
+欠損バーは §9 M6b の roll-forward で飛ばし、飛ばした本数を `naked_spot_bars` に記録する。
+perp が消えている間、`tracking_error` は 1.0 になる(**T39**)。
 
-§11.3 は「清算後は**凍結した規則で**再ヘッジするか巻き戻す(どちらかを事前に選ぶ)」と
-述べているが、値が無い。→ `post_liquidation` を必須引数にし、
-**`"rehedge"` は `NotImplementedError` で拒否する**(再建玉規則が凍結されていないため、
-実装すれば発明になる)。`"unwind"` のみ実装した。
+## 4. H14 — 清算コストは**未解決**(実験をブロックする)
 
----
+`liquidation_slippage_bps = 0.0` は v1.8 が凍結した値ではない。**黙って維持していない。**
 
-## 3. 精度の申告:T16 は連続量では厳密、離散量では lot 量子化まで
+**確認できたこと**(公式 FAQ、2026-08-17 取得):
+Liquidation Clearance Fee は**存在し**、「適用される rate × 建玉の名目価値」で算定される。
+清算トリガは `Collateral < Maintenance Margin`(**本実装の判定と一致**)。
+約定は Smart Liquidation の **IOC 成行**で、未約定分は Insurance Fund が引き取る
+→ **short にとってトリガー価格より不利になりうる**。
 
-T16「`NARDC(L)·(1+1/L)` が清算ゼロ時に `L` 不変」は、
-**丸め前の `q_raw` について厳密に成立する**(実測: 全 `L` で 10005.00、差 < 1e-9)。
+**取得できなかったこと**: **rate の数値**。
+risk bracket payload に `fee|liq|clear|penalt` に一致するキーは**0件**、
+trading-rules の表は JS 描画で非 JS 取得では "No Data"、`leverageBracket` は 401。
 
-一方、§11.1 が要求する **lot step 丸め**を適用すると、量子化の分だけずれる。
+```text
+LIQUIDATION_CLEARANCE_FEE_RATE = None
+LIQUIDATION_FEE_STATUS         = "pending_authoritative_read"
+```
 
-| L | `q_raw` | 丸め後 `q` | `q·P·(1+1/L)` 丸め前 | 丸め後 |
-|---|---|---|---|---|
-| 1 | 0.050000 | 0.050 | 10005.00 | 10005.00 |
-| 2 | 0.066667 | 0.066 | 10005.00 | 9904.95 |
-| 3 | 0.075000 | 0.075 | 10005.00 | 10005.00 |
-| 5 | 0.083333 | 0.083 | 10005.00 | 9964.98 |
-
-**これは矛盾ではなく、離散化の必然である。** テストは両方を別々に検査する
-(厳密不変性 / lot 1つ分以内)。**T16 を丸め後で厳密に要求すると通らない**ので、
-将来 T16 を機械判定に使うときは許容幅を lot 由来と明記すること。
-
----
-
-## 4. 保守側に固定した処理順序(仕様に明記が無かったため)
-
-バー内の順序を **清算判定 → 追証 → funding 受払**に固定した。
-
-funding を先に入れると、その分だけ証拠金が厚くなり清算が起きにくくなる。
-short の funding は平均的に受取(在庫 K9: 85.4% が正)なので、
-**清算判定を先に置くのが保守側**である。docstring に明記した。
-
----
+**H13 と同じ扱い**: `TwoLegConfig` は両値を**必須引数**として要求し、
+清算経路の評価時に未解決なら `ValueError` で落とす(**T41**)。
+清算しない経路は不必要に止めない(T41 の対照)。
 
 ## 5. 本モジュールがやらないこと
 

@@ -154,8 +154,10 @@ def test_protocol_is_frozen_and_records_its_remaining_blocker():
     (テストが状態を追随せずに通り続けることを防ぐため、両方は書かない)。
     """
     text = PROTOCOL_DOC.read_text(encoding="utf-8")
-    assert "FROZEN" in text, "凍結状態が明示されていない"
-    assert "未凍結" not in text, "凍結後なのに未凍結の記述が残っている"
+    header = text.splitlines()[0]
+    assert "FROZEN" in header, "見出しに凍結状態が明示されていない"
+    assert "未凍結" not in header, "見出しに未凍結の記述が残っている"
+    # 本文中の「未凍結」は改訂表の履歴記述(§24 が何を解消したか)としてのみ許す
     # 解決済みの blocker は解決として、未解決の H13 は未解決として書かれていること
     assert "H13" in text, "未解決の blocker H13 が記載されていない"
     assert "commissionRate" in text, "H13 の取得経路が記載されていない"

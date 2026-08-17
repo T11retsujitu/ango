@@ -16,7 +16,9 @@ from mce import phase8_prereg as P
 from mce.backtest import splits
 
 REPO = Path(__file__).resolve().parents[1]
-FREEZE = REPO / "experiments" / "phase8" / "carry_freeze.json"
+# v1.8 は不変の歴史記録として保存する。整合検査は**現行(active)記録**に対して行う。
+FREEZE_V1_8 = REPO / "experiments" / "phase8" / "carry_freeze.json"
+FREEZE = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_1.json"  # active
 
 pytestmark = pytest.mark.skipif(not FREEZE.exists(), reason="phase8 freeze 記録が無い")
 
@@ -96,7 +98,14 @@ def test_existing_split_semantics_are_unchanged():
 def test_frozen_spec_was_not_edited_after_the_freeze():
     """事前登録文書と凍結モジュールが freeze 記録と一致すること。"""
     rec = _record()
-    for key in ("prereg_doc", "prereg_module", "prior_register", "a3_source_review", "splits_module"):
+    for key in (
+        "prereg_doc",
+        "prereg_module",
+        "prior_register",
+        "a3_source_review",
+        "splits_module",
+        "conformance_notes",
+    ):
         entry = rec[key]
         path = REPO / entry["path"]
         assert path.exists(), f"{entry['path']} が存在しない"
@@ -108,7 +117,7 @@ def test_frozen_spec_was_not_edited_after_the_freeze():
 def test_protocol_declares_itself_frozen():
     rec = _record()
     assert rec["state"] == "FROZEN"
-    assert rec["protocol_version"] == P.PROTOCOL_VERSION == "v1.8"
+    assert rec["protocol_version"] == P.PROTOCOL_VERSION == "v1.8.1"
     text = (REPO / rec["prereg_doc"]["path"]).read_text(encoding="utf-8")
     assert "FROZEN" in text
 
@@ -206,3 +215,75 @@ def test_a3_diagnostic_thresholds_were_not_copied():
     assert 1e-4 not in frozen.values(), "A3 の REL_REBAL_THRESHOLD が混入している"
     review = (REPO / "docs" / "phase8" / "a3_source_review_v1.md").read_text(encoding="utf-8")
     assert "REL_REBAL_THRESHOLD" in review and "採用しない" in review
+
+
+# --------------------------------------------------------------------------
+# v1.8.1 修正条項(§24)
+# --------------------------------------------------------------------------
+
+
+def test_v1_8_record_is_preserved_immutably():
+    """v1.8 の凍結記録が残っており、v1.8.1 に上書きされていないこと。"""
+    assert FREEZE_V1_8.exists(), "v1.8 の凍結記録が消えている"
+    old = json.loads(FREEZE_V1_8.read_text(encoding="utf-8"))
+    assert old["protocol_version"] == "v1.8"
+    assert old["state"] == "FROZEN"
+    # v1.8.1 は v1.8 を明示的に supersede すると宣言していること
+    rec = _record()
+    assert rec["supersedes"]["version"] == "v1.8"
+    assert rec["supersedes"]["record"].endswith("carry_freeze.json")
+    # v1.8 のハッシュは**現行ファイルと一致しない**(改訂したのだから当然)
+    assert old["prereg_doc"]["sha256"] != rec["prereg_doc"]["sha256"]
+
+
+def test_amendment_did_not_touch_the_hypothesis():
+    """§24: パラメータ確定のみ。仮説・family・layer・昇格規則は不変。"""
+    scope = _record()["amendment_scope"]
+    for item in (
+        "layer boundaries",
+        "promotion rules",
+        "family",
+        "arm definitions",
+        "horizon set",
+        "GO/NO-GO",
+    ):
+        assert item in scope["unchanged"], item
+    # 実際の定数でも確認する
+    assert P.FAMILY_SIZE == len(P.COST_TIERS) == 3
+    assert P.LAYER1_END == datetime(2025, 6, 1, tzinfo=UTC)
+    assert P.LAYER3_START == datetime(2026, 9, 1, tzinfo=UTC)
+    assert P.PRIMARY_ARM == "R"
+
+
+def test_g1_reserve_is_frozen_and_derived():
+    assert P.MARGIN_RESERVE_USDT == 2_000.0
+    assert P.MARGIN_RESERVE_USDT == pytest.approx(P.CAPITAL_BASE_USDT / (P.LEVERAGE + 2))
+    assert P.POSITION_CAPITAL_USDT == P.CAPITAL_BASE_USDT - P.MARGIN_RESERVE_USDT == 8_000.0
+
+
+def test_g2_g3_g4_are_frozen():
+    assert P.FUNDING_COUNTS_TOWARD_MARGIN is True
+    assert P.POST_LIQUIDATION_RULE == "unwind"
+    assert P.EVENT_ORDER == "funding_then_margin_then_topup_then_liquidation"
+    # 追証が清算より先に到達する構造であること
+    assert P.MARGIN_TOPUP_TRIGGER > P.MAINT_MARGIN_RATE_TIER1
+
+
+def test_h14_is_unresolved_and_blocks_experiments():
+    assert P.LIQUIDATION_CLEARANCE_FEE_RATE is None
+    assert P.LIQUIDATION_FEE_STATUS == "pending_authoritative_read"
+    h14 = _record()["unresolved_at_freeze"]["H14"]
+    assert h14["orders_placed"] is False
+    assert h14["established"], "確認できた事実が記録されていること"
+    assert h14["not_obtainable"], "取得できなかった経路が記録されていること"
+    policy = _record()["post_freeze_policy"]
+    assert policy["experiments_permitted"] is False
+    assert set(policy["blocked_by"]) == {"H13", "H14"}
+
+
+def test_liquidation_slippage_zero_was_not_silently_retained():
+    """決定ログ: liquidation_slippage_bps=0.0 を黙って維持しない。"""
+    from mce.backtest.two_leg import UNFROZEN_PARAMETERS
+
+    assert "liquidation_slippage_bps" in UNFROZEN_PARAMETERS
+    assert "liquidation_clearance_fee_rate" in UNFROZEN_PARAMETERS

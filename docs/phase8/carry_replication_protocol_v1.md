@@ -1,6 +1,6 @@
-# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.8**(**FROZEN**)
+# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.8.1**(**FROZEN**)
 
-- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5** → **v1.6** → **v1.7** → **v1.8**)
+- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5** → **v1.6** → **v1.7** → **v1.8** → **v1.8.1**)
 - 対象: [Phase 8.0 選定メモ](phase8_selection_memo_v1.md) が第1位に選んだ **P8-C1**
 - **再現アンカー(唯一)**: **A2** *Fundamentals of Perpetual Futures* —
   He, Manela, Ross, von Wachter. arXiv `2212.06888`(v6 2024-08-21)。**`VERIFIED-FULL`**
@@ -1106,3 +1106,149 @@ BTCUSDT USD-M の taker commission を確定し、生レスポンス・取得時
 5. **§7.3 の算術は結果ではない。** 外部知識由来の桁を代入した設計判断である。
 6. **v1 の設計は「動かしてみて駄目だった」のではない。** 一度も実行せずに、
    全文取得と敵対監査だけで訂正した。**実行前に直せたことがこの改訂の要点である。**
+
+---
+
+## 24. v1.8.1 修正条項(**パラメータ確定のみ。仮説は変更していない**)
+
+- 承認: 2026-08-17 決定ログ
+- 契機: `two_leg.py` の実装が露出させた**凍結仕様の穴 3件**と、**清算会計の誤り 1件**
+  ([two_leg_conformance_notes_v1](two_leg_conformance_notes_v1.md))
+- **変更していないもの**: Primary Research Question / Non-goals / 情報集合 /
+  arm 定義 / horizon 集合 / コスト階層 / family / 多重比較補正 / layer 境界 /
+  昇格規則 / GO-NO-GO / negative result 条件 / 封印
+- v1.8 の凍結記録は `experiments/phase8/carry_freeze.json` として**不変のまま残す**。
+  v1.8.1 の凍結記録は `experiments/phase8/carry_freeze_v1_8_1.json` に**新規作成**する。
+
+### 24.1 G1 — 予備資金(§11.1 × §11.4 の非両立を解消)
+
+```text
+MARGIN_RESERVE_USDT   = 2000.0
+POSITION_CAPITAL_USDT = C − R = 8000.0
+サイジング             q = (C − R)·L / ((L + 1)·S_in)
+deployed_capital      = C = 10000.0   (予備資金を含む。§11.4)
+```
+
+**R の導出**(恣意的な決め打ちではない): 予備資金を
+**初期証拠金1トランシェ分**と定義する。
+
+```text
+R = (C − R)/(L + 1)   … 右辺は position capital に対する初期証拠金
+⇒ R(L + 2) = C  ⇒  R = C/(L + 2) = 10000/5 = 2000
+```
+
+内訳の検算(primary `C=10000, L=3`):
+
+| 項目 | 金額 |
+|---|---:|
+| spot 名目 `q·S_in` | 6000 |
+| 初期証拠金 `q·P_in/L` | 2000 |
+| 予備資金 `R` | 2000 |
+| **合計 = `deployed_capital`** | **10000** |
+
+- **`R` は leverage 感応度をまたいで 2000 に固定する。** `L` を変えても
+  `POSITION_CAPITAL = 8000` は動かない。
+- **T16 の修正**: 丸め前の厳密不変量の基準を **`C` から `POSITION_CAPITAL_USDT` へ**変える。
+
+  ```text
+  q_raw · S_in · (1 + 1/L) = C − R = 8000   （全ての L で厳密に成立）
+  ```
+
+  丸め後は lot 量子化の分だけずれる(v1.8 の申告どおり)。
+
+### 24.2 G2 — funding と証拠金(§9 M7 の未凍結を解消)
+
+```text
+FUNDING_COUNTS_TOWARD_MARGIN = True
+```
+
+**正負いずれの funding も先物ウォレット残高を動かす。** 受取だけを反映して
+支払を反映しない、という非対称な扱いはしない。
+
+### 24.3 G3 — 清算後の規則(§11.3 の未凍結を解消)
+
+```text
+POST_LIQUIDATION_RULE = "unwind"
+```
+
+- **再ヘッジは実装しない。**
+- 強制清算は **perp 脚を実際の清算約定で終了させる**。
+- 残った **spot 脚は、清算バーの後で最初に因果的に執行可能な spot open** で解消する。
+  必要なら §9 M6b の roll-forward 意味論をそのまま使う。
+- **清算から spot 解消までの naked spot エクスポージャを `tracking_error` に記録する。**
+
+### 24.4 G4 — イベント順序(**v1.8 の記述を訂正**)
+
+**v1.8 の実装と conformance note は「清算判定 → 追証 → funding」と書いていたが、
+これは誤りであり、正しい順序を以下に凍結する。**
+
+```text
+funding 決済境界において:
+  1. 適格な funding を先物ウォレットへ適用する
+  2. 不利側 mark 経路で証拠金・追証を評価する
+  3. TOPUP_TRIGGER は維持証拠金より上にあるので、清算より先に処理する
+  4. 追証の後、なお維持証拠金以下であれば清算する
+```
+
+`EVENT_ORDER = "funding_then_margin_then_topup_then_liquidation"`
+
+**根拠**: `TOPUP_TRIGGER`(0.010)は `MAINT_MARGIN_RATE`(0.004)より**上**にある。
+したがって追証は清算より必ず先に到達する事象であり、順序として自然である。
+funding を先に適用するのは、決済が起きた時点で残高が実際に動くからである。
+
+### 24.5 G5 — 清算会計の修正(**v1.8 実装の誤りの是正**)
+
+v1.8 の実装には次の欠陥があった。**runner 作業の前に直す。**
+
+| # | 欠陥 | 修正 |
+|---|---|---|
+| a | 強制清算の**後**に、予定していた perp exit 価格を使っていた | **使わない。** perp 脚は清算約定で終了する |
+| b | 清算後にも通常の `cost_perp_out` を計上していた | **計上しない。** 強制決済に通常の taker 手数料は掛からない |
+| c | `liquidation_loss` が清算約定の PnL と**二重計上**しうる | **価格損失は `q(P_in − P_liq)` に一度だけ現れる。** `liquidation_loss` は **清算清算手数料(clearance fee)だけ**を表す |
+| d | 清算時刻・清算約定・spot 解消時刻/価格が記録されていなかった | **フィールドを追加する** |
+
+**追加フィールド**: `liquidation_ts` / `liquidation_fill` /
+`spot_unwind_ts` / `spot_unwind_fill` / `liquidation_fee_usdt`。
+
+**恒等式の一般化**: 脚が別時刻で終了しても §6.2 の恒等式は保たれる。
+
+```text
+D_out := P_exit_actual − S_exit_actual
+         （通常時は同一バーの open、清算時は P_liq と S_unwind）
+PnL_gross = q(D_in − D_out) + Funding      … 清算経路でも成立する
+```
+
+**清算経路版の恒等式テストを追加する**(§21.2 T35)。
+
+### 24.6 H14 — 清算コストの意味論(**未解決。実験をブロックする**)
+
+`liquidation_slippage_bps = 0.0` は v1.8 が凍結した値ではない。**ゼロを黙って維持しない。**
+
+**確認できたこと(2026-08-17 実測)**:
+
+| 事項 | 出所 | 結果 |
+|---|---|---|
+| Liquidation Clearance Fee が**存在する** | 公式 FAQ(取得済) | 「維持のために供された資産の一部が控除され Liquidation Clearance Fee として Binance へ支払われる」「適用される Liquidation Clearance Fee rate と建玉の名目価値に基づいて計算される」 |
+| 清算のトリガ条件 | 同上 | `Collateral = Initial Collateral + Realized PnL + Unrealized PnL < Maintenance Margin`(**本プロトコルの判定と一致**) |
+| 約定の性質 | 同上 | Smart Liquidation。IOC で市場へ流し、未約定分は Bankrupt Position として Insurance Fund が処理 → **約定は成行であり、short にとってトリガー価格以上になりうる** |
+| **fee rate の数値** | risk bracket API / trading-rules ページ | **取得できない。** brackets payload に fee 項目は無く(`fee|liq|clear|penalt` に一致するキー 0件)、trading-rules の表は JS 描画で非 JS 取得では "No Data"、`leverageBracket` は 401 |
+
+```text
+LIQUIDATION_CLEARANCE_FEE_RATE = None
+LIQUIDATION_FEE_STATUS         = "pending_authoritative_read"
+```
+
+**H13 と同じ扱いとする**: 値が `resolved` になるまで **experiment runner を起動しない**。
+`two_leg` はこの2つを**必須引数**として要求し、既定値を持たない。
+
+### 24.7 v1.8.1 で追加するテスト
+
+| # | テスト | 対応 |
+|---|---|---|
+| **T35** | **清算経路でも脚形と basis 形の PnL が一致する** | §24.5 |
+| **T36** | **清算後に予定 perp exit 価格を使わない / `cost_perp_out` を計上しない** | §24.5 a,b |
+| **T37** | **`liquidation_loss` が価格 PnL を二重計上しない** | §24.5 c |
+| **T38** | **spot 解消が清算バーより後の最初の因果的 open で行われる** | §24.3 |
+| **T39** | **naked spot 期間が `tracking_error` に現れる** | §24.3 |
+| **T40** | **イベント順序が funding → margin → topup → liquidation である** | §24.4 |
+| **T41** | **H14 未解決なら実験がブロックされる** | §24.6 |
