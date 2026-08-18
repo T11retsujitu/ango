@@ -1,0 +1,899 @@
+{
+  "probe": "aave_availability_v1",
+  "purpose": "input-data reconstruction availability only; no rho, no signals, no returns",
+  "protocol_version": "v1.8.3",
+  "source_fidelity": "partial_proxy_not_exact_A2",
+  "frozen_generations": [
+    {
+      "name": "aave_v1",
+      "pool": "0x398eC7346DcD622eDc5ae82352F02bE94C62d119",
+      "rate_word_index": 5,
+      "expected_word_count": 13,
+      "start": "2020-01-08T00:00:00+00:00",
+      "end": "2020-12-03T00:00:00+00:00",
+      "tokens": [
+        {
+          "symbol": "USDT",
+          "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "decimals": 6
+        },
+        {
+          "symbol": "USDC",
+          "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "decimals": 6
+        },
+        {
+          "symbol": "DAI",
+          "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "decimals": 18
+        }
+      ]
+    },
+    {
+      "name": "aave_v2",
+      "pool": "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9",
+      "rate_word_index": 4,
+      "expected_word_count": 12,
+      "start": "2020-12-03T00:00:00+00:00",
+      "end": "2023-01-27T00:00:00+00:00",
+      "tokens": [
+        {
+          "symbol": "USDT",
+          "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "decimals": 6
+        },
+        {
+          "symbol": "USDC",
+          "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "decimals": 6
+        },
+        {
+          "symbol": "DAI",
+          "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "decimals": 18
+        }
+      ]
+    },
+    {
+      "name": "aave_v3_core",
+      "pool": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+      "rate_word_index": 4,
+      "expected_word_count": 15,
+      "start": "2023-01-27T00:00:00+00:00",
+      "end": null,
+      "tokens": [
+        {
+          "symbol": "USDT",
+          "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "decimals": 6
+        },
+        {
+          "symbol": "USDC",
+          "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "decimals": 6
+        },
+        {
+          "symbol": "DAI",
+          "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "decimals": 18
+        }
+      ]
+    }
+  ],
+  "endpoint": "https://eth-mainnet.public.blastapi.io",
+  "dates_probed": 17,
+  "dates_complete": 15,
+  "h17_uninitialised_reserve_days": [
+    {
+      "date_utc": "2023-01-27",
+      "generation": "aave_v3_core",
+      "uninitialised_reserves": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "mean_apr": 0.0
+    },
+    {
+      "date_utc": "2023-01-28",
+      "generation": "aave_v3_core",
+      "uninitialised_reserves": [
+        "USDT"
+      ],
+      "mean_apr": 0.0235135681535652
+    }
+  ],
+  "observations": [
+    {
+      "date_utc": "2019-12-01",
+      "target_ts": "2019-12-01T00:00:00+00:00",
+      "generation": null,
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": null,
+      "block_timestamp": null,
+      "block_hash": null,
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [],
+      "mean_apr": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:39:35.075397+00:00",
+      "note": "V1 稼働開始前(または V4 期を除外)",
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-01-08",
+      "target_ts": "2020-01-08T00:00:00+00:00",
+      "generation": "aave_v1",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 9236624,
+      "block_timestamp": 1578441600,
+      "block_hash": "0x94bad8e6538d82e21e9670a81a5079782e263fc1ef45dace6444b82f92d9888c",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": null,
+          "apr_decimal": null,
+          "word_count": 0,
+          "response_sha256": "693e8930e72658ce36bc3e1df09149339c713fea3a1175042642cd57d690de71",
+          "error": "空応答(この世代/ブロックに reserve が存在しない)",
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": null,
+          "apr_decimal": null,
+          "word_count": 0,
+          "response_sha256": "693e8930e72658ce36bc3e1df09149339c713fea3a1175042642cd57d690de71",
+          "error": "空応答(この世代/ブロックに reserve が存在しない)",
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": null,
+          "apr_decimal": null,
+          "word_count": 0,
+          "response_sha256": "693e8930e72658ce36bc3e1df09149339c713fea3a1175042642cd57d690de71",
+          "error": "空応答(この世代/ブロックに reserve が存在しない)",
+          "nonzero_word_count": 0
+        }
+      ],
+      "mean_apr": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:39:35.075484+00:00",
+      "note": "3資産が揃わないため null(補完しない)",
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-06-01",
+      "target_ts": "2020-06-01T00:00:00+00:00",
+      "generation": "aave_v1",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 10176689,
+      "block_timestamp": 1590969590,
+      "block_hash": "0x53719d1e62189c0b32426c51a8154dc5e4b6601e691b13e8c3e232abca69b3ca",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 61635199795422425376349977,
+          "apr_decimal": 0.061635199795422424,
+          "word_count": 13,
+          "response_sha256": "fa749dc720948369332284096d3410d06f636537ce89c4b9c3b3675a626f2e67",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 55404469522929483628088322,
+          "apr_decimal": 0.05540446952292948,
+          "word_count": 13,
+          "response_sha256": "41aa2d32583dee1d38cf833329c544f418849a32c5857f469b3a559dd1a4587a",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 38884860861969696777089227,
+          "apr_decimal": 0.0388848608619697,
+          "word_count": 13,
+          "response_sha256": "e4311dd80439bb269cac30f93301a69c2f1c1eb7af9f25ea4e485259d22a6fab",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": 0.05197484339344053,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:39:43.842317+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-12-02",
+      "target_ts": "2020-12-02T00:00:00+00:00",
+      "generation": "aave_v1",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 11369788,
+      "block_timestamp": 1606867194,
+      "block_hash": "0xfef1122de1bdaaeb41a590387ba8bfc77f20a8d9fea02d7c1417021cf33104a8",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 58496092340203590929349778,
+          "apr_decimal": 0.058496092340203594,
+          "word_count": 13,
+          "response_sha256": "2ce78cf45b5cec15a812eba7c0bbf44047f1210eb841a4be9b8c116559a62079",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 109638505293678399357751172,
+          "apr_decimal": 0.1096385052936784,
+          "word_count": 13,
+          "response_sha256": "e94e18edcea4ffabd7e45c83ef2b86349ade4fd50f45ffc2d417ed09abcc0230",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 76428431587620274884885710,
+          "apr_decimal": 0.07642843158762028,
+          "word_count": 13,
+          "response_sha256": "6a820eb1b122c99b0cb954158fda58e130e46a00a8c311f0dc2deab7a5f396d5",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": 0.08152100974050076,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:39:50.796302+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-12-03",
+      "target_ts": "2020-12-03T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 11376229,
+      "block_timestamp": 1606953566,
+      "block_hash": "0x476dc3927f2718228ecb7d1492eb2a734882f87febbf1f564035efb0b29a91f0",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 8395098445321542316536118,
+          "apr_decimal": 0.008395098445321542,
+          "word_count": 12,
+          "response_sha256": "3186431a506272340cc27cec7fff8f6cbd86863dbaca982094d716fa077af09d",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 6732386866363355320630,
+          "apr_decimal": 6.732386866363356e-06,
+          "word_count": 12,
+          "response_sha256": "8d899bd5e07a1a2c7458eb81ff7e3c9a7fe82e8c6b5671c633e4fd0d83a9540f",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 7564303387870039259906906,
+          "apr_decimal": 0.0075643033878700396,
+          "word_count": 12,
+          "response_sha256": "e1281c74674d97e22c1f5a00ca8c53d1632368195b24e94fc44a5cd100a30947",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.005322044740019315,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:39:57.384931+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-12-04",
+      "target_ts": "2020-12-04T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 11382788,
+      "block_timestamp": 1607039984,
+      "block_hash": "0x1fb5aaf70db2846cef72b81d6446bb482c38b80588455db7fe6fcaf69a490003",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 120661242472724324498822026,
+          "apr_decimal": 0.12066124247272432,
+          "word_count": 12,
+          "response_sha256": "2504d646e05f4e30fbb0d08578c58ccf52cb783382ea702f3eddb845df3e5fbe",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 294818267915964519044832364,
+          "apr_decimal": 0.2948182679159645,
+          "word_count": 12,
+          "response_sha256": "18d6713e115cbc8f68fce3d6790979a2967d7770be822e89200fba020dd2c9ff",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 86510119757704692052093574,
+          "apr_decimal": 0.08651011975770469,
+          "word_count": 12,
+          "response_sha256": "ffee5fc602e290a0b92dacfe60e0e1ec5dfdc9c351074f671cc5b91d74816660",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.1673298767154645,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:40:01.809699+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2021-06-01",
+      "target_ts": "2021-06-01T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 12545218,
+      "block_timestamp": 1622505597,
+      "block_hash": "0xa7fc347732d7db128dc0b0c1b181c3f1ce2bcd84eafe83b146e91aacea3d29b7",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 26039524726649895405133550,
+          "apr_decimal": 0.026039524726649894,
+          "word_count": 12,
+          "response_sha256": "c65d21ba43353191729d32d6e93eb51c8545ce946375939ab517b487d57c7b2b",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 31055184237476309946194657,
+          "apr_decimal": 0.03105518423747631,
+          "word_count": 12,
+          "response_sha256": "9c822575d1cb90425dc7ecb9aa9ea41afce25a5a867743dd7d34bf5701e77b8c",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 65712879157344294966972430,
+          "apr_decimal": 0.06571287915734429,
+          "word_count": 12,
+          "response_sha256": "280c51dfa6bd7975331b2c7f6a06b895d5f7b55c7c7a5f283d0424d071c8576d",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.04093586270715683,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:40:10.192169+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2022-06-01",
+      "target_ts": "2022-06-01T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 14881676,
+      "block_timestamp": 1654041591,
+      "block_hash": "0x673101e5b5a674b5243689dce629c3b3f251717e785768a158888469db8de668",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 24647347299650520678161180,
+          "apr_decimal": 0.02464734729965052,
+          "word_count": 12,
+          "response_sha256": "01e1a00433ce45b7b9bb66d8a6bc5261b4c362b28096e17a7da01d6e1d902c86",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 21560911403020826392851536,
+          "apr_decimal": 0.021560911403020827,
+          "word_count": 12,
+          "response_sha256": "c256e9af86d390db522208a3a227874973ffc8faa41415d3576ea1b368fb9828",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 28548171256698900722150283,
+          "apr_decimal": 0.028548171256698902,
+          "word_count": 12,
+          "response_sha256": "cf38d7d625bbfc537f7a43b86c486f225b185ba2a48cbb0f4d4229e9029a9204",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.02491880998645675,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:40:17.405805+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2023-01-26",
+      "target_ts": "2023-01-26T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 16487269,
+      "block_timestamp": 1674691199,
+      "block_hash": "0x75a0ba94b90bb7c7375c3808ab656ca58922952136357edb323f55807044a355",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 34972803395574771996792378,
+          "apr_decimal": 0.03497280339557477,
+          "word_count": 12,
+          "response_sha256": "e591ec1efa5ce951097fafdc64646f6f07418288ed8923522b44f1a9c69746e6",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 28186591884223425320834193,
+          "apr_decimal": 0.028186591884223424,
+          "word_count": 12,
+          "response_sha256": "2fb64628d30683c83e28777f86675a1bd694b4fa1ae538946af5fe517f287b19",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 26823942200995937723216836,
+          "apr_decimal": 0.02682394220099594,
+          "word_count": 12,
+          "response_sha256": "a8039e00800bd2187a993b7ebe02ecefa23a27e4ee700c30b81635ab71e19470",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.029994445826931376,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:40:24.969803+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2023-01-27",
+      "target_ts": "2023-01-27T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 16494435,
+      "block_timestamp": 1674777599,
+      "block_hash": "0x8ab6646048ad387e470765b93183b482ef0624de7a2bcf53a0748c927b320e57",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        }
+      ],
+      "mean_apr": 0.0,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:40:33.825282+00:00",
+      "note": "H17: 未初期化 reserve が 0% として平均に混入(USDT, USDC, DAI)",
+      "uninitialised_reserves": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ]
+    },
+    {
+      "date_utc": "2023-01-28",
+      "target_ts": "2023-01-28T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 16501588,
+      "block_timestamp": 1674863999,
+      "block_hash": "0x7786a2df03cd7426550d210de107c73d602d5cabc3bbca33dfe57c45ba9947b5",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 38599351648592997263887608,
+          "apr_decimal": 0.038599351648592996,
+          "word_count": 15,
+          "response_sha256": "644124ee084dff855e11105b42c55e5d565ba6c89b97481f74490f8f3bd15440",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 31941352812102610240310770,
+          "apr_decimal": 0.031941352812102614,
+          "word_count": 15,
+          "response_sha256": "9f0e8d6bedc4f371306fe7f532386dfc3f54fd6fb0c59df3eb59a973562e22cc",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": 0.0235135681535652,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:40:39.325525+00:00",
+      "note": "H17: 未初期化 reserve が 0% として平均に混入(USDT)",
+      "uninitialised_reserves": [
+        "USDT"
+      ]
+    },
+    {
+      "date_utc": "2023-06-01",
+      "target_ts": "2023-06-01T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 17382265,
+      "block_timestamp": 1685577599,
+      "block_hash": "0x5b54c7cbb1816c36c6b5431e31ca12b1162b8d87a305318702d954e1f2b0b0cc",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 35963023014687800832070003,
+          "apr_decimal": 0.0359630230146878,
+          "word_count": 15,
+          "response_sha256": "06b32906bbb93e2f4b81d5cf99debfb6db0c2805284ef842dc970789ab6aa81e",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 33988218638059803035333514,
+          "apr_decimal": 0.0339882186380598,
+          "word_count": 15,
+          "response_sha256": "ebf08ed9b35e5a31ca58c68aa31e7f8265c120048cea0bbad8a1add01fb6cf9b",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 35032599833774809595846879,
+          "apr_decimal": 0.03503259983377481,
+          "word_count": 15,
+          "response_sha256": "1aab3a210eb8030e2eb208aca8ecc51e2b9e19130e6b65d9ab4a50fde55de7f7",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": 0.0349946138288408,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:40:46.481274+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2024-06-01",
+      "target_ts": "2024-06-01T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 19993249,
+      "block_timestamp": 1717199999,
+      "block_hash": "0x2aec1945eec44a5b0ad6993460e68d0203baf4e80569ea52aecfb70f890ff743",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 84926060986250556395696465,
+          "apr_decimal": 0.08492606098625055,
+          "word_count": 15,
+          "response_sha256": "f0b9ad11f1c7b96187c1320d53dd8056260f0e683b520dc5eacdbffbdb5c657b",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 87710485128716815899168991,
+          "apr_decimal": 0.08771048512871682,
+          "word_count": 15,
+          "response_sha256": "5dff363ca7f9ab476a516436a7d85f5f75c831bdc2c58b648d7b6d71148047d7",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 89214273565874344112444366,
+          "apr_decimal": 0.08921427356587434,
+          "word_count": 15,
+          "response_sha256": "78011556d86191329daa23f65103e77e1c1a5e18dd0b1562a2de774952e12fa1",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": 0.08728360656028057,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:40:52.705281+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2025-06-01",
+      "target_ts": "2025-06-01T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 22606142,
+      "block_timestamp": 1748735999,
+      "block_hash": "0x0bc358a1ab32f993c13ad402779f5a3b4b4a3127dc06814cb556a158dffaa1fa",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 50239211071717988427462668,
+          "apr_decimal": 0.05023921107171799,
+          "word_count": 15,
+          "response_sha256": "bd0b5ab1fc6e102e82f04d688a9b2ab62a11a493b56284709485031d9dbd4162",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 50688453723787693564158442,
+          "apr_decimal": 0.05068845372378769,
+          "word_count": 15,
+          "response_sha256": "34041579c622a0b657a1ebe8cbf412daa6a58b66c35dc87426e938f8c459e25c",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 49058002465922942173730580,
+          "apr_decimal": 0.04905800246592294,
+          "word_count": 15,
+          "response_sha256": "64539129e989fb35eab15deb31f44cb2f013e25e15f900b6a0b8371d8386b750",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.049995222420476215,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:41:00.864611+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2025-12-31",
+      "target_ts": "2025-12-31T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 24128884,
+      "block_timestamp": 1767139199,
+      "block_hash": "0xc992db8ac9363560469779bd1d9b42352efd65410b8c1a7db50ec9d695595aea",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 50081494807735882227359326,
+          "apr_decimal": 0.05008149480773588,
+          "word_count": 15,
+          "response_sha256": "6864bc56332b0f7b112444fd2adc9713a9e76ba921dbefe67065fa6e0c8b5f7b",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 45489456070993686821417714,
+          "apr_decimal": 0.04548945607099369,
+          "word_count": 15,
+          "response_sha256": "d6bb248ebad21c82c7cb812608d6764df07439547f5bda55973fb35063299e85",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 44708771255393925574233533,
+          "apr_decimal": 0.04470877125539392,
+          "word_count": 15,
+          "response_sha256": "19b6b7a3e6878d8746308ad10672d3d0f1e45f479dc159ad02dffc174398a35d",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.046759907378041164,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:41:07.811671+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2026-03-30",
+      "target_ts": "2026-03-30T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 24766691,
+      "block_timestamp": 1774828799,
+      "block_hash": "0x730cf6b7b7ddd0701b6e58eb3531de7776e30786d1f62e128d1ecb3d09e32763",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 30702269524258596489839361,
+          "apr_decimal": 0.030702269524258596,
+          "word_count": 15,
+          "response_sha256": "6c16ec0a9637d2ae83123aa5812c85a0764f3de2b1d5499091bd412d268cebf9",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 33377153550043341984070011,
+          "apr_decimal": 0.033377153550043344,
+          "word_count": 15,
+          "response_sha256": "5999c05158c55114762916c337f2c567278a132d0cbcdd16c9f129eaebbe2ab4",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 40815652998735941538462279,
+          "apr_decimal": 0.04081565299873594,
+          "word_count": 15,
+          "response_sha256": "33d06431ec2a80ddefbf7a1ec4054048c8df4687e71bdca9f7d1f26fce2f5dad",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.03496502535767929,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:41:14.623854+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2026-08-01",
+      "target_ts": "2026-08-01T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "market": "canonical_primary_market",
+      "block_number": 25656292,
+      "block_timestamp": 1785542399,
+      "block_hash": "0x0485b1eb7ba44d0e9cc31f1ac5e203b86e6525feb0c36283bef329e903bbf507",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 35918132171139672785553514,
+          "apr_decimal": 0.03591813217113967,
+          "word_count": 15,
+          "response_sha256": "919032609007d34d7c8d695c4ac0a3b90e61c2fd25e2cadbe08df8b24623b521",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 139611082504455743085125146,
+          "apr_decimal": 0.13961108250445575,
+          "word_count": 15,
+          "response_sha256": "1ddde0cb98e1ae9e71f6d6e851f7f595c5d903f8af95660e7e31c432e359682e",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 54794315160670819746178786,
+          "apr_decimal": 0.05479431516067082,
+          "word_count": 15,
+          "response_sha256": "6802bdbc37487155b819cff4eab26e771c32b39fc672fc60794ffb98e3766c5a",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.07677450994542208,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T11:41:22.738827+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    }
+  ]
+}
