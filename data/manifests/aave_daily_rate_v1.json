@@ -1,0 +1,206 @@
+{
+  "series": "aave_daily_rate_v1",
+  "purpose": "input-data reconstruction only; not joined to BTC data; no rho, no signals, no returns, no PnL, no Phase-8 outcome",
+  "protocol_version": "v1.8.4",
+  "source_of_truth": "aave_contract_state_on_ethereum_mainnet",
+  "access_route": "archive_rpc_eth_call",
+  "access_provider_role": "transport_not_economic_source",
+  "chain_id": 1,
+  "completeness_rule": "initialized_reserve_list_membership_at_observation_block",
+  "value_treatment": "no_filter_no_clip_no_smoothing_no_winsorization",
+  "interpolation": "none",
+  "source_fidelity": "partial_proxy_not_exact_A2",
+  "assets": [
+    "USDT",
+    "USDC",
+    "DAI"
+  ],
+  "snapshot_hour_utc": 0,
+  "path": "data/phase8/aave_daily_rate_v1.jsonl",
+  "sha256": "18f73bb1777e4465a90837bfa3169d141ac2bc75b09292789036094e511102bb",
+  "bytes": 4304351,
+  "first_date_utc": "2020-01-08",
+  "last_date_utc": "2026-08-18",
+  "days_total": 2415,
+  "days_complete": 2396,
+  "days_missing": 19,
+  "days_transport_failure": 0,
+  "days_integrity_error": 0,
+  "coverage": 0.992133,
+  "by_generation": {
+    "aave_v1": {
+      "days": 330,
+      "complete": 329
+    },
+    "aave_v2": {
+      "days": 785,
+      "complete": 785
+    },
+    "aave_v3_core": {
+      "days": 1300,
+      "complete": 1282
+    }
+  },
+  "mean_apr_min": 0.005322044740019315,
+  "mean_apr_max": 0.42319026185050707,
+  "missing_days": [
+    {
+      "date_utc": "2020-01-08",
+      "generation": "aave_v1",
+      "missing_reserves": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "note": "reserve list を読めない: 空応答(このブロックに reserve list が存在しない)"
+    },
+    {
+      "date_utc": "2023-01-27",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "note": "初期化済み reserve list に不在: USDT, USDC, DAI(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-01-28",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-01-29",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-01-30",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-01-31",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-01",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-02",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-03",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-04",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-05",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-06",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-07",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-08",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-09",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-10",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-11",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-12",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-13",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    }
+  ],
+  "integrity_error_days": [],
+  "note": "生の外部応答は保存していない。各行は provenance(chain id / block number / block timestamp / block hash / token address / 生 RAY / 小数 APR / 応答 SHA-256 / reserve list の SHA-256 と要素数)のみ。"
+}

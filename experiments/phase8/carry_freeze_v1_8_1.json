@@ -1,0 +1,176 @@
+{
+  "protocol": "phase8_carry_replication_v1",
+  "protocol_version": "v1.8.1",
+  "state": "FROZEN",
+  "supersedes": {
+    "version": "v1.8",
+    "record": "experiments/phase8/carry_freeze.json",
+    "note": "The v1.8 record is preserved byte-for-byte as an immutable historical artifact. It is NOT re-verified against current files, because v1.8.1 deliberately changed them."
+  },
+  "frozen_at_utc": "2026-08-17T20:30:00Z",
+  "frozen_by": "human decision log 2026-08-17 (v1.8.1 amendment: G1-G5 resolved, H14 opened)",
+  "amendment_scope": {
+    "changed": [
+      "MARGIN_RESERVE_USDT (G1)",
+      "POSITION_CAPITAL_USDT (G1)",
+      "sizing denominator (G1)",
+      "T16 invariant reference (G1)",
+      "FUNDING_COUNTS_TOWARD_MARGIN (G2)",
+      "POST_LIQUIDATION_RULE (G3)",
+      "EVENT_ORDER (G4)",
+      "liquidation accounting (G5)",
+      "LIQUIDATION_CLEARANCE_FEE_RATE / LIQUIDATION_FEE_STATUS (H14)"
+    ],
+    "unchanged": [
+      "primary research question",
+      "non-goals",
+      "information set",
+      "arm definitions",
+      "horizon set",
+      "cost tiers",
+      "family",
+      "multiple-testing correction",
+      "layer boundaries",
+      "promotion rules",
+      "GO/NO-GO",
+      "negative-result conditions",
+      "seal invariants"
+    ],
+    "note": "Parameter resolution only. No hypothesis, horizon, family or promotion rule was altered."
+  },
+  "prereg_doc": {
+    "path": "docs/phase8/carry_replication_protocol_v1.md",
+    "sha256": "03ce5cc8aa36b9ac00373b116e8563c5a9edb1e8e4a7f0db357fd1f744a4b25b"
+  },
+  "prereg_module": {
+    "path": "src/mce/phase8_prereg.py",
+    "sha256": "bbebc65f3226aed86f4415254306ecc9379e3718919f4ae7a88431b99070a3f4"
+  },
+  "prior_register": {
+    "path": "docs/phase8/carry_prior_register_v1.md",
+    "sha256": "26ad4dd1535ecdcf9e0a16fd196d5392f4d4a6767b54a4530556d1ca5cdf89a6",
+    "sealed": true,
+    "note": "Unchanged by this amendment. Executor must NOT read it."
+  },
+  "a3_source_review": {
+    "path": "docs/phase8/a3_source_review_v1.md",
+    "sha256": "7846302b66593a16459ac1f8b443671cc3edb4fbbffcfa4c2dbb514b10bed51d"
+  },
+  "audit_record": {
+    "path": "docs/phase8/carry_protocol_audit_v1.md",
+    "sha256": "cda714c35599b52798b5c06ef7e976e244569773e629aaffcae13a37f9201be2"
+  },
+  "conformance_notes": {
+    "path": "docs/phase8/two_leg_conformance_notes_v1.md",
+    "sha256": "204741553b1ac25783ccd64924e2f2e95a198a8e5f1b6aca874df632f05b5dee"
+  },
+  "splits_module": {
+    "path": "src/mce/backtest/splits.py",
+    "sha256": "948668127d96e888de165b0d7f7ec8dcc946c458d7b666e1827781b91e045222"
+  },
+  "engine_module": {
+    "path": "src/mce/backtest/two_leg.py",
+    "sha256": "6bd1341dcf6fc5abab60a0dba1e9cf062041dbe217d4308644cd13a4d7b08f97",
+    "note": "Recorded for provenance. The engine is implementation, not specification; conformance is enforced by tests, not by this hash."
+  },
+  "source_commit": "2072810ebb4cc0a8785a0f057ffb811d21b70c6f",
+  "uv_lock_sha256": "4f187f1a8ed2d64e2e949b0e1f6b8e6b9252e81201a28dc60d898870ea2d8ca8",
+  "seal_invariants": {
+    "FINAL_OOS_START": "2026-01-01T00:00:00+00:00",
+    "FINAL_OOS_START_modified_by_phase8": false,
+    "PHASE8_PROSPECTIVE_START": "2026-09-01T00:00:00+00:00",
+    "phase8_contaminated_band": [
+      "2026-01-01T00:00:00+00:00",
+      "2026-09-01T00:00:00+00:00"
+    ],
+    "phase8_contaminated_band_readable_for_outcome_evaluation": false,
+    "layer3_bars_existing_at_freeze_time": 0,
+    "note": "Layer 3 begins 2026-09-01, which is in the future at freeze time, so reading it was physically impossible when the protocol was frozen."
+  },
+  "resolved_in_v1_8_1": {
+    "G1": "MARGIN_RESERVE_USDT=2000.0 derived as one initial-margin tranche: R=(C-R)/(L+1) => R=C/(L+2)=2000. POSITION_CAPITAL_USDT=8000. Sizing q=(C-R)L/((L+1)S_in). Reserve constant across leverage sensitivities. T16 exact invariant is now relative to POSITION_CAPITAL_USDT.",
+    "G2": "FUNDING_COUNTS_TOWARD_MARGIN=True. Both signs move the futures wallet.",
+    "G3": "POST_LIQUIDATION_RULE='unwind'. No rehedging. Perp terminates at the simulated liquidation fill; spot unwinds at the first causally executable spot open after the liquidation bar, using M6b roll-forward; naked-spot exposure recorded as tracking error.",
+    "G4": "EVENT_ORDER='funding_then_margin_then_topup_then_liquidation'. Corrects the v1.8 docstring/notes which said liquidation->topup->funding and did not match intent.",
+    "G5": "Liquidation accounting fixed: scheduled perp exit price unused after forced close; no ordinary cost_perp_out; price loss appears exactly once in q(P_in-P_liq); liquidation_fee_usdt carries only the clearance fee; explicit liquidation_ts/fill and spot_unwind_ts/fill fields added."
+  },
+  "unresolved_at_freeze": {
+    "H13": {
+      "item": "authoritative live BTCUSDT USD-M taker commission",
+      "requested_by": "decision log 2026-08-17 (resolve before freeze via GET /fapi/v1/commissionRate)",
+      "status": "COULD NOT BE EXECUTED IN THIS ENVIRONMENT",
+      "endpoint_attempted": "https://www.binance.com/fapi/v1/commissionRate?symbol=BTCUSDT&timestamp=<ms>",
+      "http_status": 401,
+      "raw_response": "{\"code\":-2014,\"msg\":\"API-key format invalid.\"}",
+      "raw_response_sha256": "e7712db7077e81c13ccaf23d57a54ffb8e54c18d680a7bc30979e711ebdffbf1",
+      "retrieved_at_utc": "2026-08-17T19:24:00Z",
+      "reason": "commissionRate is a USER_DATA endpoint requiring an API key and HMAC-SHA256 signature. No Binance credentials exist in this environment (checked env vars and config paths).",
+      "orders_placed": false,
+      "placeholder_used": {
+        "PERP_TAKER_BPS": 5.0,
+        "provenance": "Binance futures FAQ worked example",
+        "confidence": "probable"
+      },
+      "blocking_rule": "COMMISSION_RATE_STATUS must become 'resolved' before any experiment runner may start (enforced by tests).",
+      "note": "Filling this value instantiates a single parameter and changes no design decision. It does not require re-freezing the protocol."
+    },
+    "H14": {
+      "item": "BTCUSDT USD-M liquidation clearance fee rate and forced-fill execution semantics",
+      "requested_by": "decision log 2026-08-17",
+      "status": "UNRESOLVED - authoritative rate not obtainable from this environment",
+      "established": [
+        {
+          "fact": "A Liquidation Clearance Fee exists and is computed from an applicable rate times the notional value of the position",
+          "source": "https://www.binance.com/en/support/faq/detail/360033525271",
+          "kind": "official_faq",
+          "retrieved_utc": "2026-08-17T20:05:00Z"
+        },
+        {
+          "fact": "Liquidation trigger is Collateral = Initial Collateral + Realized PnL + Unrealized PnL < Maintenance Margin (matches this protocol's condition)",
+          "source": "https://www.binance.com/en/support/faq/detail/360033525271",
+          "kind": "official_faq"
+        },
+        {
+          "fact": "Smart Liquidation offloads via an Immediate-or-Cancel order; the unfilled remainder becomes a Bankrupt Position handled by the Futures Insurance Fund. The fill is therefore a market IOC and can be worse than the trigger price for a short.",
+          "source": "https://www.binance.com/en/support/faq/detail/360033525271",
+          "kind": "official_faq"
+        }
+      ],
+      "not_obtainable": [
+        {
+          "attempt": "https://www.binance.com/bapi/futures/v1/friendly/future/common/brackets",
+          "http": 200,
+          "result": "BTCUSDT tier 1 maintenance margin rate 0.004 confirmed, but ZERO keys matching fee|liq|clear|penalt in the entire payload"
+        },
+        {
+          "attempt": "https://www.binance.com/fapi/v1/leverageBracket?symbol=BTCUSDT",
+          "http": 401,
+          "raw_response": "{\"code\":-2014,\"msg\":\"API-key format invalid.\"}"
+        },
+        {
+          "attempt": "https://www.binance.com/en/futures/trading-rules/perpetual/leverage-margin",
+          "http": 202,
+          "result": "client-side rendered table returns 'No Data' to non-JS fetch; no Liquidation Clearance Fee rate present"
+        }
+      ],
+      "orders_placed": false,
+      "frozen_values": {
+        "LIQUIDATION_CLEARANCE_FEE_RATE": null,
+        "LIQUIDATION_FEE_STATUS": "pending_authoritative_read"
+      },
+      "blocking_rule": "Same as H13. TwoLegConfig requires both liquidation_clearance_fee_rate and liquidation_slippage_bps explicitly; the liquidation path raises ValueError if unresolved. No experiment runner may start until resolved.",
+      "note": "liquidation_slippage_bps = 0.0 from v1.8 was NOT silently retained; it is now an explicit required argument with no default."
+    }
+  },
+  "post_freeze_policy": {
+    "design_audit_permitted": false,
+    "conformance_audit_permitted": true,
+    "experiments_permitted": false,
+    "final_oos_read_permitted": false,
+    "blocked_by": [
+      "H13",
+      "H14"
+    ]
+  },
+  "source_commit_note": "Set to 2072810ebb4cc0a8785a0f057ffb811d21b70c6f, the commit containing the v1.8.1 artifacts. The value written while building the record (a6d4ef6c73b5c2d7ee8923ea33be704236afe85f) was the parent and predates them. File hashes are unaffected."
+}

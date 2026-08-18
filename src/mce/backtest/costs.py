@@ -61,3 +61,44 @@ def break_even_cost_bps(bar_df: pl.DataFrame) -> float | None:
     if total_turnover == 0:
         return None
     return float(bar_df["gross_return"].sum() / total_turnover * 1e4)
+
+
+# ---------------------------------------------------------------------------
+# Phase 8.1 two-leg carry(凍結プロトコル §7.1)
+#
+# ADR 補記: 本モジュール冒頭の「funding は PnL 外(Q4 の決定)」は、
+# 単一銘柄の `CostConfig` パイプラインについての決定である。**Phase 8.1 の
+# two-leg carry PnL については、凍結プロトコル §8 が funding を PnL の中心に
+# 置くため、その範囲でのみ Q4 の ADR を supersede する**(監査 Y32)。
+# `CostConfig` / `apply_costs` の挙動は一切変更していない。
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class TwoLegCostConfig:
+    """spot 脚と perp 脚に**別々**の片道コストを持つ設定(§7.1)。
+
+    単一の `CostConfig` に畳まないのは、Binance の spot taker(0.100%)と
+    USD-M taker が**異なる**ためである(§7.2 / 監査 Y36)。
+    """
+
+    name: str
+    spot_bps: float  # 片道
+    perp_bps: float  # 片道
+    transfer_bps: float = 0.0  # Binance 内 spot<->futures 振替。仮定を可視化する(Y42)
+
+    @property
+    def round_trip_bps(self) -> float:
+        """4約定(entry 2 + exit 2)の合計 bps。"""
+        return 2.0 * (self.spot_bps + self.perp_bps)
+
+    @property
+    def round_trip_fraction(self) -> float:
+        """A2 の no-arbitrage 帯に渡す往復コスト C(小数)。"""
+        return self.round_trip_bps * 1e-4
+
+    def spot_fraction(self) -> float:
+        return self.spot_bps * 1e-4
+
+    def perp_fraction(self) -> float:
+        return self.perp_bps * 1e-4

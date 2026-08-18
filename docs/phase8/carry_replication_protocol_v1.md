@@ -1,6 +1,6 @@
-# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.7**(**draft・未凍結**)
+# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.8.4**(**FROZEN**)
 
-- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5** → **v1.6** → **v1.7**)
+- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5** → **v1.6** → **v1.7** → **v1.8** → **v1.8.1** → **v1.8.2** → **v1.8.3** → **v1.8.4**)
 - 対象: [Phase 8.0 選定メモ](phase8_selection_memo_v1.md) が第1位に選んだ **P8-C1**
 - **再現アンカー(唯一)**: **A2** *Fundamentals of Perpetual Futures* —
   He, Manela, Ross, von Wachter. arXiv `2212.06888`(v6 2024-08-21)。**`VERIFIED-FULL`**
@@ -238,7 +238,8 @@ A1 は **dated futures** の carry を 2019-03 〜 2024-07 で分析し、
 | `spot_close` / `perp_close` | 各 5m バーの close | `close_of_bar` |
 | `basis_abs` | `perp_close − spot_close` | `close_of_bar` |
 | `basis_rel` | `(perp_close − spot_close) / spot_close`。**A2 の ρ ではない**(下記 Y45) | `close_of_bar` |
-| **`rho`(= A2 の ρ)** | **`ρ = κ·(1 − e^{−(f−s)}) − (r − r′) ≈ κ·(f − s) − r`、`κ = 1095`**(= 年間の8時間区間数)。`f`,`s` は log 価格、`r` は **USDT/USDC/DAI の借入金利の平均**(spot ショート時は supply rate `r′`) | `close_of_bar` |
+| **`rho`(= A2 の ρ)** | **`ρ = κ·(1 − e^{−(f−s)}) − (r − r′)`、`κ = 1095`**(= 年間の8時間区間数)。`f`,`s` は log 価格 | `close_of_bar` |
+| **`r`(金利項。H12 で確定)** | **Aave の変動借入 APR(USDT / USDC / DAI)の等加重平均**。**`r′ = 0`**(Arm R は spot をショートしないため)。**signal_time で利用可能な観測のみ**を使う(point-in-time) | **`start_of_bar`** |
 | `funding_last_settled` | **決定時点以前に決済が確定した直近 funding**(§5.2) | `start_of_bar` |
 | `funding_interval_hours_last` | 同上の行の間隔(**8 とハードコードしない**。X5) | `start_of_bar` |
 | `basis_rel_ma_w` | `basis_rel` の**左閉窓**移動平均(現在バーを含まない)。窓 `w` は §14.2 で凍結。**窓完全性を満たさない行は null**(data_contract §5) | **`start_of_bar`**(Y20) |
@@ -572,11 +573,29 @@ B2/B3/B4 は §11.1 の `C`。**同じ分母を機械的に当てはめない。
 ### 13.1 3層(**X2 / X3 で境界を修正**)
 
 ```text
-layer 1  literature_in_sample      2020-01-01 <= ts < 2025-06-01      ← 下限を Y49 で明示
+layer 1  literature_in_sample      2020-01-01 <= ts < 2025-06-01
          = max(A2 2024-03-11, A1 2024-07, K11 2023-06-23, K12 2025-05-31) を月境界へ切り上げ
-layer 2  contaminated_confirmation 2025-06-01 <= ts < 2026-01-01   (7 ヶ月のみ)
-layer 3  prospective_final         ts >= PHASE8_PROSPECTIVE_START   ← H5
+layer 2  contaminated_confirmation 2025-06-01 <= ts < 2026-01-01        (7 ヶ月のみ)
+layer X  phase8_contaminated       2026-01-01 <= ts < 2026-09-01        ← 読まない
+layer 3  phase8_prospective_final  ts >= 2026-09-01
 ```
+
+**H5 は承認された(2026-08-17 決定ログ。制約つき)。**
+
+| 決定 | 実装 |
+|---|---|
+| `PHASE8_PROSPECTIVE_START = 2026-09-01T00:00:00Z` | `mce.backtest.splits` に**新規定数として追加**(`phase8_layer()` も追加) |
+| **`FINAL_OOS_START` を変更も弱化もしない** | **`2026-01-01` のまま。1文字も触っていない**(T35 で機械検査) |
+| `2026-01-01` 〜 `2026-08-31` は Phase 8 の汚染域であり、**Phase 8 の結果評価で決して読まない** | `PHASE8_CONTAMINATED_BAND` として定数化。§20 の `phase8_contaminated_rows_read == 0` で機械検査 |
+
+- 既存 split(`research` / `validation` / `final_oos`)の**意味は変わらない**。
+  `final_oos` は従来どおり 2026-01-01 以降すべてであり、
+  **Phase 8 の汚染域(layer X)はその部分集合**である。
+- **layer X は「後で使う」窓ではない。** Phase 8 の結果評価に対して恒久的に閉じている。
+  K9(ango 自身が 2026-07 まで funding を測定済み)と文献の 2026 年言及により、
+  **この窓は Phase 8 にとって既知**だからである。
+- **layer 3 は 2026-09-01 以降であり、本タスクの時点では 1 バーも存在しない。**
+  したがって **freeze 時点で layer 3 を読むことは物理的に不可能**である。
 
 **境界は2度動いた。**
 
@@ -1038,14 +1057,43 @@ external_knowledge : §13.4 の台帳を埋め込む
 | **H5** | layer 3 を設けるか / firewall 改訂(freeze v2)の可否 | **未解決・fatal** |
 | **H6** | spot leg の執行前提・fee 表・margin tier・`N0`・`L` | **未解決・高** |
 | ~~H11~~ | A2 の `arb_bound(c)` の実装式 | **✅ 解決**(Table 3 caption: `ρ_l = κ log(1−C)` / `ρ_u = κ log(1+C)`。Y47) |
-| **H12** | **ρ の金利項 `r`(A2 は Aave の USDT/USDC/DAI 借入金利平均)の代理をどう置くか** | **未解決・高**(新規。Aave データは ango 未保有) |
+| ~~H12~~ | ρ の金利項 `r` | **✅ 解決**(決定ログ 2026-08-17): **Aave 変動借入 APR(USDT/USDC/DAI)の等加重平均、`r′ = 0`、point-in-time**。**Kenneth-French daily RF は事前登録した感応度であって primary ではない** |
+| ~~H5~~ | layer 3 と firewall | **✅ 承認(制約つき)**。§13.1 |
+| ~~H6~~ | 執行前提・fee・margin tier | **✅ 大部分解決**。残るのは taker commission のみ(下記) |
+| **H13** | **BTCUSDT USD-M の taker commission の権威ある値** | **未解決・freeze の前提として要求されたが、本環境では取得不能**(§22.1) |
 | H10 | 公式 REST `markPrice` を primary にするか | 未解決・中(**推奨: する**) |
 | H9 | BTC 単独か ETH を足すか | 未解決・中 |
 | H7 | ToS 上の利用可否 | 継続して要確認 |
 | H8 | *Alpha Illusion* P1–P6 を報告規準として採用するか | 未解決・低(**推奨: 採用**) |
 
-**H5 は依然として fatal である。** H11 は解決したが、**H12(金利項 `r` の代理)が新たに高**である
-(`ρ` は `r` を含むので、代理を決めないと Arm R の閾値が定義できない)。
+### 22.1 H13 — 実行できなかった凍結前要求(**正直な申告**)
+
+決定ログは「freeze の前に `GET /fapi/v1/commissionRate`(read-only USER_DATA)で
+BTCUSDT USD-M の taker commission を確定し、生レスポンス・取得時刻 UTC・digest を
+記録せよ」と指示した。**この指示は本環境では実行できなかった。**
+
+| 項目 | 実測(2026-08-17) |
+|---|---|
+| エンドポイント | `https://www.binance.com/fapi/v1/commissionRate?symbol=BTCUSDT&timestamp=…` |
+| HTTP | **401** |
+| 生レスポンス | `{"code":-2014,"msg":"API-key format invalid."}` |
+| 原因 | `commissionRate` は **USER_DATA** であり、**API key と HMAC-SHA256 署名が必須**。本環境に Binance の資格情報は存在しない(環境変数・設定ファイルとも無し) |
+| 発注 | **していない**(指示どおり) |
+
+**この1個の定数を推測で埋めることはしない。** 代わりに:
+
+1. `phase8_prereg.py` の `PERP_TAKER_BPS` を **`5.0`(FAQ の worked example 由来・`probable`)**
+   として置き、**`COMMISSION_RATE_STATUS = "pending_authenticated_read"` を併記**する。
+2. **`spot` 側は確定値**(公式 fee ページの live 読み取りで VIP-0 taker `0.100%`)。
+3. **freeze は実行する。** 理由: これは**設計の未確定ではなく、単一パラメータの実測待ち**であり、
+   確定しても**設計は1文字も変わらない**。凍結対象は設計である。
+4. **ただし実験の実行はブロックする**: `COMMISSION_RATE_STATUS` が `resolved` に
+   なるまで experiment runner を起動しない(T36 で機械強制)。
+5. 実測できたときは **生レスポンス・取得時刻・digest を `carry_freeze.json` の
+   `commission_rate` ブロックへ追記**する(**設計の再凍結には当たらない**)。
+
+**もしこの扱いが決定ログの意図と異なるなら、freeze を巻き戻して再凍結する。**
+現時点の判断は「**設計を凍結し、実測待ちの1定数だけを明示的に未確定として持つ**」である。
 
 ---
 
@@ -1058,3 +1106,478 @@ external_knowledge : §13.4 の台帳を埋め込む
 5. **§7.3 の算術は結果ではない。** 外部知識由来の桁を代入した設計判断である。
 6. **v1 の設計は「動かしてみて駄目だった」のではない。** 一度も実行せずに、
    全文取得と敵対監査だけで訂正した。**実行前に直せたことがこの改訂の要点である。**
+
+---
+
+## 24. v1.8.1 修正条項(**パラメータ確定のみ。仮説は変更していない**)
+
+- 承認: 2026-08-17 決定ログ
+- 契機: `two_leg.py` の実装が露出させた**凍結仕様の穴 3件**と、**清算会計の誤り 1件**
+  ([two_leg_conformance_notes_v1](two_leg_conformance_notes_v1.md))
+- **変更していないもの**: Primary Research Question / Non-goals / 情報集合 /
+  arm 定義 / horizon 集合 / コスト階層 / family / 多重比較補正 / layer 境界 /
+  昇格規則 / GO-NO-GO / negative result 条件 / 封印
+- v1.8 の凍結記録は `experiments/phase8/carry_freeze.json` として**不変のまま残す**。
+  v1.8.1 の凍結記録は `experiments/phase8/carry_freeze_v1_8_1.json` に**新規作成**する。
+
+### 24.1 G1 — 予備資金(§11.1 × §11.4 の非両立を解消)
+
+```text
+MARGIN_RESERVE_USDT   = 2000.0
+POSITION_CAPITAL_USDT = C − R = 8000.0
+サイジング             q = (C − R)·L / ((L + 1)·S_in)
+deployed_capital      = C = 10000.0   (予備資金を含む。§11.4)
+```
+
+**R の導出**(恣意的な決め打ちではない): 予備資金を
+**初期証拠金1トランシェ分**と定義する。
+
+```text
+R = (C − R)/(L + 1)   … 右辺は position capital に対する初期証拠金
+⇒ R(L + 2) = C  ⇒  R = C/(L + 2) = 10000/5 = 2000
+```
+
+内訳の検算(primary `C=10000, L=3`):
+
+| 項目 | 金額 |
+|---|---:|
+| spot 名目 `q·S_in` | 6000 |
+| 初期証拠金 `q·P_in/L` | 2000 |
+| 予備資金 `R` | 2000 |
+| **合計 = `deployed_capital`** | **10000** |
+
+- **`R` は leverage 感応度をまたいで 2000 に固定する。** `L` を変えても
+  `POSITION_CAPITAL = 8000` は動かない。
+- **T16 の修正**: 丸め前の厳密不変量の基準を **`C` から `POSITION_CAPITAL_USDT` へ**変える。
+
+  ```text
+  q_raw · S_in · (1 + 1/L) = C − R = 8000   （全ての L で厳密に成立）
+  ```
+
+  丸め後は lot 量子化の分だけずれる(v1.8 の申告どおり)。
+
+### 24.2 G2 — funding と証拠金(§9 M7 の未凍結を解消)
+
+```text
+FUNDING_COUNTS_TOWARD_MARGIN = True
+```
+
+**正負いずれの funding も先物ウォレット残高を動かす。** 受取だけを反映して
+支払を反映しない、という非対称な扱いはしない。
+
+### 24.3 G3 — 清算後の規則(§11.3 の未凍結を解消)
+
+```text
+POST_LIQUIDATION_RULE = "unwind"
+```
+
+- **再ヘッジは実装しない。**
+- 強制清算は **perp 脚を実際の清算約定で終了させる**。
+- 残った **spot 脚は、清算バーの後で最初に因果的に執行可能な spot open** で解消する。
+  必要なら §9 M6b の roll-forward 意味論をそのまま使う。
+- **清算から spot 解消までの naked spot エクスポージャを `tracking_error` に記録する。**
+
+### 24.4 G4 — イベント順序(**v1.8 の記述を訂正**)
+
+**v1.8 の実装と conformance note は「清算判定 → 追証 → funding」と書いていたが、
+これは誤りであり、正しい順序を以下に凍結する。**
+
+```text
+funding 決済境界において:
+  1. 適格な funding を先物ウォレットへ適用する
+  2. 不利側 mark 経路で証拠金・追証を評価する
+  3. TOPUP_TRIGGER は維持証拠金より上にあるので、清算より先に処理する
+  4. 追証の後、なお維持証拠金以下であれば清算する
+```
+
+`EVENT_ORDER = "funding_then_margin_then_topup_then_liquidation"`
+
+**根拠**: `TOPUP_TRIGGER`(0.010)は `MAINT_MARGIN_RATE`(0.004)より**上**にある。
+したがって追証は清算より必ず先に到達する事象であり、順序として自然である。
+funding を先に適用するのは、決済が起きた時点で残高が実際に動くからである。
+
+### 24.5 G5 — 清算会計の修正(**v1.8 実装の誤りの是正**)
+
+v1.8 の実装には次の欠陥があった。**runner 作業の前に直す。**
+
+| # | 欠陥 | 修正 |
+|---|---|---|
+| a | 強制清算の**後**に、予定していた perp exit 価格を使っていた | **使わない。** perp 脚は清算約定で終了する |
+| b | 清算後にも通常の `cost_perp_out` を計上していた | **計上しない。** 強制決済に通常の taker 手数料は掛からない |
+| c | `liquidation_loss` が清算約定の PnL と**二重計上**しうる | **価格損失は `q(P_in − P_liq)` に一度だけ現れる。** `liquidation_loss` は **清算清算手数料(clearance fee)だけ**を表す |
+| d | 清算時刻・清算約定・spot 解消時刻/価格が記録されていなかった | **フィールドを追加する** |
+
+**追加フィールド**: `liquidation_ts` / `liquidation_fill` /
+`spot_unwind_ts` / `spot_unwind_fill` / `liquidation_fee_usdt`。
+
+**恒等式の一般化**: 脚が別時刻で終了しても §6.2 の恒等式は保たれる。
+
+```text
+D_out := P_exit_actual − S_exit_actual
+         （通常時は同一バーの open、清算時は P_liq と S_unwind）
+PnL_gross = q(D_in − D_out) + Funding      … 清算経路でも成立する
+```
+
+**清算経路版の恒等式テストを追加する**(§21.2 T35)。
+
+### 24.6 H14 — 清算コストの意味論(**未解決。実験をブロックする**)
+
+`liquidation_slippage_bps = 0.0` は v1.8 が凍結した値ではない。**ゼロを黙って維持しない。**
+
+**確認できたこと(2026-08-17 実測)**:
+
+| 事項 | 出所 | 結果 |
+|---|---|---|
+| Liquidation Clearance Fee が**存在する** | 公式 FAQ(取得済) | 「維持のために供された資産の一部が控除され Liquidation Clearance Fee として Binance へ支払われる」「適用される Liquidation Clearance Fee rate と建玉の名目価値に基づいて計算される」 |
+| 清算のトリガ条件 | 同上 | `Collateral = Initial Collateral + Realized PnL + Unrealized PnL < Maintenance Margin`(**本プロトコルの判定と一致**) |
+| 約定の性質 | 同上 | Smart Liquidation。IOC で市場へ流し、未約定分は Bankrupt Position として Insurance Fund が処理 → **約定は成行であり、short にとってトリガー価格以上になりうる** |
+| **fee rate の数値** | risk bracket API / trading-rules ページ | **取得できない。** brackets payload に fee 項目は無く(`fee|liq|clear|penalt` に一致するキー 0件)、trading-rules の表は JS 描画で非 JS 取得では "No Data"、`leverageBracket` は 401 |
+
+```text
+LIQUIDATION_CLEARANCE_FEE_RATE = None
+LIQUIDATION_FEE_STATUS         = "pending_authoritative_read"
+```
+
+**H13 と同じ扱いとする**: 値が `resolved` になるまで **experiment runner を起動しない**。
+`two_leg` はこの2つを**必須引数**として要求し、既定値を持たない。
+
+### 24.7 v1.8.1 で追加するテスト
+
+| # | テスト | 対応 |
+|---|---|---|
+| **T35** | **清算経路でも脚形と basis 形の PnL が一致する** | §24.5 |
+| **T36** | **清算後に予定 perp exit 価格を使わない / `cost_perp_out` を計上しない** | §24.5 a,b |
+| **T37** | **`liquidation_loss` が価格 PnL を二重計上しない** | §24.5 c |
+| **T38** | **spot 解消が清算バーより後の最初の因果的 open で行われる** | §24.3 |
+| **T39** | **naked spot 期間が `tracking_error` に現れる** | §24.3 |
+| **T40** | **イベント順序が funding → margin → topup → liquidation である** | §24.4 |
+| **T41** | **H14 未解決なら実験がブロックされる** | §24.6 |
+
+---
+
+## 25. 仕様の優先順位(specification precedence)
+
+**この節は本文書の読み方を定める。以降の改訂もこの規則に従う。**
+
+```text
+同一フィールドについて複数の記述がある場合、
+**後の凍結改訂節が先の記述を supersede する。**
+先行する矛盾した記述は、削除せず**歴史的な監査証跡として残す**。
+```
+
+適用規則:
+
+1. **番号の大きい改訂節が勝つ。** §24(v1.8.1)は §1–§23(v1.8)の同一フィールドを上書きする。
+   §26 以降も同様に、それ以前を上書きする。
+2. **上書きされた記述は消さない。** 「なぜそう決めたか」「何が誤っていたか」は
+   研究記録の一部である(Phase 3 / Phase 7 と同じ方針)。
+3. **上書きの有無が曖昧な場合は、改訂節に明示的な訂正表を置く**
+   (§24.4 が §4 の順序記述を訂正したのがその例)。
+4. **`src/mce/phase8_prereg.py` は常に最新の凍結値のみを持つ。**
+   歴史的な値はモジュールに残さず、本文書と凍結記録に残す。
+5. 本規則は**遡及して適用する**。すなわち §24 は本節より前に書かれているが、
+   §1–§23 に対する優先権を持つ。
+
+**既知の supersede 一覧**(網羅ではなく、混乱しやすいもの):
+
+| 上書きした節 | 上書きされた記述 | 内容 |
+|---|---|---|
+| §24.1 | §11.1 の `q = C·L/((L+1)·S_in)` / §6.1 の `N0` | `q = (C−R)·L/((L+1)·S_in)`、`R = 2000` |
+| §24.1 | §11.1 の T16 基準 `C` | 基準は `POSITION_CAPITAL_USDT` |
+| §24.2 | §9 M7 の「明示的に凍結する」(未凍結だった) | `True` |
+| §24.3 | §11.3 の「どちらかを事前に選ぶ」(未凍結だった) | `"unwind"` |
+| **§24.4** | **§8 / §11 周辺の順序記述(「清算 → 追証 → funding」)** | **funding → margin → topup → liquidation** |
+| §24.5 | §11.3 の清算損失の扱い | 価格損失は一度だけ。`liquidation_fee_usdt` は clearance fee のみ |
+| §24.6 | `liquidation_slippage_bps = 0.0`(暗黙の既定) | **未凍結。H14 として実験をブロック** |
+| **§26** | **§4.2 の `r` の記述(Aave の版・network・market を特定していない)** | **H15 として未解決登録** |
+| **§27** | **§26 の「未解決」と、そこで提案した version-current proxy** | **部分 proxy を採用。V4 へは移行しない** |
+| **§28** | **`MAX_STALE_SECONDS = 9h`(funding 用)を rho にも適用していた記述** | **系列ごとに分離。rho は 24h** |
+
+---
+
+## 26. H15 — Aave 金利市場の同定(**未解決。実験をブロックする**)
+
+- 調査記録: [h15_aave_source_investigation_v1](h15_aave_source_investigation_v1.md)
+- 契機: §4.2 / H12 は `aave_variable_borrow_apr` としか定めておらず、
+  **Aave の version・network・market・データ提供元が一意に定まらない**
+
+### 26.1 A2 の記述水準(全文走査の結果)
+
+**A2 は Aave の版・ネットワーク・market・提供元を一切書いていない。**
+言及は7箇所のみで、確定できるのは次だけである。
+
+- 対象は **USDT / USDC / DAI の3ステーブルコイン**、**等加重平均**
+- **日次**
+- perp > spot の側(= Arm R)では **borrowing rate** を使う(supply rate ではない)
+- **金利データの開始日は 2020-01-08** であり、**A2 のサンプル開始日はこれに律速されている**
+
+### 26.2 唯一の強い手がかりと、その限界
+
+`2020-01-08` は **Aave V1 の Ethereum mainnet ローンチ日**と一致する(公式 changelog)。
+しかし A2 のサンプル(〜2024-03-11)は **V1(2020-01-08)→ V2(2020-12-03)→
+V3 Core(2023-01-27)** の3世代をまたぎ、**接合方法は記載されていない**。
+
+### 26.3 ango の層との非対称(**新規に判明した設計問題**)
+
+| 層 | 期間 | 現存する Aave 世代 |
+|---|---|---|
+| layer 1 | 2020-01 〜 2025-06 | V1 → V2 → V3 Core |
+| layer 2 | 2025-06 〜 2026-01 | V3 |
+| **layer 3** | **2026-09 〜** | **V4**(2026-03-30 以降) |
+
+**layer 3 は A2 が一度も見ていない世代の上で評価されることになる。**
+
+### 26.4 凍結する状態
+
+```text
+RATE_MARKET_IDENTITY_STATUS = "unresolved_source_fidelity_limitation"
+```
+
+- **H13 / H14 と同じ扱い**: 解決するまで experiment runner を起動しない。
+- **Aave の履歴 adapter を実装しない。**
+- **純粋な数学層(ρ・境界・Arm R シグナル)は実装してよい。**
+  `r` を**明示的な入力**にすることで、ソース同定と独立に検証できるからである。
+- 提案 proxy は調査記録 §5 に **1つだけ**記載した。**採否は人間が決める。**
+  **本改訂は proxy を採用していない。**
+
+---
+
+## 27. H15 解決 — Aave 金利市場を**部分 proxy として**採用する
+
+- 承認: 2026-08-17 決定ログ
+- 調査記録: [h15_aave_source_investigation_v1](h15_aave_source_investigation_v1.md)
+- **§25 の優先順位規則により、本節は §4.2 / §26 の `r` に関する記述を supersede する。**
+
+### 27.1 位置づけ(**厳密再現ではない**)
+
+```text
+RATE_SOURCE_FIDELITY = "partial_proxy_not_exact_A2"
+```
+
+> **A2 の厳密な再構成であるとは主張しない。**
+> A2 は version / network / market / 提供元を書いていない(§26)。
+> 以下は **部分的な source fidelity を持つ proxy** であり、そう明記して報告する。
+
+**§26 で提案した "canonical-Ethereum, version-current" をそのままは採用しない。**
+V4 の扱いが異なる(下記 27.2)。
+
+### 27.2 凍結する市場と接合
+
+| 期間 | 適用する市場 |
+|---|---|
+| 2020-01-08 〜 2020-12-03 | **Aave V1**(Ethereum mainnet) |
+| 2020-12-03 〜 2023-01-27 | **Aave V2**(Ethereum mainnet) |
+| 2023-01-27 〜 **以降ずっと** | **Aave V3 Core**(Ethereum mainnet) |
+
+- **network は Ethereum mainnet のみ。** L2 を含めない。
+- **V4 へは移行しない。** 理由: **V4 は担保依存のリスクプレミアムによって
+  借入金利の構造そのものを変える**一方、**V3 は引き続き利用可能な market として
+  存在する**。したがって Phase 8 は V3 Core に留まる方が系列として一貫する。
+  (V4 の Ethereum ローンチ 2026-03-30 は参照として記録するが**使わない**。)
+- **接合日は provenance に必ず記録する**(§27.6)。平滑化・補間・遡及再計算をしない。
+
+> **帰結**: §26.3 で挙げた「layer 3 が V4 世代になる」問題は**解消した**。
+> layer 1 は V1→V2→V3、layer 2 と layer 3 はいずれも **V3 Core** である。
+
+### 27.3 系列の特定化と basket
+
+```text
+rate   : variable borrow APR          ← 明示的な proxy specialization
+assets : USDT / USDC / DAI の等加重平均
+```
+
+- `variable` は **A2 に根拠のある値ではなく、明示的に選んだ proxy 特定化**である
+  (V1/V2 には stable borrow rate もあった。§26.1)。**そう明記して報告する。**
+- **3成分すべてを要求する。** どれか1つでも欠けたらその日は **r なし**とする。
+  **黙って basket 構成を変えない**(2成分平均への退化を禁じる)。
+
+### 27.4 観測の時刻規約
+
+```text
+毎日 00:00 UTC の point-in-time スナップショット
+その時刻**以前**に確定したチェーン状態のみを使う
+補間・平滑化をしない(RATE_INTERPOLATION = "none")
+```
+
+**スナップショットの「年齢」は、その日 00:00 UTC のスナップショット時刻から測る。**
+基礎となる reserve 更新イベントの時刻からではない(§28 と対で読むこと)。
+
+### 27.5 感応度は維持する
+
+**Kenneth-French daily RF は事前登録した感応度として維持する**(§4.2 のまま)。
+primary の置換ではない。
+
+### 27.6 provenance の要求
+
+artifact に次を必ず残す: 使用した版と接合日、日次スナップショット時刻、
+3成分それぞれの生値、欠測日の一覧(補完していないことの証跡)、
+`RATE_SOURCE_FIDELITY` の値。
+
+---
+
+## 28. H16 — 陳腐化ガードを系列ごとに分離する(**v1.8.2 の実装の誤りを是正**)
+
+**v1.8.2 までは単一の `MAX_STALE_SECONDS = 9h` しか無く、
+`point_in_time_rate()` がそれを既定にしていた。これは funding 系列の定数であり、
+A2 の Aave 金利入力は日次なので誤りである**(9h では同じ暦日の午前中に陳腐化する)。
+
+```text
+FUNDING_MAX_STALE_SECONDS = 9  * 3600      … funding(8h 間隔 + 余裕)
+RATE_MAX_STALE_SECONDS    = 24 * 3600      … Aave 日次スナップショット
+```
+
+- `point_in_time_rate()` は **`RATE_MAX_STALE_SECONDS` を使う**。
+- **`MAX_STALE_SECONDS` は廃止する**(§25 規則4: モジュールは最新の凍結値のみを持つ)。
+- **funding の 9h が ρ に影響してはならない。** テストで固定する。
+
+---
+
+## 29. source-sensitivity disposition
+
+```text
+if sign(Aave proxy での最終的な経済判定) != sign(Kenneth-French RF での判定):
+        → source_sensitive と分類する。**GO とはしない。**
+```
+
+**根拠**: 結論が金利ソースの選択で反転するなら、それは機序についての結論ではなく
+**ソース選択についての結論**である。§27 が部分 proxy であることを認めた以上、
+この分類は必須である。
+
+`source_sensitive` は NO-GO でもない。**「この設計では判定できない」**という第3の帰結であり、
+§19 の negative result 条件とは別に記録する。
+
+### 29.1 v1.8.3 で追加するテスト
+
+| # | テスト |
+|---|---|
+| **T42** | 日次レートが**同じ UTC 日のあいだ有効**であり続ける |
+| **T43** | 翌日のスナップショットが欠けたら、凍結した rate horizon を過ぎて陳腐化する |
+| **T44** | **funding の 9h 定数が ρ に影響しない** |
+| **T45** | 3ステーブルコインすべてが必要(1つ欠けたら r なし) |
+| **T46** | 欠測日をまたいで**補間しない** |
+| **T47** | V4 へ移行しない(接合が V3 Core で止まる) |
+| **T48** | `source_sensitive` の分類規則が凍結されている |
+
+---
+
+## 30. v1.8.4 修正条項(**入力データ源の確定。仮説は変更していない**)
+
+**適用範囲**: Aave 金利入力の (i) 源と経路の定義、(ii) 完全性の定義、(iii) 有効値の扱い。
+**変更していないもの**: 仮説、family、layer 境界、昇格規則、コスト、証拠金規則、
+`FINAL_OOS_START`、封印、H13 / H14 のブロッカー状態。
+
+§25 の優先順位により、**本節は同一フィールドについて §27 の記述を supersede する**。
+§27 の先行記述は削除せず歴史的監査証跡として残す。
+
+根拠となる実測: [aave_source_probe_findings_v1](aave_source_probe_findings_v1.md)。
+
+### 30.1 D1 — source of truth と access route
+
+Aave 自身の subgraph は利用不能である(hosted service は HTTP 301 で sunset、
+decentralized gateway は API key 必須)。§27 の source 指定は
+"Aave's own protocol subgraph / **historical protocol state** where available" という
+**or** であり、後者を採る。これは**以前から許されていた source 定義への適合**であって、
+別プロバイダへの差し替えではない。
+
+```text
+RATE_SOURCE_OF_TRUTH      = "aave_contract_state_on_ethereum_mainnet"
+RATE_ACCESS_ROUTE         = "archive_rpc_eth_call"
+RATE_ACCESS_PROVIDER_ROLE = "transport_not_economic_source"
+RATE_CHAIN_ID             = 1
+```
+
+**RPC 提供者は transport であって経済的なデータ源ではない。** したがって提供者を
+替えても source は変わらない。ただし観測が**どのチェーンのどのブロックの state か**は
+検証可能でなければならないため、**全観測**が次を保持する:
+
+```text
+RATE_PROVENANCE_REQUIRED = ("chain_id", "block_number", "block_timestamp", "block_hash")
+```
+
+`chain_id != 1` の観測は integrity error として破棄する。
+
+### 30.2 H17 — 完全性を **reserve list membership** で定義する(option B + protocol membership semantics)
+
+**問題**(v1.8.3 までの穴): `getReserveData()` は**未上場 reserve に対しても revert せず
+全語ゼロを成功応答として返す**。「3資産すべてを要求」を*読み取りの成否*で判定すると、
+未上場 reserve が **0% として basket に混入する**。実測では V3 Core の USDT が
+2023-01-27 から 2023-02-13 まで未上場であり、2023-01-27 は3資産とも未上場で
+平均が丸ごと 0.0000% になっていた。
+
+**解決**: 「3資産が揃っている」を次のように再定義する。
+
+> USDT / USDC / DAI の凍結アドレスが、**rate 観測に使ったのと同じ履歴ブロック**において、
+> protocol の**初期化済み(configured)reserve list の member である**こと。
+
+世代ごとの primitive(**V1 だけ名前が違う。共通名で呼べると仮定しない**):
+
+| 世代 | primitive | selector |
+|---|---|---|
+| aave_v1 | `getReserves()` | `0x0902f1ac` |
+| aave_v2 | `getReservesList()` | `0xd1946dbc` |
+| aave_v3_core | `getReservesList()` | `0xd1946dbc` |
+
+```text
+RATE_COMPLETENESS_RULE   = "initialized_reserve_list_membership_at_observation_block"
+RATE_MEMBERSHIP_BLOCK_RULE = "same_block_as_rate_read"
+```
+
+**いずれかの成分が初期化されていない日**:
+
+- `mean_apr = null`
+- 欠落/未初期化の成分を記録する
+- **0 で代替しない**(`RATE_ZERO_SUBSTITUTION_ALLOWED = False`)
+- **basket を2資産へ縮めない**(`RATE_TWO_ASSET_FALLBACK_ALLOWED = False`)
+- **前の Aave 世代を延長しない**(`RATE_GENERATION_EXTENSION_ALLOWED = False`)
+- **凍結 splice 日を動かさない**(`RATE_SPLICE_DATES_MOVABLE = False`)
+- **補間も forward-fill もしない**(`RATE_FORWARD_FILL_ALLOWED = False`)
+
+**全語ゼロ構造体の検出は独立した cross-check としてのみ残す**
+(`RATE_ZERO_STRUCT_DIAGNOSTIC = "independent_cross_check_only"`)。
+membership と食い違ったら:
+
+```text
+RATE_INTEGRITY_DISAGREEMENT_ACTION = "emit_integrity_error_and_no_rate_value"
+```
+
+**どちらか一方の解釈を選ばない。** integrity error を出し、その日は値を出さない。
+
+**期待される帰結**: 既にプローブした V3 launch 期(2023-01-27〜2023-02-13)は
+「不完全な basket の日」から「レート欠測の日」へ変わる。
+**この期待を日付のハードコード規則にしてはならない**
+(`RATE_LAUNCH_GAP_DERIVATION = "derived_from_historical_reserve_membership"`)。
+欠測は**履歴上の reserve membership から導出**される。
+
+欠測日の下流での扱いは §28(H16)のとおり: `RATE_MAX_STALE_SECONDS = 24h` を
+超えた時点で r は陳腐化し、**シグナルが成立しない**。値は補完されない。
+
+### 30.3 O1 — launch 期の有効値を加工しない
+
+V1→V2 接合直後(2020-12-03 以降)の V2 レートは 0.53%〜21.2% の範囲で激しく振れ、
+USDT 単体では 51.669% を記録する日がある。これは**未初期化ではなく実データ**であり、
+薄商いに由来する実際の借入金利である。
+
+```text
+RATE_VALUE_TREATMENT = "no_filter_no_clip_no_smoothing_no_winsorization"
+```
+
+**有効な非ゼロの launch 期金利を filter / clip / smooth / winsorize しない。**
+極端さを理由に落とすことは、結果を見てからの標本選択に等しい。
+
+### 30.4 v1.8.4 で追加するテスト
+
+| # | テスト |
+|---|---|
+| **T49** | 未初期化 reserve は **0% として basket に入れない** |
+| **T50** | 初期化済み reserve の**本物の 0% 借入金利**は有効な 0% 観測として残る |
+| **T51** | membership は **rate 読み取りと同一の履歴ブロック**で検査される |
+| **T52** | 3資産のうち1つでも欠ければ**その日の basket 全体が null** |
+| **T53** | V2→V3 の接合は **2023-01-27 のまま** |
+| **T54** | **2資産へ縮退する経路が存在しない** |
+| **T55** | 全語ゼロ診断と membership の**食い違いは出力をブロックする** |
+| **T56** | 食い違い時に**どちらの側にも寄せていない** |
+| **T57** | 全観測が chain id / block number / timestamp / hash を保持する |
+| **T58** | mainnet 以外の chain id を拒否する |
+| **T59** | `hint` による探索の高速化が**答えを変えない** |
+| **T60** | launch 期の極端だが有効な値を**加工していない** |
+| **T61** | reserve list primitive が**世代ごとに凍結**されている(V1 のみ別名) |

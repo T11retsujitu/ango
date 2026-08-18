@@ -46,12 +46,16 @@ Phase 3(探索軸)と Phase 7(情報軸)が同じ壁に当たったため、次�
 - 文献調査: [Phase 8.0 literature review](../phase8/literature_review_2026-08-17.md)
 - 候補採点: [replication candidates v1](../phase8/replication_candidates_v1.md)
 - 選定: [Phase 8.0 selection memo](../phase8/phase8_selection_memo_v1.md)
-  — 第1位 **BTC spot–perp funding carry / basis**(**81**/100。訂正前 89)
-- 再現プロトコル(**未凍結・v1.2**):
+  — 第1位 **BTC spot–perp funding carry / basis**(**78**/100。89 → 81 → 78 と2度訂正)
+- 再現プロトコル(**v1.8・凍結済み 2026-08-17**):
   [Phase 8.1 carry replication protocol](../phase8/carry_replication_protocol_v1.md)
+  / 凍結記録 `experiments/phase8/carry_freeze.json`
+- A3 ソースレビュー(実装より優先): [a3 source review v1](../phase8/a3_source_review_v1.md)
+- 事前予想(**封印。実行者は読まない**): [carry prior register v1](../phase8/carry_prior_register_v1.md)
 - 凍結前 独立監査: [carry protocol audit v1](../phase8/carry_protocol_audit_v1.md)
-  — 論文全文の取得で**アンカー論文の読み違い6件**、敵対監査で **fatal 4件を含む26件**を
-  **一度も実行しないまま**検出・訂正した
+  — 論文全文の取得で**アンカー論文の読み違い6件**、5レンズの敵対監査で
+  **fatal 10件を含む計60件**を **一度も実行しないまま**検出・訂正した。
+  反証パスで**自分の調査結果10件**も覆した
 
 ### 履歴(2026-08-16 時点の研究軸。書き換えない)
 

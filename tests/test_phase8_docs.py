@@ -147,10 +147,20 @@ def test_phase8_docs_do_not_claim_results():
     assert "開封していない" in review
 
 
-def test_protocol_is_not_frozen_and_lists_blockers():
+def test_protocol_is_frozen_and_records_its_remaining_blocker():
+    """2026-08-17 の決定ログにより v1.8 で凍結された。
+
+    凍結前は「未凍結であること」を検査していた。状態遷移に伴い検査を反転させる
+    (テストが状態を追随せずに通り続けることを防ぐため、両方は書かない)。
+    """
     text = PROTOCOL_DOC.read_text(encoding="utf-8")
-    assert "未凍結" in text, "未凍結であることが明示されていない"
-    assert "H5" in text, "未解決の fatal blocker H5 が記載されていない"
+    header = text.splitlines()[0]
+    assert "FROZEN" in header, "見出しに凍結状態が明示されていない"
+    assert "未凍結" not in header, "見出しに未凍結の記述が残っている"
+    # 本文中の「未凍結」は改訂表の履歴記述(§24 が何を解消したか)としてのみ許す
+    # 解決済みの blocker は解決として、未解決の H13 は未解決として書かれていること
+    assert "H13" in text, "未解決の blocker H13 が記載されていない"
+    assert "commissionRate" in text, "H13 の取得経路が記載されていない"
     # primary endpoint が方向正解率でないこと / delta-neutral が non-goal に書かれていること
     assert "方向正解率" in text
     assert "方向予測をしない" in text

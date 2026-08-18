@@ -1,0 +1,2375 @@
+{
+  "probe": "aave_splice_v1",
+  "purpose": "input-data reconstruction availability only; no rho, no signals, no returns",
+  "protocol_version": "v1.8.4",
+  "source_of_truth": "aave_contract_state_on_ethereum_mainnet",
+  "access_route": "archive_rpc_eth_call",
+  "access_provider_role": "transport_not_economic_source",
+  "chain_id": 1,
+  "completeness_rule": "initialized_reserve_list_membership_at_observation_block",
+  "source_fidelity": "partial_proxy_not_exact_A2",
+  "frozen_generations": [
+    {
+      "name": "aave_v1",
+      "pool": "0x398eC7346DcD622eDc5ae82352F02bE94C62d119",
+      "rate_word_index": 5,
+      "expected_word_count": 13,
+      "reserve_list_signature": "getReserves()",
+      "reserve_list_selector": "0x0902f1ac",
+      "start": "2020-01-08T00:00:00+00:00",
+      "end": "2020-12-03T00:00:00+00:00",
+      "tokens": [
+        {
+          "symbol": "USDT",
+          "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "decimals": 6
+        },
+        {
+          "symbol": "USDC",
+          "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "decimals": 6
+        },
+        {
+          "symbol": "DAI",
+          "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "decimals": 18
+        }
+      ]
+    },
+    {
+      "name": "aave_v2",
+      "pool": "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9",
+      "rate_word_index": 4,
+      "expected_word_count": 12,
+      "reserve_list_signature": "getReservesList()",
+      "reserve_list_selector": "0xd1946dbc",
+      "start": "2020-12-03T00:00:00+00:00",
+      "end": "2023-01-27T00:00:00+00:00",
+      "tokens": [
+        {
+          "symbol": "USDT",
+          "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "decimals": 6
+        },
+        {
+          "symbol": "USDC",
+          "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "decimals": 6
+        },
+        {
+          "symbol": "DAI",
+          "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "decimals": 18
+        }
+      ]
+    },
+    {
+      "name": "aave_v3_core",
+      "pool": "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2",
+      "rate_word_index": 4,
+      "expected_word_count": 15,
+      "reserve_list_signature": "getReservesList()",
+      "reserve_list_selector": "0xd1946dbc",
+      "start": "2023-01-27T00:00:00+00:00",
+      "end": null,
+      "tokens": [
+        {
+          "symbol": "USDT",
+          "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "decimals": 6
+        },
+        {
+          "symbol": "USDC",
+          "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "decimals": 6
+        },
+        {
+          "symbol": "DAI",
+          "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "decimals": 18
+        }
+      ]
+    }
+  ],
+  "endpoint": "https://eth-mainnet.public.blastapi.io",
+  "dates_probed": 25,
+  "dates_complete": 15,
+  "h17_zero_struct_diagnostic_days": [
+    {
+      "date_utc": "2023-01-27",
+      "generation": "aave_v3_core",
+      "uninitialised_reserves": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "mean_apr": null
+    },
+    {
+      "date_utc": "2023-01-28",
+      "generation": "aave_v3_core",
+      "uninitialised_reserves": [
+        "USDT"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "mean_apr": null
+    },
+    {
+      "date_utc": "2023-01-29",
+      "generation": "aave_v3_core",
+      "uninitialised_reserves": [
+        "USDT"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "mean_apr": null
+    },
+    {
+      "date_utc": "2023-01-30",
+      "generation": "aave_v3_core",
+      "uninitialised_reserves": [
+        "USDT"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "mean_apr": null
+    },
+    {
+      "date_utc": "2023-01-31",
+      "generation": "aave_v3_core",
+      "uninitialised_reserves": [
+        "USDT"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "mean_apr": null
+    },
+    {
+      "date_utc": "2023-02-01",
+      "generation": "aave_v3_core",
+      "uninitialised_reserves": [
+        "USDT"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "mean_apr": null
+    },
+    {
+      "date_utc": "2023-02-02",
+      "generation": "aave_v3_core",
+      "uninitialised_reserves": [
+        "USDT"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "mean_apr": null
+    },
+    {
+      "date_utc": "2023-02-03",
+      "generation": "aave_v3_core",
+      "uninitialised_reserves": [
+        "USDT"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "mean_apr": null
+    },
+    {
+      "date_utc": "2023-02-04",
+      "generation": "aave_v3_core",
+      "uninitialised_reserves": [
+        "USDT"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "mean_apr": null
+    },
+    {
+      "date_utc": "2023-02-05",
+      "generation": "aave_v3_core",
+      "uninitialised_reserves": [
+        "USDT"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "mean_apr": null
+    }
+  ],
+  "integrity_errors": [],
+  "incomplete_days": [
+    {
+      "date_utc": "2023-01-27",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "note": "初期化済み reserve list に不在: USDT, USDC, DAI(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-01-28",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-01-29",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-01-30",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-01-31",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-01",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-02",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-03",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-04",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    },
+    {
+      "date_utc": "2023-02-05",
+      "generation": "aave_v3_core",
+      "missing_reserves": [
+        "USDT"
+      ],
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)"
+    }
+  ],
+  "observations": [
+    {
+      "date_utc": "2020-11-30",
+      "target_ts": "2020-11-30T00:00:00+00:00",
+      "generation": "aave_v1",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 11356699,
+      "block_timestamp": 1606694393,
+      "block_hash": "0xab98d03d87baf4c5c1c1fbbc106c6816318d8a53c75cad5420b4a0ace01d028e",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReserves()",
+        "addresses": [
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0x0000000000085d4780b73119b644ae5ecd22b376",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+          "0x80fb784b7ed66730e8b1dbd9820afd29931aab03",
+          "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+          "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "0x1985365e9f78359a9b6ad760e32412f4a445e862",
+          "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+          "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+          "0xe41d2489571d322189246dafa5ebde1f4699f498",
+          "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
+          "0x408e41876cccdc0f92210600ef50372656052a38",
+          "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+          "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+        ],
+        "count": 22,
+        "response_sha256": "2b66fc5f2c1023e812fbe7fb9653cca76861f3fceb8fd94df7ad0d68899c73ea",
+        "error": null
+      },
+      "members_present": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 62338250477820589649560537,
+          "apr_decimal": 0.062338250477820586,
+          "word_count": 13,
+          "response_sha256": "8c1ca1e2aa90248efa2ea58abbaf1f46efaf1b744d7750ec2184cc9d7a6564b6",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 72546455950517922141372279,
+          "apr_decimal": 0.07254645595051792,
+          "word_count": 13,
+          "response_sha256": "538e980a7240ce615c249e487fb2a215f630b6671c93e05d886c1b7feda441f0",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 68016818551713199391506755,
+          "apr_decimal": 0.0680168185517132,
+          "word_count": 13,
+          "response_sha256": "d3cc276c19e348759f79d4edd0c20c2985b7703d6671c2f3e5f401248eb0ff90",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": 0.06763384166001724,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:19:17.017786+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-12-01",
+      "target_ts": "2020-12-01T00:00:00+00:00",
+      "generation": "aave_v1",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 11363269,
+      "block_timestamp": 1606780796,
+      "block_hash": "0xfee70c409c14bb19e4a5ea4a0edd85f0a165df1a1327ab62d4a1806f6ba81c61",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReserves()",
+        "addresses": [
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0x0000000000085d4780b73119b644ae5ecd22b376",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+          "0x80fb784b7ed66730e8b1dbd9820afd29931aab03",
+          "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+          "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "0x1985365e9f78359a9b6ad760e32412f4a445e862",
+          "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+          "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+          "0xe41d2489571d322189246dafa5ebde1f4699f498",
+          "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
+          "0x408e41876cccdc0f92210600ef50372656052a38",
+          "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+          "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+        ],
+        "count": 22,
+        "response_sha256": "2b66fc5f2c1023e812fbe7fb9653cca76861f3fceb8fd94df7ad0d68899c73ea",
+        "error": null
+      },
+      "members_present": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 60033869675364999851727674,
+          "apr_decimal": 0.060033869675365,
+          "word_count": 13,
+          "response_sha256": "21dd2bac1efc95e931133881868ceb00ddeed9fa9fd4e9c1a3e23f667d84442e",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 75210922153086229205523833,
+          "apr_decimal": 0.07521092215308622,
+          "word_count": 13,
+          "response_sha256": "e5716b47b27d87c57c02adbd87daa5d299e0c4a1b978b20039a6c7b4bbf65809",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 78755160674913691453547698,
+          "apr_decimal": 0.07875516067491369,
+          "word_count": 13,
+          "response_sha256": "6bc7ef7a60b9b2aca6b556eab06fbe579ce14468589b0c3c8b85ba3c30c6c7a8",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": 0.07133331750112164,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:19:25.910599+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-12-02",
+      "target_ts": "2020-12-02T00:00:00+00:00",
+      "generation": "aave_v1",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 11369788,
+      "block_timestamp": 1606867194,
+      "block_hash": "0xfef1122de1bdaaeb41a590387ba8bfc77f20a8d9fea02d7c1417021cf33104a8",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReserves()",
+        "addresses": [
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0x0000000000085d4780b73119b644ae5ecd22b376",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+          "0x80fb784b7ed66730e8b1dbd9820afd29931aab03",
+          "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+          "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "0x1985365e9f78359a9b6ad760e32412f4a445e862",
+          "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+          "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+          "0xe41d2489571d322189246dafa5ebde1f4699f498",
+          "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
+          "0x408e41876cccdc0f92210600ef50372656052a38",
+          "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+          "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984"
+        ],
+        "count": 22,
+        "response_sha256": "2b66fc5f2c1023e812fbe7fb9653cca76861f3fceb8fd94df7ad0d68899c73ea",
+        "error": null
+      },
+      "members_present": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 58496092340203590929349778,
+          "apr_decimal": 0.058496092340203594,
+          "word_count": 13,
+          "response_sha256": "2ce78cf45b5cec15a812eba7c0bbf44047f1210eb841a4be9b8c116559a62079",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 109638505293678399357751172,
+          "apr_decimal": 0.1096385052936784,
+          "word_count": 13,
+          "response_sha256": "e94e18edcea4ffabd7e45c83ef2b86349ade4fd50f45ffc2d417ed09abcc0230",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 76428431587620274884885710,
+          "apr_decimal": 0.07642843158762028,
+          "word_count": 13,
+          "response_sha256": "6a820eb1b122c99b0cb954158fda58e130e46a00a8c311f0dc2deab7a5f396d5",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": 0.08152100974050076,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:19:31.257241+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-12-03",
+      "target_ts": "2020-12-03T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 11376229,
+      "block_timestamp": 1606953566,
+      "block_hash": "0x476dc3927f2718228ecb7d1492eb2a734882f87febbf1f564035efb0b29a91f0",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+          "0xe41d2489571d322189246dafa5ebde1f4699f498",
+          "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+          "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+          "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
+          "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+          "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+          "0x408e41876cccdc0f92210600ef50372656052a38",
+          "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+          "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+          "0x0000000000085d4780b73119b644ae5ecd22b376",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+        ],
+        "count": 20,
+        "response_sha256": "15765540f4f7fa1d036591e09fc9202664f539dd50f59687a3acfaed1f2eab7d",
+        "error": null
+      },
+      "members_present": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 8395098445321542316536118,
+          "apr_decimal": 0.008395098445321542,
+          "word_count": 12,
+          "response_sha256": "3186431a506272340cc27cec7fff8f6cbd86863dbaca982094d716fa077af09d",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 6732386866363355320630,
+          "apr_decimal": 6.732386866363356e-06,
+          "word_count": 12,
+          "response_sha256": "8d899bd5e07a1a2c7458eb81ff7e3c9a7fe82e8c6b5671c633e4fd0d83a9540f",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 7564303387870039259906906,
+          "apr_decimal": 0.0075643033878700396,
+          "word_count": 12,
+          "response_sha256": "e1281c74674d97e22c1f5a00ca8c53d1632368195b24e94fc44a5cd100a30947",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.005322044740019315,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:19:36.203028+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-12-04",
+      "target_ts": "2020-12-04T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 11382788,
+      "block_timestamp": 1607039984,
+      "block_hash": "0x1fb5aaf70db2846cef72b81d6446bb482c38b80588455db7fe6fcaf69a490003",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+          "0xe41d2489571d322189246dafa5ebde1f4699f498",
+          "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+          "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+          "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
+          "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+          "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+          "0x408e41876cccdc0f92210600ef50372656052a38",
+          "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+          "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+          "0x0000000000085d4780b73119b644ae5ecd22b376",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+        ],
+        "count": 20,
+        "response_sha256": "15765540f4f7fa1d036591e09fc9202664f539dd50f59687a3acfaed1f2eab7d",
+        "error": null
+      },
+      "members_present": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 120661242472724324498822026,
+          "apr_decimal": 0.12066124247272432,
+          "word_count": 12,
+          "response_sha256": "2504d646e05f4e30fbb0d08578c58ccf52cb783382ea702f3eddb845df3e5fbe",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 294818267915964519044832364,
+          "apr_decimal": 0.2948182679159645,
+          "word_count": 12,
+          "response_sha256": "18d6713e115cbc8f68fce3d6790979a2967d7770be822e89200fba020dd2c9ff",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 86510119757704692052093574,
+          "apr_decimal": 0.08651011975770469,
+          "word_count": 12,
+          "response_sha256": "ffee5fc602e290a0b92dacfe60e0e1ec5dfdc9c351074f671cc5b91d74816660",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.1673298767154645,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:19:40.779122+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-12-05",
+      "target_ts": "2020-12-05T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 11389237,
+      "block_timestamp": 1607126379,
+      "block_hash": "0x3e045eb0e5b1efdcfc53c862bb11c5996777846240b021ebba96c3cccfbcbc3f",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+          "0xe41d2489571d322189246dafa5ebde1f4699f498",
+          "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+          "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+          "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
+          "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+          "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+          "0x408e41876cccdc0f92210600ef50372656052a38",
+          "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+          "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+          "0x0000000000085d4780b73119b644ae5ecd22b376",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+        ],
+        "count": 20,
+        "response_sha256": "15765540f4f7fa1d036591e09fc9202664f539dd50f59687a3acfaed1f2eab7d",
+        "error": null
+      },
+      "members_present": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 21792862347475405813041980,
+          "apr_decimal": 0.021792862347475406,
+          "word_count": 12,
+          "response_sha256": "db4d6cd1069ad10d7e7fb574b47952c3169938b53a2480ec1646987b6858cac4",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 38965877115522777050039219,
+          "apr_decimal": 0.038965877115522775,
+          "word_count": 12,
+          "response_sha256": "0f994458a9303248825d4341e889bf0cdec072771e30633dcfaf9376442d3595",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 24267252082606854336481803,
+          "apr_decimal": 0.024267252082606855,
+          "word_count": 12,
+          "response_sha256": "46f4336a530cb823aae0758f8a20dc19eee5cd67a897ea639225a341c7211889",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.028341997181868344,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:19:46.049061+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-12-06",
+      "target_ts": "2020-12-06T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 11395732,
+      "block_timestamp": 1607212791,
+      "block_hash": "0xa7b3c0b8df94bea2f3d3de563068a1e4754501fec04064175c9af56db6c82a98",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+          "0xe41d2489571d322189246dafa5ebde1f4699f498",
+          "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+          "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+          "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
+          "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+          "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+          "0x408e41876cccdc0f92210600ef50372656052a38",
+          "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+          "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+          "0x0000000000085d4780b73119b644ae5ecd22b376",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+        ],
+        "count": 20,
+        "response_sha256": "15765540f4f7fa1d036591e09fc9202664f539dd50f59687a3acfaed1f2eab7d",
+        "error": null
+      },
+      "members_present": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 39759522818122799758160993,
+          "apr_decimal": 0.0397595228181228,
+          "word_count": 12,
+          "response_sha256": "0a0a3c08ffa7f3e5af8959a9ee66883b424e0d7d6a8d243d4937f585f7bb332d",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 346137779021913617779264516,
+          "apr_decimal": 0.3461377790219136,
+          "word_count": 12,
+          "response_sha256": "f1dcfee09f88d9a2cdfbffb1f2df1fa2a38934c53e744959119c79f1a76fe12c",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 30939088992982181412870198,
+          "apr_decimal": 0.030939088992982183,
+          "word_count": 12,
+          "response_sha256": "03fa61323a5c68f4ce5019e0b6058f1a022e83a589100a0fa747356380c552fc",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.1389454636110062,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:19:50.880060+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-12-07",
+      "target_ts": "2020-12-07T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 11402290,
+      "block_timestamp": 1607299188,
+      "block_hash": "0x12fee7f2887be70e0199c6122cd500ecc7ad48c4dad7849aa5aec7b0fbd7c2ff",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+          "0xe41d2489571d322189246dafa5ebde1f4699f498",
+          "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+          "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+          "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
+          "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+          "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+          "0x408e41876cccdc0f92210600ef50372656052a38",
+          "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+          "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+          "0x0000000000085d4780b73119b644ae5ecd22b376",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+        ],
+        "count": 20,
+        "response_sha256": "15765540f4f7fa1d036591e09fc9202664f539dd50f59687a3acfaed1f2eab7d",
+        "error": null
+      },
+      "members_present": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 41836347486954533715584578,
+          "apr_decimal": 0.041836347486954535,
+          "word_count": 12,
+          "response_sha256": "0c6f70da149c7cf01001d8b1513ddf4ae3004c79f7fda5bc6ff97bb4006acfa1",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 39772055020586946613041781,
+          "apr_decimal": 0.03977205502058695,
+          "word_count": 12,
+          "response_sha256": "a5dc16cfcebd6f447c6c5cad9264155df70c4eed26ba97cf1816fe9e8e415f68",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 38266123710994314799830333,
+          "apr_decimal": 0.03826612371099432,
+          "word_count": 12,
+          "response_sha256": "e7bd55fdc8d9d1dbd186d29c4fef86480ea5de01960c8dd79e08a86298078e4f",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.039958175406178596,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:19:57.007460+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-12-08",
+      "target_ts": "2020-12-08T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 11408756,
+      "block_timestamp": 1607385600,
+      "block_hash": "0x680c487d5381c6574287b20ff79387e9c27767ad0b30ed1022c11f886e4cd9df",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+          "0xe41d2489571d322189246dafa5ebde1f4699f498",
+          "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+          "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+          "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
+          "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+          "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+          "0x408e41876cccdc0f92210600ef50372656052a38",
+          "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+          "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+          "0x0000000000085d4780b73119b644ae5ecd22b376",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+        ],
+        "count": 20,
+        "response_sha256": "15765540f4f7fa1d036591e09fc9202664f539dd50f59687a3acfaed1f2eab7d",
+        "error": null
+      },
+      "members_present": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 516690585323029672280652106,
+          "apr_decimal": 0.5166905853230297,
+          "word_count": 12,
+          "response_sha256": "d27b76295bf0e5c2ca659fed4ff9e5cd5db89a2287f4c9ef62fa45217a53de77",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 33908194848037425595664734,
+          "apr_decimal": 0.03390819484803743,
+          "word_count": 12,
+          "response_sha256": "fe539ac7885635028fa08cc0eda4a9fb3245a95fec65daa74d1353d69dcb8b73",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 85633870958999725588472444,
+          "apr_decimal": 0.08563387095899973,
+          "word_count": 12,
+          "response_sha256": "732018cacfebd430d2ea76f044bbcde7f783142b72eea4a1cbe6f2498986d98e",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.21207755037668896,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:20:02.109268+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-12-09",
+      "target_ts": "2020-12-09T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 11415239,
+      "block_timestamp": 1607471976,
+      "block_hash": "0xcc8df45827a8f0c6b3c9a2fb9b874e368196b5625fb61637e55535c1fb21343d",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+          "0xe41d2489571d322189246dafa5ebde1f4699f498",
+          "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+          "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+          "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
+          "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+          "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+          "0x408e41876cccdc0f92210600ef50372656052a38",
+          "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+          "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+          "0x0000000000085d4780b73119b644ae5ecd22b376",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+        ],
+        "count": 20,
+        "response_sha256": "15765540f4f7fa1d036591e09fc9202664f539dd50f59687a3acfaed1f2eab7d",
+        "error": null
+      },
+      "members_present": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 126204831358951849037949928,
+          "apr_decimal": 0.12620483135895186,
+          "word_count": 12,
+          "response_sha256": "57d0bca5a302806a7f722f23ea044e69caa976c07a9b48a48ec6ae5fca63a2c2",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 38979499934421290133785148,
+          "apr_decimal": 0.03897949993442129,
+          "word_count": 12,
+          "response_sha256": "a1ee3fd4fefc4ec0643a47ffe1fc5ea0c220776cfe844d32287de760e13fd7d7",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 35947444361635985287233681,
+          "apr_decimal": 0.03594744436163599,
+          "word_count": 12,
+          "response_sha256": "525bfe7014f23959410b91c3de35c3efe542851266ee1a0d138fd6e1d26d89ed",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.06704392521833638,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:20:07.419237+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-12-10",
+      "target_ts": "2020-12-10T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 11421842,
+      "block_timestamp": 1607558394,
+      "block_hash": "0xf64ec9051f2622a1ff26a5e840c9da5693b876672860e89eb4d026854edb9b72",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+          "0xe41d2489571d322189246dafa5ebde1f4699f498",
+          "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+          "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+          "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
+          "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+          "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+          "0x408e41876cccdc0f92210600ef50372656052a38",
+          "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+          "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+          "0x0000000000085d4780b73119b644ae5ecd22b376",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+        ],
+        "count": 20,
+        "response_sha256": "15765540f4f7fa1d036591e09fc9202664f539dd50f59687a3acfaed1f2eab7d",
+        "error": null
+      },
+      "members_present": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 28522195035865887188869273,
+          "apr_decimal": 0.028522195035865887,
+          "word_count": 12,
+          "response_sha256": "6a7acf29db260c94210bb895fb291d14b3ec40e9bc72cb8b054bd6d3957a6ffb",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 292638950730857698205175280,
+          "apr_decimal": 0.2926389507308577,
+          "word_count": 12,
+          "response_sha256": "2604d4c630e661ebb6b371459ffc39c09bfff6e6a3e211f184b2cda33b608f60",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 39962901897469247723642375,
+          "apr_decimal": 0.03996290189746925,
+          "word_count": 12,
+          "response_sha256": "d415759461e7506042bea2b460629003ed48f72601000c85025567338d830e41",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.12037468255473095,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:20:12.136743+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2020-12-11",
+      "target_ts": "2020-12-11T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 11428267,
+      "block_timestamp": 1607644787,
+      "block_hash": "0x4210297252a690d418fce6ac019811c327227398dbd32483f6cc391f12c52476",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+          "0xe41d2489571d322189246dafa5ebde1f4699f498",
+          "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+          "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+          "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
+          "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+          "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+          "0x408e41876cccdc0f92210600ef50372656052a38",
+          "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+          "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+          "0x0000000000085d4780b73119b644ae5ecd22b376",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+        ],
+        "count": 20,
+        "response_sha256": "15765540f4f7fa1d036591e09fc9202664f539dd50f59687a3acfaed1f2eab7d",
+        "error": null
+      },
+      "members_present": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 154274251955213593375036066,
+          "apr_decimal": 0.1542742519552136,
+          "word_count": 12,
+          "response_sha256": "f5465a04852ad2872098cfab0dee7db7f3ddd0e7436f6d8079850e5cfdb586dd",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 53312557516207319151399232,
+          "apr_decimal": 0.053312557516207316,
+          "word_count": 12,
+          "response_sha256": "9fb02064997c603780fcb9f18c0c318942b7284d3bbfc3c2fcdc4a920ed752eb",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 157857137039265970882381360,
+          "apr_decimal": 0.15785713703926596,
+          "word_count": 12,
+          "response_sha256": "894d42be6274748371ed266df0f5a9401dee5bfec894dc1afed86a3981f0a795",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.12181464883689563,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:20:17.045285+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2023-01-24",
+      "target_ts": "2023-01-24T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 16472945,
+      "block_timestamp": 1674518399,
+      "block_hash": "0x5e71a75b681e558c328fbce4996c8d2e4d8e135181d295e8efd7f4a723f15bff",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+          "0xe41d2489571d322189246dafa5ebde1f4699f498",
+          "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+          "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+          "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
+          "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+          "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+          "0x408e41876cccdc0f92210600ef50372656052a38",
+          "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+          "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+          "0x0000000000085d4780b73119b644ae5ecd22b376",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "0xd533a949740bb3306d119cc777fa900ba034cd52",
+          "0x056fd409e1d7a124bd7017459dfea2f387b6d5cd",
+          "0xba100000625a3754423978a60c9317c58a424e3d",
+          "0x8798249c2e607446efb7ad49ec89dd1865ff4272",
+          "0xd5147bc8e386d91cc5dbe72099dac6c9b99276f5",
+          "0x03ab458634910aad20ef5f1c8ee96f1d6ac54919",
+          "0xd46ba6d942050d489dbd938a2c909a5d5039a161",
+          "0x8e870d67f660d95d5be530380d0ec0bd388289e1",
+          "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b",
+          "0x853d955acef822db058eb8505911ed77f175b99e",
+          "0x956f47f50a910163d8bf957cf5846d573e7f87ca",
+          "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+          "0xc18360217d8f7ab5e7c516566761ea12ce7f9d72",
+          "0xa693b19d2931d498c5b318df961919bb4aee87a5",
+          "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b",
+          "0x111111111117dc0aa78b770fa6a738034120c302",
+          "0x5f98805a4e8be255a32880fdec7f6728c6568ba0"
+        ],
+        "count": 37,
+        "response_sha256": "73d95adc2de9e877d1ad30ca4b3d55710d7b8af92366b83fbe0af96bcb262e5b",
+        "error": null
+      },
+      "members_present": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 35711912466199247422693431,
+          "apr_decimal": 0.035711912466199244,
+          "word_count": 12,
+          "response_sha256": "ac67fc36e6f6e2179ddbf6385d6f5b522bee371f78b7341680dfa5079fdde3ad",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 29632108038768834707678384,
+          "apr_decimal": 0.029632108038768836,
+          "word_count": 12,
+          "response_sha256": "8a1ce04a9d85bad0609f3cb23d99f63cb05d0146bf604b180ca871609a7ef086",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 27288694157318678699534693,
+          "apr_decimal": 0.027288694157318678,
+          "word_count": 12,
+          "response_sha256": "c31022ecee0839000a9d646b98a66c95297dbb90f00a3d7e35dbbadf9cd75921",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.030877571554095585,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:20:22.439649+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2023-01-25",
+      "target_ts": "2023-01-25T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 16480111,
+      "block_timestamp": 1674604799,
+      "block_hash": "0xba5493712357629d1751653a97332bf697f71b93697a68a1d21e3037f7d0e40b",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+          "0xe41d2489571d322189246dafa5ebde1f4699f498",
+          "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+          "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+          "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
+          "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+          "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+          "0x408e41876cccdc0f92210600ef50372656052a38",
+          "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+          "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+          "0x0000000000085d4780b73119b644ae5ecd22b376",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "0xd533a949740bb3306d119cc777fa900ba034cd52",
+          "0x056fd409e1d7a124bd7017459dfea2f387b6d5cd",
+          "0xba100000625a3754423978a60c9317c58a424e3d",
+          "0x8798249c2e607446efb7ad49ec89dd1865ff4272",
+          "0xd5147bc8e386d91cc5dbe72099dac6c9b99276f5",
+          "0x03ab458634910aad20ef5f1c8ee96f1d6ac54919",
+          "0xd46ba6d942050d489dbd938a2c909a5d5039a161",
+          "0x8e870d67f660d95d5be530380d0ec0bd388289e1",
+          "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b",
+          "0x853d955acef822db058eb8505911ed77f175b99e",
+          "0x956f47f50a910163d8bf957cf5846d573e7f87ca",
+          "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+          "0xc18360217d8f7ab5e7c516566761ea12ce7f9d72",
+          "0xa693b19d2931d498c5b318df961919bb4aee87a5",
+          "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b",
+          "0x111111111117dc0aa78b770fa6a738034120c302",
+          "0x5f98805a4e8be255a32880fdec7f6728c6568ba0"
+        ],
+        "count": 37,
+        "response_sha256": "73d95adc2de9e877d1ad30ca4b3d55710d7b8af92366b83fbe0af96bcb262e5b",
+        "error": null
+      },
+      "members_present": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 36934222568053548918402569,
+          "apr_decimal": 0.03693422256805355,
+          "word_count": 12,
+          "response_sha256": "55a10a57c12186c539fe3192ab147db0562e22c197645438ae38109aa2a299f9",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 29554573883358358149455278,
+          "apr_decimal": 0.02955457388335836,
+          "word_count": 12,
+          "response_sha256": "e84f1ce65a9c93916c77652f429ccffc6372f0d252da89ed88785b3cda6c9ea9",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 27451859773762983834197920,
+          "apr_decimal": 0.027451859773762983,
+          "word_count": 12,
+          "response_sha256": "1f4aaa4cd2268bc4825ba0f2c75bcc097d98f5cbaac5e370fe39705323e86b67",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.031313552075058294,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:20:30.089188+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2023-01-26",
+      "target_ts": "2023-01-26T00:00:00+00:00",
+      "generation": "aave_v2",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 16487269,
+      "block_timestamp": 1674691199,
+      "block_hash": "0x75a0ba94b90bb7c7375c3808ab656ca58922952136357edb323f55807044a355",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e",
+          "0xe41d2489571d322189246dafa5ebde1f4699f498",
+          "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
+          "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+          "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
+          "0xdd974d5c2e2928dea5f71b9825b8b646686bd200",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
+          "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+          "0x408e41876cccdc0f92210600ef50372656052a38",
+          "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
+          "0x57ab1ec28d129707052df4df418d58a2d46d5f51",
+          "0x0000000000085d4780b73119b644ae5ecd22b376",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "0xd533a949740bb3306d119cc777fa900ba034cd52",
+          "0x056fd409e1d7a124bd7017459dfea2f387b6d5cd",
+          "0xba100000625a3754423978a60c9317c58a424e3d",
+          "0x8798249c2e607446efb7ad49ec89dd1865ff4272",
+          "0xd5147bc8e386d91cc5dbe72099dac6c9b99276f5",
+          "0x03ab458634910aad20ef5f1c8ee96f1d6ac54919",
+          "0xd46ba6d942050d489dbd938a2c909a5d5039a161",
+          "0x8e870d67f660d95d5be530380d0ec0bd388289e1",
+          "0x1494ca1f11d487c2bbe4543e90080aeba4ba3c2b",
+          "0x853d955acef822db058eb8505911ed77f175b99e",
+          "0x956f47f50a910163d8bf957cf5846d573e7f87ca",
+          "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+          "0xc18360217d8f7ab5e7c516566761ea12ce7f9d72",
+          "0xa693b19d2931d498c5b318df961919bb4aee87a5",
+          "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b",
+          "0x111111111117dc0aa78b770fa6a738034120c302",
+          "0x5f98805a4e8be255a32880fdec7f6728c6568ba0"
+        ],
+        "count": 37,
+        "response_sha256": "73d95adc2de9e877d1ad30ca4b3d55710d7b8af92366b83fbe0af96bcb262e5b",
+        "error": null
+      },
+      "members_present": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 34972803395574771996792378,
+          "apr_decimal": 0.03497280339557477,
+          "word_count": 12,
+          "response_sha256": "e591ec1efa5ce951097fafdc64646f6f07418288ed8923522b44f1a9c69746e6",
+          "error": null,
+          "nonzero_word_count": 11
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 28186591884223425320834193,
+          "apr_decimal": 0.028186591884223424,
+          "word_count": 12,
+          "response_sha256": "2fb64628d30683c83e28777f86675a1bd694b4fa1ae538946af5fe517f287b19",
+          "error": null,
+          "nonzero_word_count": 12
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 26823942200995937723216836,
+          "apr_decimal": 0.02682394220099594,
+          "word_count": 12,
+          "response_sha256": "a8039e00800bd2187a993b7ebe02ecefa23a27e4ee700c30b81635ab71e19470",
+          "error": null,
+          "nonzero_word_count": 12
+        }
+      ],
+      "mean_apr": 0.029994445826931376,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:20:35.092361+00:00",
+      "note": null,
+      "uninitialised_reserves": []
+    },
+    {
+      "date_utc": "2023-01-27",
+      "target_ts": "2023-01-27T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 16494435,
+      "block_timestamp": 1674777599,
+      "block_hash": "0x8ab6646048ad387e470765b93183b482ef0624de7a2bcf53a0748c927b320e57",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [],
+        "count": 0,
+        "response_sha256": "fefefe9cbfddbe6a29b3cff637f642f77147544b55e59528f3c193476b7dceaa",
+        "error": null
+      },
+      "members_present": [],
+      "missing_reserves": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        }
+      ],
+      "mean_apr": null,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:20:40.057999+00:00",
+      "note": "初期化済み reserve list に不在: USDT, USDC, DAI(0 で代替しない)",
+      "uninitialised_reserves": [
+        "USDT",
+        "USDC",
+        "DAI"
+      ]
+    },
+    {
+      "date_utc": "2023-01-28",
+      "target_ts": "2023-01-28T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 16501588,
+      "block_timestamp": 1674863999,
+      "block_hash": "0x7786a2df03cd7426550d210de107c73d602d5cabc3bbca33dfe57c45ba9947b5",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9"
+        ],
+        "count": 7,
+        "response_sha256": "0b397b9e3728e665fbad85518b5476455dfa1bb320ee085cd66f11c4597bfe33",
+        "error": null
+      },
+      "members_present": [
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 38599351648592997263887608,
+          "apr_decimal": 0.038599351648592996,
+          "word_count": 15,
+          "response_sha256": "644124ee084dff855e11105b42c55e5d565ba6c89b97481f74490f8f3bd15440",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 31941352812102610240310770,
+          "apr_decimal": 0.031941352812102614,
+          "word_count": 15,
+          "response_sha256": "9f0e8d6bedc4f371306fe7f532386dfc3f54fd6fb0c59df3eb59a973562e22cc",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": null,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:20:45.094648+00:00",
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)",
+      "uninitialised_reserves": [
+        "USDT"
+      ]
+    },
+    {
+      "date_utc": "2023-01-29",
+      "target_ts": "2023-01-29T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 16508757,
+      "block_timestamp": 1674950399,
+      "block_hash": "0x296d6dbb6bc1b2ddf2ee4589c328d34153d18f7ae812372eb3f46c5158ca1622",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9"
+        ],
+        "count": 7,
+        "response_sha256": "0b397b9e3728e665fbad85518b5476455dfa1bb320ee085cd66f11c4597bfe33",
+        "error": null
+      },
+      "members_present": [
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 20236424569371811538599167,
+          "apr_decimal": 0.020236424569371813,
+          "word_count": 15,
+          "response_sha256": "7bc09c338583b2567eb37b6838a3e3762119121f34eba339fb89de4e38f127e6",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 24908548392716506884374398,
+          "apr_decimal": 0.024908548392716508,
+          "word_count": 15,
+          "response_sha256": "c72f8537f4619735b6e08d08b6019b8f2b108b664c89e9ec77157141da015f90",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": null,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:20:50.450418+00:00",
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)",
+      "uninitialised_reserves": [
+        "USDT"
+      ]
+    },
+    {
+      "date_utc": "2023-01-30",
+      "target_ts": "2023-01-30T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 16515916,
+      "block_timestamp": 1675036799,
+      "block_hash": "0x4c6d7204c2d8b5371ff21e953aef691e7127ea696a44d8c3f4a3bdae67452958",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9"
+        ],
+        "count": 7,
+        "response_sha256": "0b397b9e3728e665fbad85518b5476455dfa1bb320ee085cd66f11c4597bfe33",
+        "error": null
+      },
+      "members_present": [
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 23018901832929966241885352,
+          "apr_decimal": 0.023018901832929966,
+          "word_count": 15,
+          "response_sha256": "6cb67e527fd69361c7f4750e849d7eece36afd69deb8a82693a46f2f12d351d8",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 36655499765998071184553951,
+          "apr_decimal": 0.03665549976599807,
+          "word_count": 15,
+          "response_sha256": "75ef1b0a7dbad41343420a0181e9e54ad4a7a117e1cf9fc3f569743765dd16f8",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": null,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:20:55.808701+00:00",
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)",
+      "uninitialised_reserves": [
+        "USDT"
+      ]
+    },
+    {
+      "date_utc": "2023-01-31",
+      "target_ts": "2023-01-31T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 16523084,
+      "block_timestamp": 1675123199,
+      "block_hash": "0x353cf0ac48fa77568ccebe769df43add0e1f80f174ed410d484e15cf1ca44897",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9"
+        ],
+        "count": 7,
+        "response_sha256": "0b397b9e3728e665fbad85518b5476455dfa1bb320ee085cd66f11c4597bfe33",
+        "error": null
+      },
+      "members_present": [
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 27594772234141101478347259,
+          "apr_decimal": 0.027594772234141102,
+          "word_count": 15,
+          "response_sha256": "7432eabc42f937aafda19e2c1bb18f09fa6dfe892789278da7f10ef76dee8bf8",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 21268977644741731248838308,
+          "apr_decimal": 0.02126897764474173,
+          "word_count": 15,
+          "response_sha256": "76b8b7aba47984b032cd72a95f72c3eb0459f9adaae682e0e5e9b74f6a76d70f",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": null,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:21:00.525027+00:00",
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)",
+      "uninitialised_reserves": [
+        "USDT"
+      ]
+    },
+    {
+      "date_utc": "2023-02-01",
+      "target_ts": "2023-02-01T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 16530247,
+      "block_timestamp": 1675209599,
+      "block_hash": "0x57fef7995db2e9d9863eb7340bbb192d2a52a08fc9ce4a7d804f441182209931",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9"
+        ],
+        "count": 7,
+        "response_sha256": "0b397b9e3728e665fbad85518b5476455dfa1bb320ee085cd66f11c4597bfe33",
+        "error": null
+      },
+      "members_present": [
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 30479603611069040808559662,
+          "apr_decimal": 0.03047960361106904,
+          "word_count": 15,
+          "response_sha256": "397264d5f7c87074a70e7ef88e68770d5c9c510c9985aa3a2032e615fc0a9fce",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 37578145658113417268940096,
+          "apr_decimal": 0.03757814565811342,
+          "word_count": 15,
+          "response_sha256": "1b73e91aebc538b5ffc6809614661071dcaedf4580157b17bd76bf288e425368",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": null,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:21:05.415740+00:00",
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)",
+      "uninitialised_reserves": [
+        "USDT"
+      ]
+    },
+    {
+      "date_utc": "2023-02-02",
+      "target_ts": "2023-02-02T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 16537406,
+      "block_timestamp": 1675295999,
+      "block_hash": "0xdca1b8d53787d89dfbd7f9d3ff6947f5a5043996f38368f6fa39ab4fe3806be7",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9"
+        ],
+        "count": 7,
+        "response_sha256": "0b397b9e3728e665fbad85518b5476455dfa1bb320ee085cd66f11c4597bfe33",
+        "error": null
+      },
+      "members_present": [
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 28850578198308774870656077,
+          "apr_decimal": 0.028850578198308774,
+          "word_count": 15,
+          "response_sha256": "8776f1c6fc834ebb3030b36e9483573893d7d3c7a6db2d72709a471b8abdd4c8",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 35820825445401461550551410,
+          "apr_decimal": 0.03582082544540146,
+          "word_count": 15,
+          "response_sha256": "ebae595238495921c14a8a9e6d6f5fdf7b60502ccd66c72eb06b778ad7f5cc45",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": null,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:21:10.565211+00:00",
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)",
+      "uninitialised_reserves": [
+        "USDT"
+      ]
+    },
+    {
+      "date_utc": "2023-02-03",
+      "target_ts": "2023-02-03T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 16544547,
+      "block_timestamp": 1675382399,
+      "block_hash": "0x1b775cef83fac196d10846722b1f082b444d1564ed3304e25c9d6f96813a5dc1",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9"
+        ],
+        "count": 7,
+        "response_sha256": "0b397b9e3728e665fbad85518b5476455dfa1bb320ee085cd66f11c4597bfe33",
+        "error": null
+      },
+      "members_present": [
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 29396105484762997460422804,
+          "apr_decimal": 0.029396105484762996,
+          "word_count": 15,
+          "response_sha256": "7628a86bba203427ba62efe8bc9ba73af7911d307145f49cbe8138b48d70ac87",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 28990420949465915103626934,
+          "apr_decimal": 0.028990420949465915,
+          "word_count": 15,
+          "response_sha256": "92436c350ca46448f0c3bcceb96cd964aad6cdce319f06e828b49deadd2c38f3",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": null,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:21:15.301405+00:00",
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)",
+      "uninitialised_reserves": [
+        "USDT"
+      ]
+    },
+    {
+      "date_utc": "2023-02-04",
+      "target_ts": "2023-02-04T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 16551700,
+      "block_timestamp": 1675468799,
+      "block_hash": "0x7c46016671d22945499a89adef849195d9d9a2632b24818f6c45e79ea9126302",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9"
+        ],
+        "count": 7,
+        "response_sha256": "0b397b9e3728e665fbad85518b5476455dfa1bb320ee085cd66f11c4597bfe33",
+        "error": null
+      },
+      "members_present": [
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 29710961871790546786306059,
+          "apr_decimal": 0.029710961871790547,
+          "word_count": 15,
+          "response_sha256": "fca039e78a4276729fe39b3857cb68682decc9e4d951c0f00d4728dc99aeef2f",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 31965712524451077847909314,
+          "apr_decimal": 0.03196571252445108,
+          "word_count": 15,
+          "response_sha256": "293253acfd6bef0a53a743bd52efacbb97d79d49804621b77bfeacbcaf2f7d76",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": null,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:21:20.741582+00:00",
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)",
+      "uninitialised_reserves": [
+        "USDT"
+      ]
+    },
+    {
+      "date_utc": "2023-02-05",
+      "target_ts": "2023-02-05T00:00:00+00:00",
+      "generation": "aave_v3_core",
+      "network": "ethereum_mainnet",
+      "chain_id": 1,
+      "market": "canonical_primary_market",
+      "block_number": 16558856,
+      "block_timestamp": 1675555199,
+      "block_hash": "0x46287ab98fc8f23cf711d6d7212b07d8fdb60a34a5fd962967b474bdd58bda90",
+      "endpoint": "https://eth-mainnet.public.blastapi.io",
+      "access_route": "archive_rpc_eth_call",
+      "reserve_list": {
+        "signature": "getReservesList()",
+        "addresses": [
+          "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+          "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+          "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "0x514910771af9ca656af840dff83e8264ecf986ca",
+          "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9"
+        ],
+        "count": 7,
+        "response_sha256": "0b397b9e3728e665fbad85518b5476455dfa1bb320ee085cd66f11c4597bfe33",
+        "error": null
+      },
+      "members_present": [
+        "USDC",
+        "DAI"
+      ],
+      "missing_reserves": [
+        "USDT"
+      ],
+      "components": [
+        {
+          "symbol": "USDT",
+          "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+          "raw_ray": 0,
+          "apr_decimal": 0.0,
+          "word_count": 15,
+          "response_sha256": "65169f181d31880d67c877b9902ca2396fa1ed494c6d4f30cee81f6514a617c1",
+          "error": null,
+          "nonzero_word_count": 0
+        },
+        {
+          "symbol": "USDC",
+          "token_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "raw_ray": 30541819908612639254986139,
+          "apr_decimal": 0.030541819908612638,
+          "word_count": 15,
+          "response_sha256": "e4afc160e23962b6c6e809a624f2fd0a3cc68fdf6e9421a79d78584bc9ee4880",
+          "error": null,
+          "nonzero_word_count": 13
+        },
+        {
+          "symbol": "DAI",
+          "token_address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          "raw_ray": 29622077973054496462820484,
+          "apr_decimal": 0.029622077973054495,
+          "word_count": 15,
+          "response_sha256": "b9e8eb1c70b682584c056ad796f79a9f53b046aa04d77493ae69e33a94d79a16",
+          "error": null,
+          "nonzero_word_count": 13
+        }
+      ],
+      "mean_apr": null,
+      "integrity_error": null,
+      "source_fidelity": "partial_proxy_not_exact_A2",
+      "retrieved_at_utc": "2026-08-18T13:21:25.965597+00:00",
+      "note": "初期化済み reserve list に不在: USDT(0 で代替しない)",
+      "uninitialised_reserves": [
+        "USDT"
+      ]
+    }
+  ]
+}

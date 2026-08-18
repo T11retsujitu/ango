@@ -1,0 +1,325 @@
+{
+  "protocol": "phase8_carry_replication_v1",
+  "protocol_version": "v1.8.4",
+  "state": "FROZEN",
+  "supersedes": {
+    "version": "v1.8.3",
+    "record": "experiments/phase8/carry_freeze_v1_8_3.json",
+    "chain": [
+      "experiments/phase8/carry_freeze.json (v1.8)",
+      "experiments/phase8/carry_freeze_v1_8_1.json (v1.8.1)",
+      "experiments/phase8/carry_freeze_v1_8_2.json (v1.8.2)",
+      "experiments/phase8/carry_freeze_v1_8_3.json (v1.8.3)"
+    ],
+    "note": "先行4記録は1バイトも変更していない。preserved_predecessors の SHA-256 で固定する。"
+  },
+  "preserved_predecessors": {
+    "v1.8": "04695f13db97db5453e527eb2099ee15d44246e50c8b1f162adc53096076bdec",
+    "v1.8.1": "c894f08d3fb272a7180fafccffb6fdd1150eb52759f4be23eb4129388c9176ee",
+    "v1.8.2": "b857e2ee075f593c3f9bcdbfd1bcd022043499a197bcf4263be8b2c95359eb45",
+    "v1.8.3": "d8c7adb3ee886a396927a94a2c1b667208134fa33716ea9f8572942a3a198b12"
+  },
+  "frozen_at_utc": "2026-08-18T12:10:00Z",
+  "frozen_by": "human decision log 2026-08-18 (D1 access route accepted; H17 resolved via option B + protocol membership semantics; O1 no-alteration frozen)",
+  "amendment_scope": {
+    "changed": [
+      "D1",
+      "H17",
+      "O1"
+    ],
+    "unchanged": [
+      "hypothesis",
+      "family",
+      "layer boundaries",
+      "promotion rules",
+      "costs",
+      "margin rules",
+      "GO/NO-GO",
+      "horizon set",
+      "arm definitions",
+      "FINAL_OOS_START",
+      "seals",
+      "H13",
+      "H14",
+      "RATE_MARKET_SPLICES",
+      "RATE_ASSETS",
+      "RATE_SOURCE",
+      "RATE_SENSITIVITY_SOURCE"
+    ],
+    "note": "入力データ源の定義のみ。仮説は変更していない。実験は解禁していない。"
+  },
+  "prereg_doc": {
+    "path": "docs/phase8/carry_replication_protocol_v1.md",
+    "sha256": "787009f6031efc16d8a33c934f1b8e918bf3787337aa91d81501cd2cd9e3aa2d"
+  },
+  "prereg_module": {
+    "path": "src/mce/phase8_prereg.py",
+    "sha256": "a29f732536c80edc151782c04db8e694432774c9c5ca97eb5f93fe355ff82ff9"
+  },
+  "prior_register": {
+    "path": "docs/phase8/carry_prior_register_v1.md",
+    "sha256": "26ad4dd1535ecdcf9e0a16fd196d5392f4d4a6767b54a4530556d1ca5cdf89a6",
+    "sealed": true,
+    "note": "Unchanged by this amendment. Executor must NOT read it."
+  },
+  "a3_source_review": {
+    "path": "docs/phase8/a3_source_review_v1.md",
+    "sha256": "7846302b66593a16459ac1f8b443671cc3edb4fbbffcfa4c2dbb514b10bed51d"
+  },
+  "audit_record": {
+    "path": "docs/phase8/carry_protocol_audit_v1.md",
+    "sha256": "cda714c35599b52798b5c06ef7e976e244569773e629aaffcae13a37f9201be2"
+  },
+  "conformance_notes": {
+    "path": "docs/phase8/two_leg_conformance_notes_v1.md",
+    "sha256": "204741553b1ac25783ccd64924e2f2e95a198a8e5f1b6aca874df632f05b5dee"
+  },
+  "h15_investigation": {
+    "path": "docs/phase8/h15_aave_source_investigation_v1.md",
+    "sha256": "48d9be07aee850c3b402d0ba38c20f8f712777df2bd9083e0f1e9f620e85e429"
+  },
+  "probe_findings": {
+    "path": "docs/phase8/aave_source_probe_findings_v1.md",
+    "sha256": "bc4bb43b6c92c7275478cfe1d2d13293a3d76682c7c77ea09c75cf8663bc6cff",
+    "note": "D1 / H17 / O1 の実測根拠。§7 が v1.8.4 の決定。"
+  },
+  "splits_module": {
+    "path": "src/mce/backtest/splits.py",
+    "sha256": "948668127d96e888de165b0d7f7ec8dcc946c458d7b666e1827781b91e045222"
+  },
+  "signal_module": {
+    "path": "src/mce/backtest/rho.py",
+    "sha256": "83c79d68b1b82b0e51eff76f06414b51d35a8669fe028aaaa286c75bc498bd41",
+    "note": "Pure mathematical layer. Implemented before H15 resolution because r is an explicit input."
+  },
+  "engine_module": {
+    "path": "src/mce/backtest/two_leg.py",
+    "sha256": "6bd1341dcf6fc5abab60a0dba1e9cf062041dbe217d4308644cd13a4d7b08f97",
+    "note": "Recorded for provenance. The engine is implementation, not specification; conformance is enforced by tests, not by this hash."
+  },
+  "rate_adapter": {
+    "path": "src/mce/aave_rates.py",
+    "sha256": "db7196d7afe4ab4f3fdab71cc6880b95612888aebdfd5ab25d9cd20abb027694",
+    "note": "v1.8.4 で新たに凍結対象へ加えた。§30 の完全性規則の実装であるため、凍結後の編集は凍結違反として検出されなければならない。"
+  },
+  "probe_module": {
+    "path": "src/mce/aave_probe.py",
+    "sha256": "1ea7bcb77d181bec78c2def423dfbd7519220a98ef064bed39cc00692bef8bc7",
+    "note": "可用性プローブ。凍結対象ではないが記録する。"
+  },
+  "probe_artifacts": {
+    "availability": {
+      "path": "experiments/phase8/aave_availability_probe_v1.json",
+      "sha256": "d902c62355297f6c05107230a76d1765ee9c6e71082ca3d475660df73182bdcd"
+    },
+    "splice": {
+      "path": "experiments/phase8/aave_splice_probe_v1.json",
+      "sha256": "ef0e170287aa7fe65ac179435959200282388e4a4f2ab4278e75f7c8d84ae7ea"
+    }
+  },
+  "source_commit": "a57d4fdfe6a791cfa370c4a4912a1f432daebd1a",
+  "uv_lock_sha256": "4f187f1a8ed2d64e2e949b0e1f6b8e6b9252e81201a28dc60d898870ea2d8ca8",
+  "seal_invariants": {
+    "FINAL_OOS_START": "2026-01-01T00:00:00+00:00",
+    "FINAL_OOS_START_modified_by_phase8": false,
+    "PHASE8_PROSPECTIVE_START": "2026-09-01T00:00:00+00:00",
+    "phase8_contaminated_band": [
+      "2026-01-01T00:00:00+00:00",
+      "2026-09-01T00:00:00+00:00"
+    ],
+    "phase8_contaminated_band_readable_for_outcome_evaluation": false,
+    "layer3_bars_existing_at_freeze_time": 0,
+    "note": "Layer 3 begins 2026-09-01, which is in the future at freeze time, so reading it was physically impossible when the protocol was frozen."
+  },
+  "resolved_in_v1_8_1": {
+    "G1": "MARGIN_RESERVE_USDT=2000.0 derived as one initial-margin tranche: R=(C-R)/(L+1) => R=C/(L+2)=2000. POSITION_CAPITAL_USDT=8000. Sizing q=(C-R)L/((L+1)S_in). Reserve constant across leverage sensitivities. T16 exact invariant is now relative to POSITION_CAPITAL_USDT.",
+    "G2": "FUNDING_COUNTS_TOWARD_MARGIN=True. Both signs move the futures wallet.",
+    "G3": "POST_LIQUIDATION_RULE='unwind'. No rehedging. Perp terminates at the simulated liquidation fill; spot unwinds at the first causally executable spot open after the liquidation bar, using M6b roll-forward; naked-spot exposure recorded as tracking error.",
+    "G4": "EVENT_ORDER='funding_then_margin_then_topup_then_liquidation'. Corrects the v1.8 docstring/notes which said liquidation->topup->funding and did not match intent.",
+    "G5": "Liquidation accounting fixed: scheduled perp exit price unused after forced close; no ordinary cost_perp_out; price loss appears exactly once in q(P_in-P_liq); liquidation_fee_usdt carries only the clearance fee; explicit liquidation_ts/fill and spot_unwind_ts/fill fields added."
+  },
+  "resolved_in_v1_8_3": {
+    "H15": {
+      "resolution": "ADOPTED AS A PARTIAL PROXY, explicitly not an exact A2 reconstruction (RATE_SOURCE_FIDELITY='partial_proxy_not_exact_A2').",
+      "network": "Ethereum mainnet only (no L2)",
+      "splices": [
+        [
+          "aave_v1",
+          "2020-01-08",
+          "2020-12-03"
+        ],
+        [
+          "aave_v2",
+          "2020-12-03",
+          "2023-01-27"
+        ],
+        [
+          "aave_v3_core",
+          "2023-01-27",
+          null
+        ]
+      ],
+      "v4_excluded": "Phase 8 does NOT transition to Aave V4. V4 changes the borrowing-rate architecture through collateral-dependent risk premiums, while V3 continues to exist as an available market. V4 Ethereum launch 2026-03-30 is recorded for reference only.",
+      "consequence": "The layer-3/V4 asymmetry raised in v1.8.2 section 26.3 is RESOLVED: layer 2 and layer 3 are both on V3 Core.",
+      "rate_series": "variable borrow APR - an explicit proxy specialisation with no basis in A2 (V1/V2 also offered stable rates); reported as such",
+      "basket": "USDT/USDC/DAI equal-weight mean; all three components REQUIRED; silent composition change is refused",
+      "sampling": "daily point-in-time snapshot at 00:00 UTC using only chain state at or before that timestamp; no interpolation or smoothing",
+      "provenance": "splice dates, snapshot hour, per-component raw values and the missing-day list must be recorded in the artifact",
+      "sensitivity_retained": "Kenneth-French daily RF remains the preregistered sensitivity, not a replacement"
+    },
+    "H16": {
+      "defect": "point_in_time_rate() defaulted to MAX_STALE_SECONDS = 9h, which is the funding-series constant. A2's Aave rate input is daily, so 9h would stale it mid-morning of the same calendar day.",
+      "resolution": "MAX_STALE_SECONDS retired. FUNDING_MAX_STALE_SECONDS = 9*3600 and RATE_MAX_STALE_SECONDS = 24*3600 introduced; point_in_time_rate() uses the rate-specific constant.",
+      "snapshot_age_semantics": "A daily Aave observation represents protocol state sampled at 00:00 UTC; its age is measured from that daily snapshot, not from the last underlying reserve-update event.",
+      "tests": [
+        "T42 valid through the same UTC day",
+        "T43 stale past the frozen horizon when the next snapshot is missing",
+        "T44 the 9h funding constant cannot affect rho",
+        "T45 all three stablecoins required",
+        "T46 no interpolation across missing days",
+        "T47 no V4 transition",
+        "T48 source-sensitivity rule frozen"
+      ]
+    },
+    "source_sensitivity": {
+      "rule": "if sign(disposition under the Aave proxy) != sign(disposition under the Kenneth-French RF sensitivity) then classify as source_sensitive, NOT GO",
+      "disposition": "source_sensitive",
+      "note": "A third outcome distinct from both GO and NO-GO: the conclusion would be about the rate-source choice rather than about the mechanism."
+    }
+  },
+  "resolved_in_v1_8_4": {
+    "D1": {
+      "finding": "Aave 自身の subgraph は利用不能(hosted service は HTTP 301 sunset、decentralized gateway は API key 必須)。",
+      "decision": "§27 の source 指定の第2項 historical protocol state に適合すると受理する。別プロバイダへの差し替えではない。",
+      "source_of_truth": "aave_contract_state_on_ethereum_mainnet",
+      "access_route": "archive_rpc_eth_call",
+      "provider_is": "transport_not_economic_source",
+      "provenance_required": [
+        "chain_id",
+        "block_number",
+        "block_timestamp",
+        "block_hash"
+      ]
+    },
+    "H17": {
+      "finding": "getReserveData() は未上場 reserve にも全語ゼロを成功応答として返すため、読み取り成否で完全性を判定すると 0% が basket に混入する。実測では V3 Core の USDT が 2023-01-27 から 2023-02-13 まで未上場。",
+      "decision": "option B。完全性を『rate 観測と同一の履歴ブロックにおける初期化済み reserve list membership』として再定義する。",
+      "primitives": {
+        "aave_v1": "getReserves()",
+        "aave_v2": "getReservesList()",
+        "aave_v3_core": "getReservesList()"
+      },
+      "forbidden": [
+        "zero_substitution",
+        "two_asset_fallback",
+        "generation_extension",
+        "splice_date_move",
+        "interpolation",
+        "forward_fill"
+      ],
+      "zero_struct_role": "independent_cross_check_only",
+      "disagreement_action": "emit_integrity_error_and_no_rate_value",
+      "gap_derivation": "derived_from_historical_reserve_membership",
+      "measured_effect": {
+        "availability_probe": "17 日中 4 日が欠測(v1.8.3 では 2 日が 0% 混入で通過)",
+        "splice_probe": "25 日中 10 日が欠測",
+        "integrity_errors": 0,
+        "note": "membership 判定と全語ゼロ診断は実測した全日で一致した。"
+      }
+    },
+    "O1": {
+      "finding": "V1→V2 接合直後の V2 レートは 0.53%〜21.2%(USDT 単体 51.669%)で振れるが、全語ゼロではなく実データである。",
+      "decision": "filter / clip / smooth / winsorize を一切しない。",
+      "constant": "no_filter_no_clip_no_smoothing_no_winsorization"
+    },
+    "unblocks_experiments": false
+  },
+  "unresolved_at_freeze": {
+    "H13": {
+      "item": "authoritative live BTCUSDT USD-M taker commission",
+      "requested_by": "decision log 2026-08-17 (resolve before freeze via GET /fapi/v1/commissionRate)",
+      "status": "COULD NOT BE EXECUTED IN THIS ENVIRONMENT",
+      "endpoint_attempted": "https://www.binance.com/fapi/v1/commissionRate?symbol=BTCUSDT&timestamp=<ms>",
+      "http_status": 401,
+      "raw_response": "{\"code\":-2014,\"msg\":\"API-key format invalid.\"}",
+      "raw_response_sha256": "e7712db7077e81c13ccaf23d57a54ffb8e54c18d680a7bc30979e711ebdffbf1",
+      "retrieved_at_utc": "2026-08-17T19:24:00Z",
+      "reason": "commissionRate is a USER_DATA endpoint requiring an API key and HMAC-SHA256 signature. No Binance credentials exist in this environment (checked env vars and config paths).",
+      "orders_placed": false,
+      "placeholder_used": {
+        "PERP_TAKER_BPS": 5.0,
+        "provenance": "Binance futures FAQ worked example",
+        "confidence": "probable"
+      },
+      "blocking_rule": "COMMISSION_RATE_STATUS must become 'resolved' before any experiment runner may start (enforced by tests).",
+      "note": "Filling this value instantiates a single parameter and changes no design decision. It does not require re-freezing the protocol."
+    },
+    "H14": {
+      "item": "BTCUSDT USD-M liquidation clearance fee rate and forced-fill execution semantics",
+      "requested_by": "decision log 2026-08-17",
+      "status": "UNRESOLVED - authoritative rate not obtainable from this environment",
+      "established": [
+        {
+          "fact": "A Liquidation Clearance Fee exists and is computed from an applicable rate times the notional value of the position",
+          "source": "https://www.binance.com/en/support/faq/detail/360033525271",
+          "kind": "official_faq",
+          "retrieved_utc": "2026-08-17T20:05:00Z"
+        },
+        {
+          "fact": "Liquidation trigger is Collateral = Initial Collateral + Realized PnL + Unrealized PnL < Maintenance Margin (matches this protocol's condition)",
+          "source": "https://www.binance.com/en/support/faq/detail/360033525271",
+          "kind": "official_faq"
+        },
+        {
+          "fact": "Smart Liquidation offloads via an Immediate-or-Cancel order; the unfilled remainder becomes a Bankrupt Position handled by the Futures Insurance Fund. The fill is therefore a market IOC and can be worse than the trigger price for a short.",
+          "source": "https://www.binance.com/en/support/faq/detail/360033525271",
+          "kind": "official_faq"
+        }
+      ],
+      "not_obtainable": [
+        {
+          "attempt": "https://www.binance.com/bapi/futures/v1/friendly/future/common/brackets",
+          "http": 200,
+          "result": "BTCUSDT tier 1 maintenance margin rate 0.004 confirmed, but ZERO keys matching fee|liq|clear|penalt in the entire payload"
+        },
+        {
+          "attempt": "https://www.binance.com/fapi/v1/leverageBracket?symbol=BTCUSDT",
+          "http": 401,
+          "raw_response": "{\"code\":-2014,\"msg\":\"API-key format invalid.\"}"
+        },
+        {
+          "attempt": "https://www.binance.com/en/futures/trading-rules/perpetual/leverage-margin",
+          "http": 202,
+          "result": "client-side rendered table returns 'No Data' to non-JS fetch; no Liquidation Clearance Fee rate present"
+        }
+      ],
+      "orders_placed": false,
+      "frozen_values": {
+        "LIQUIDATION_CLEARANCE_FEE_RATE": null,
+        "LIQUIDATION_FEE_STATUS": "pending_authoritative_read"
+      },
+      "blocking_rule": "Same as H13. TwoLegConfig requires both liquidation_clearance_fee_rate and liquidation_slippage_bps explicitly; the liquidation path raises ValueError if unresolved. No experiment runner may start until resolved.",
+      "note": "liquidation_slippage_bps = 0.0 from v1.8 was NOT silently retained; it is now an explicit required argument with no default."
+    }
+  },
+  "post_freeze_policy": {
+    "design_audit_permitted": false,
+    "conformance_audit_permitted": true,
+    "experiments_permitted": false,
+    "final_oos_read_permitted": false,
+    "blocked_by": [
+      "H13",
+      "H14"
+    ]
+  },
+  "spec_precedence": "later_frozen_amendment_supersedes_earlier_text_for_the_same_field; superseded text is retained as historical audit trail",
+  "permitted_after_this_freeze": {
+    "aave_daily_rate_series_reconstruction": true,
+    "join_to_btc_data": false,
+    "rho_over_empirical_data": false,
+    "signals_returns_pnl": false,
+    "phase8_outcome": false,
+    "note": "v1.8.4 封印後に許されるのは Aave 日次レート入力系列の再構成のみ。"
+  },
+  "source_commit_note": "Set to a57d4fdfe6a791cfa370c4a4912a1f432daebd1a, the commit containing the v1.8.4 artifacts. File hashes are unaffected."
+}
