@@ -1,6 +1,6 @@
 """Phase 8.1 carry replication — 凍結パラメータの機械可読定義。
 
-正は docs/phase8/carry_replication_protocol_v1.md(v1.8.2)。本モジュールは
+正は docs/phase8/carry_replication_protocol_v1.md(v1.8.3)。本モジュールは
 その数値を実行器が読める形へ書き写したものであり、**結果を見た後に変更しない**。
 
 凍結の作法(Phase 7 と同じ):
@@ -22,7 +22,7 @@ from typing import Final
 UTC = timezone.utc
 
 PROTOCOL: Final = "phase8_carry_replication_v1"
-PROTOCOL_VERSION: Final = "v1.8.2"
+PROTOCOL_VERSION: Final = "v1.8.3"
 FROZEN_AT: Final = "2026-08-17"
 
 # ---------------------------------------------------------------------------
@@ -49,20 +49,44 @@ RATE_AGGREGATION: Final = "equal_weight_mean"
 RATE_POINT_IN_TIME: Final = True  # signal_time で利用可能な観測のみ
 R_PRIME: Final = 0.0  # Arm R は spot をショートしないため supply rate は使わない
 
-# 事前登録した感応度(primary ではない)
+# 事前登録した感応度(primary ではない)。**v1.8.3 でも維持する**。
 RATE_SENSITIVITY_SOURCE: Final = "kenneth_french_daily_rf"
 
-# --- v1.8.2 H15: Aave 金利市場の同定(§26。**未解決。実験をブロックする**)-----
-# A2 は Aave の version / network / market / データ提供元を**一切書いていない**
-# (全文中の言及は7箇所。確定できるのは 3 ステーブルコインの等加重平均・日次・
-#  perp > spot 側では borrowing rate、という点のみ)。
-# 金利データの起点 2020-01-08 は Aave V1 の Ethereum mainnet ローンチ日と一致するが、
-# A2 のサンプルは V1 → V2 → V3 の3世代をまたぎ、接合方法は記載が無い。
-# **提案 proxy は調査記録に1つだけ記載してある。本モジュールは採用していない。**
-RATE_MARKET_IDENTITY_STATUS: Final = "unresolved_source_fidelity_limitation"
-RATE_MARKET_VERSION: Final = None  # V1/V2/V3/V4 のいずれとも確定していない
-RATE_MARKET_NETWORK: Final = None  # Ethereum mainnet と推定されるが未確定
-RATE_MARKET_INSTANCE: Final = None  # Core / Prime / EtherFi 等が未確定
+# --- v1.8.3 §29: source-sensitivity disposition -----------------------------
+# Aave proxy と Kenneth-French RF 感応度で**最終的な経済判定の符号が逆**なら、
+# 結論は金利ソースの選択に依存している。その場合は **GO とせず** に分類する。
+SOURCE_SENSITIVE_DISPOSITION: Final = "source_sensitive"
+SOURCE_SENSITIVITY_RULE: Final = (
+    "if sign(primary_disposition_under_aave_proxy) != "
+    "sign(disposition_under_kenneth_french_rf) then classify as source_sensitive, not GO"
+)
+
+# --- v1.8.3 H15: Aave 金利市場(§27。**部分 proxy として採用**)---------------
+# **A2 の厳密な再構成ではない。** A2 は version / network / market / 提供元を
+# 書いていないため(§26)、以下を「部分的な source fidelity を持つ proxy」として
+# 明示的に凍結する。**厳密再現だと主張しない。**
+RATE_SOURCE_FIDELITY: Final = "partial_proxy_not_exact_A2"
+RATE_MARKET_IDENTITY_STATUS: Final = "adopted_partial_proxy"
+RATE_MARKET_NETWORK: Final = "ethereum_mainnet"  # L2 を含めない
+RATE_MARKET_INSTANCE: Final = "canonical_primary_market"
+
+# 版の接合。**V4 へは移行しない**(§27.2):
+#   V4 は担保依存のリスクプレミアムで借入金利の構造を変える一方、
+#   V3 は引き続き利用可能な market として存在するため。
+RATE_MARKET_SPLICES: Final = (
+    ("aave_v1", datetime(2020, 1, 8, tzinfo=UTC), datetime(2020, 12, 3, tzinfo=UTC)),
+    ("aave_v2", datetime(2020, 12, 3, tzinfo=UTC), datetime(2023, 1, 27, tzinfo=UTC)),
+    ("aave_v3_core", datetime(2023, 1, 27, tzinfo=UTC), None),  # 以降ずっと V3 Core
+)
+RATE_MARKET_EXCLUDED_VERSIONS: Final = ("aave_v4",)
+RATE_V4_ETHEREUM_LAUNCH: Final = datetime(2026, 3, 30, tzinfo=UTC)  # 参照のみ。使わない
+
+# basket は3成分すべてを要求する。**黙って構成を変えない**(§27.3)。
+RATE_BASKET_REQUIRE_ALL: Final = True
+
+# 日次 point-in-time スナップショット(§27.4)
+RATE_SNAPSHOT_HOUR_UTC: Final = 0  # 00:00 UTC
+RATE_INTERPOLATION: Final = "none"  # 補間・平滑化をしない
 
 # --- v1.8.2 §25: 仕様の優先順位 -------------------------------------------
 # 同一フィールドについて複数の記述があるとき、**後の凍結改訂節が先の記述を
@@ -165,7 +189,13 @@ RISK_FREE_SOURCE: Final = "aave_variable_borrow_apr_usdt"  # decision-time obser
 # ---------------------------------------------------------------------------
 # calc_time は決済時刻(X4 で確定)。公開遅延シフトで未来参照を防ぐ。
 DELTA_PUB_SECONDS: Final = 60  # funding_key = settlement_time + DELTA_PUB
-MAX_STALE_SECONDS: Final = 9 * 3600  # 陳腐化ガード(未来参照とは無関係)
+
+# --- v1.8.3 H16: 陳腐化ガードを系列ごとに分離(§28)-------------------------
+# v1.8.2 までは単一の MAX_STALE_SECONDS(9h)しか無く、**rho の金利入力にも
+# funding 用の 9h が適用されていた**。A2 の Aave 金利入力は**日次**なので誤りである。
+# MAX_STALE_SECONDS は廃止し、系列ごとの定数へ分離する(§25 の優先順位規則に従う)。
+FUNDING_MAX_STALE_SECONDS: Final = 9 * 3600  # funding(8h 間隔 + 余裕)
+RATE_MAX_STALE_SECONDS: Final = 24 * 3600  # Aave 日次スナップショット
 
 # 決済 s が trade に帰属する条件: entry_fill_time < s <= exit_fill_time (Y6)
 FUNDING_BOUNDARY: Final = "entry_exclusive_exit_inclusive"

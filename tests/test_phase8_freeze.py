@@ -19,7 +19,8 @@ REPO = Path(__file__).resolve().parents[1]
 # v1.8 は不変の歴史記録として保存する。整合検査は**現行(active)記録**に対して行う。
 FREEZE_V1_8 = REPO / "experiments" / "phase8" / "carry_freeze.json"
 FREEZE_V1_8_1 = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_1.json"
-FREEZE = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_2.json"  # active
+FREEZE_V1_8_2 = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_2.json"
+FREEZE = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_3.json"  # active
 
 pytestmark = pytest.mark.skipif(not FREEZE.exists(), reason="phase8 freeze 記録が無い")
 
@@ -120,7 +121,7 @@ def test_frozen_spec_was_not_edited_after_the_freeze():
 def test_protocol_declares_itself_frozen():
     rec = _record()
     assert rec["state"] == "FROZEN"
-    assert rec["protocol_version"] == P.PROTOCOL_VERSION == "v1.8.2"
+    assert rec["protocol_version"] == P.PROTOCOL_VERSION == "v1.8.3"
     text = (REPO / rec["prereg_doc"]["path"]).read_text(encoding="utf-8")
     assert "FROZEN" in text
 
@@ -196,7 +197,9 @@ def test_funding_boundary_and_interval_handling():
     assert P.READ_FUNDING_INTERVAL_PER_ROW is True
     # publication-delay シフトと陳腐化ガードは別物
     assert P.DELTA_PUB_SECONDS >= 0
-    assert P.MAX_STALE_SECONDS > P.DELTA_PUB_SECONDS
+    # H16(§28): 陳腐化ガードは系列ごとに分離された
+    assert P.FUNDING_MAX_STALE_SECONDS > P.DELTA_PUB_SECONDS
+    assert not hasattr(P, "MAX_STALE_SECONDS"), "単一定数は廃止された"
 
 
 def test_sample_floor_and_randomization_are_frozen():
@@ -233,10 +236,11 @@ def test_v1_8_record_is_preserved_immutably():
     assert old["state"] == "FROZEN"
     # v1.8.1 は v1.8 を明示的に supersede すると宣言していること
     rec = _record()
-    assert rec["supersedes"]["version"] == "v1.8.1"
+    assert rec["supersedes"]["version"] == "v1.8.2"
     assert any("v1.8" in c for c in rec["supersedes"]["chain"])
-    assert FREEZE_V1_8_1.exists(), "v1.8.1 の凍結記録が消えている"
-    assert json.loads(FREEZE_V1_8_1.read_text(encoding="utf-8"))["protocol_version"] == "v1.8.1"
+    for path, ver in ((FREEZE_V1_8, "v1.8"), (FREEZE_V1_8_1, "v1.8.1"), (FREEZE_V1_8_2, "v1.8.2")):
+        assert path.exists(), f"{ver} の凍結記録が消えている"
+        assert json.loads(path.read_text(encoding="utf-8"))["protocol_version"] == ver
     # v1.8 のハッシュは**現行ファイルと一致しない**(改訂したのだから当然)
     assert old["prereg_doc"]["sha256"] != rec["prereg_doc"]["sha256"]
 
@@ -310,19 +314,43 @@ def test_specification_precedence_is_declared():
     assert "歴史的な監査証跡" in text
 
 
-def test_h15_is_unresolved_and_no_proxy_was_adopted():
-    assert P.RATE_MARKET_IDENTITY_STATUS == "unresolved_source_fidelity_limitation"
-    assert P.RATE_MARKET_VERSION is None
-    assert P.RATE_MARKET_NETWORK is None
-    assert P.RATE_MARKET_INSTANCE is None
-    h15 = _record()["unresolved_at_freeze"]["H15"]
-    assert h15["proxy_adopted"] is False, "proxy を黙って採用していないこと"
-    assert h15["proposed_proxy_count"] == 1, "提案する proxy はちょうど1つ"
-    assert h15["established"], "確認できた事実が記録されていること"
-    assert h15["not_specified_by_a2"], "A2 が書いていない項目が記録されていること"
+def test_h15_is_adopted_as_a_partial_proxy_and_says_so():
+    """§27: 部分 proxy として採用。**厳密再現だと主張しない**。"""
+    assert P.RATE_SOURCE_FIDELITY == "partial_proxy_not_exact_A2"
+    assert P.RATE_MARKET_IDENTITY_STATUS == "adopted_partial_proxy"
+    h15 = _record()["resolved_in_v1_8_3"]["H15"]
+    assert "not an exact A2 reconstruction" in h15["resolution"]
+    assert "V4" in h15["v4_excluded"]
+    assert h15["sensitivity_retained"].startswith("Kenneth-French")
+    # H15 は未解決リストから外れたが、H13/H14 は残っている
+    assert "H15" not in _record()["unresolved_at_freeze"]
 
 
-def test_all_three_blockers_gate_experiments():
+def test_h16_split_the_stale_constants():
+    """§28: funding 用の 9h が金利入力に効いていた誤りの是正。"""
+    assert P.FUNDING_MAX_STALE_SECONDS == 9 * 3600
+    assert P.RATE_MAX_STALE_SECONDS == 24 * 3600
+    assert not hasattr(P, "MAX_STALE_SECONDS")
+    h16 = _record()["resolved_in_v1_8_3"]["H16"]
+    assert "9h" in h16["defect"]
+    assert "00:00 UTC" in h16["snapshot_age_semantics"]
+
+
+def test_source_sensitivity_disposition_is_frozen():
+    """§29: 符号が逆なら GO ではなく source_sensitive。"""
+    assert P.SOURCE_SENSITIVE_DISPOSITION == "source_sensitive"
+    rule = _record()["resolved_in_v1_8_3"]["source_sensitivity"]["rule"]
+    assert "NOT GO" in rule and "kenneth" in rule.lower()
+
+
+def test_v4_is_excluded_from_phase8():
+    assert "aave_v4" in P.RATE_MARKET_EXCLUDED_VERSIONS
+    assert P.RATE_MARKET_SPLICES[-1][0] == "aave_v3_core"
+    assert P.RATE_MARKET_SPLICES[-1][2] is None
+
+
+def test_remaining_blockers_gate_experiments():
+    """H15 は解決したが H13 / H14 は残る。"""
     policy = _record()["post_freeze_policy"]
     assert policy["experiments_permitted"] is False
-    assert set(policy["blocked_by"]) == {"H13", "H14", "H15"}
+    assert set(policy["blocked_by"]) == {"H13", "H14"}

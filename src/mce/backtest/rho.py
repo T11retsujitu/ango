@@ -26,7 +26,7 @@ import math
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Sequence
+from typing import Mapping, Sequence
 
 from mce import phase8_prereg as P
 
@@ -40,6 +40,8 @@ __all__ = [
     "arb_bound_upper",
     "arb_bound_lower",
     "point_in_time_rate",
+    "aave_basket_mean",
+    "aave_market_for",
     "arm_r_signal",
     "generate_arm_r_signals",
     "require_resolved_cost",
@@ -138,13 +140,21 @@ class RateObservation:
 def point_in_time_rate(
     observations: Sequence[RateObservation],
     decision_ts: datetime,
-    max_stale_seconds: int = P.MAX_STALE_SECONDS,
+    max_stale_seconds: int = P.RATE_MAX_STALE_SECONDS,
 ) -> float | None:
     """決定時刻で利用可能な最新の `r`。無ければ **None**(補完しない)。
 
     - `observed_ts <= decision_ts` のものだけを候補にする(未来参照の禁止)。
     - 直近の観測が `max_stale_seconds` より古ければ **None**。
       **前方補完しない**(point-in-time データ契約が禁じる区間をまたがない)。
+
+    **既定は `RATE_MAX_STALE_SECONDS`(24h)である**(H16 / §28)。
+    v1.8.2 までは funding 用の 9h を誤って使っていた。A2 の Aave 金利は**日次**なので、
+    9h では同じ暦日の午前中に陳腐化してしまう。
+
+    `observed_ts` は **その日 00:00 UTC のスナップショット時刻**であり、
+    基礎となる reserve 更新イベントの時刻ではない(§27.4)。経過時間はスナップショット
+    時刻から測る。
     """
     best: RateObservation | None = None
     for obs in observations:
@@ -162,6 +172,36 @@ def point_in_time_rate(
 # ---------------------------------------------------------------------------
 # Arm R のシグナル
 # ---------------------------------------------------------------------------
+
+
+def aave_basket_mean(rates: "Mapping[str, float | None]") -> float | None:
+    """USDT / USDC / DAI の等加重平均(§27.3)。
+
+    **3成分すべてを要求する。** どれか1つでも欠けたら **None** を返す。
+    2成分で平均を取って「黙って basket 構成を変える」ことをしない。
+
+    凍結された構成以外のキーが来たら例外にする(構成の差し替えを検出するため)。
+    """
+    required = set(P.RATE_ASSETS)
+    got = set(rates)
+    if got != required:
+        raise ValueError(
+            f"basket 構成が凍結値と違う: {sorted(got)} != {sorted(required)}(§27.3)"
+        )
+    values = [rates[a] for a in P.RATE_ASSETS]
+    if any(v is None for v in values):
+        return None  # 補完しない
+    if not P.RATE_BASKET_REQUIRE_ALL:  # pragma: no cover - 凍結値は True
+        raise AssertionError("RATE_BASKET_REQUIRE_ALL が False に変えられている")
+    return sum(float(v) for v in values) / len(values)  # type: ignore[arg-type]
+
+
+def aave_market_for(ts: datetime) -> str | None:
+    """その時刻に適用する Aave 版(§27.2)。V4 へは移行しない。"""
+    for name, start, end in P.RATE_MARKET_SPLICES:
+        if ts >= start and (end is None or ts < end):
+            return name
+    return None  # V1 稼働開始前
 
 
 @dataclass(frozen=True)

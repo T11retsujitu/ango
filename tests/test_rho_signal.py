@@ -160,12 +160,12 @@ def test_point_in_time_rate_never_looks_ahead():
 
 
 def test_point_in_time_rate_returns_none_when_stale():
-    obs = [RateObservation(T0 - timedelta(seconds=P.MAX_STALE_SECONDS + 1), 0.05)]
+    obs = [RateObservation(T0 - timedelta(seconds=P.RATE_MAX_STALE_SECONDS + 1), 0.05)]
     assert point_in_time_rate(obs, T0) is None, "陳腐化した値を前方補完しない"
 
 
 def test_point_in_time_rate_accepts_value_exactly_at_the_stale_boundary():
-    obs = [RateObservation(T0 - timedelta(seconds=P.MAX_STALE_SECONDS), 0.05)]
+    obs = [RateObservation(T0 - timedelta(seconds=P.RATE_MAX_STALE_SECONDS), 0.05)]
     assert point_in_time_rate(obs, T0) == pytest.approx(0.05)
 
 
@@ -246,16 +246,152 @@ def test_rate_must_be_supplied_explicitly_to_rho():
 # --------------------------------------------------------------------------
 
 
-def test_h15_is_registered_as_unresolved():
-    assert P.RATE_MARKET_IDENTITY_STATUS == "unresolved_source_fidelity_limitation"
-    assert P.RATE_MARKET_VERSION is None
-    assert P.RATE_MARKET_NETWORK is None
-    assert P.RATE_MARKET_INSTANCE is None
+def test_h15_is_adopted_as_a_partial_proxy_not_an_exact_reconstruction():
+    """§27.1: 厳密再現だと主張しない。"""
+    assert P.RATE_SOURCE_FIDELITY == "partial_proxy_not_exact_A2"
+    assert P.RATE_MARKET_IDENTITY_STATUS == "adopted_partial_proxy"
+    assert P.RATE_MARKET_NETWORK == "ethereum_mainnet"
 
 
-def test_rho_layer_works_without_h15_being_resolved():
-    """r を明示入力にしたので、ソース同定と独立に検証できる。"""
-    assert P.RATE_MARKET_IDENTITY_STATUS.startswith("unresolved")
+def test_rho_layer_is_independent_of_the_rate_source():
+    """r を明示入力にしたので、ソース選択と独立に検証できる。"""
     assert rho_exact(100_500.0, 100_000.0, 0.05) == pytest.approx(
         P.KAPPA * (1 - math.exp(-math.log(100_500.0 / 100_000.0))) - 0.05
     )
+
+
+# ==========================================================================
+# v1.8.3 §29.1 — H15 proxy と H16 の陳腐化分離(T42-T48)
+# ==========================================================================
+
+from mce.backtest.rho import aave_basket_mean, aave_market_for  # noqa: E402
+
+DAY = timedelta(days=1)
+
+
+def _snapshot(day: datetime, rate: float) -> RateObservation:
+    """その日 00:00 UTC のスナップショット(§27.4)。"""
+    return RateObservation(day.replace(hour=0, minute=0, second=0, microsecond=0), rate)
+
+
+def test_t42_daily_rate_stays_valid_through_the_same_utc_day():
+    """§27.4 / §28: 00:00 UTC のスナップショットは同じ暦日を通じて有効。"""
+    snap = _snapshot(T0, 0.05)
+    for hh in (0, 1, 9, 12, 23):
+        ts = T0.replace(hour=hh, minute=59 if hh else 0)
+        assert point_in_time_rate([snap], ts) == pytest.approx(0.05), hh
+    # 日の終わりでもまだ有効
+    assert point_in_time_rate([snap], T0 + DAY - timedelta(seconds=1)) == pytest.approx(0.05)
+
+
+def test_t43_rate_goes_stale_after_the_frozen_horizon_when_the_next_snapshot_is_missing():
+    """翌日のスナップショットが欠けたら、24h を過ぎて陳腐化する。"""
+    snap = _snapshot(T0, 0.05)
+    assert P.RATE_MAX_STALE_SECONDS == 24 * 3600
+    # ちょうど 24h は有効(境界は包含)
+    assert point_in_time_rate([snap], T0 + DAY) == pytest.approx(0.05)
+    # 24h を1秒でも過ぎたら None
+    assert point_in_time_rate([snap], T0 + DAY + timedelta(seconds=1)) is None
+    assert point_in_time_rate([snap], T0 + 2 * DAY) is None
+
+
+def test_t44_funding_staleness_constant_cannot_affect_rho():
+    """§28: funding の 9h が金利入力に効いてはならない。"""
+    assert P.FUNDING_MAX_STALE_SECONDS == 9 * 3600
+    assert P.RATE_MAX_STALE_SECONDS == 24 * 3600
+    assert P.RATE_MAX_STALE_SECONDS != P.FUNDING_MAX_STALE_SECONDS
+    # 廃止された単一定数が復活していないこと(§25 規則4)
+    assert not hasattr(P, "MAX_STALE_SECONDS"), "MAX_STALE_SECONDS は廃止された"
+    # 9h を超え 24h 未満の時点で、9h 基準なら None、正しくは有効
+    snap = _snapshot(T0, 0.05)
+    ts = T0 + timedelta(hours=12)
+    assert point_in_time_rate([snap], ts) == pytest.approx(0.05)
+    assert point_in_time_rate([snap], ts, max_stale_seconds=P.FUNDING_MAX_STALE_SECONDS) is None
+    # 既定が rate 側であること
+    import inspect
+
+    default = inspect.signature(point_in_time_rate).parameters["max_stale_seconds"].default
+    assert default == P.RATE_MAX_STALE_SECONDS
+
+
+def test_t45_all_three_stablecoins_are_required():
+    """§27.3: 3成分すべて必要。黙って構成を変えない。"""
+    assert P.RATE_BASKET_REQUIRE_ALL is True
+    assert aave_basket_mean({"USDT": 0.04, "USDC": 0.06, "DAI": 0.08}) == pytest.approx(0.06)
+    for missing in ("USDT", "USDC", "DAI"):
+        rates = {"USDT": 0.04, "USDC": 0.06, "DAI": 0.08}
+        rates[missing] = None
+        assert aave_basket_mean(rates) is None, f"{missing} 欠測で r なしになること"
+
+
+def test_t45_basket_composition_cannot_be_silently_changed():
+    with pytest.raises(ValueError, match="basket 構成"):
+        aave_basket_mean({"USDT": 0.04, "USDC": 0.06})  # DAI を落とす
+    with pytest.raises(ValueError, match="basket 構成"):
+        aave_basket_mean({"USDT": 0.04, "USDC": 0.06, "DAI": 0.08, "FRAX": 0.05})
+
+
+def test_t46_no_interpolation_across_missing_days():
+    """§27.4: 欠測日をまたいで補間しない。"""
+    assert P.RATE_INTERPOLATION == "none"
+    d0, d3 = T0, T0 + 3 * DAY
+    obs = [_snapshot(d0, 0.04), _snapshot(d3, 0.10)]
+    # 欠測日 (d0+1, d0+2) では補間値(0.06/0.08)を作らず None を返す
+    assert point_in_time_rate(obs, d0 + DAY) == pytest.approx(0.04), "24h ちょうどは有効"
+    assert point_in_time_rate(obs, d0 + DAY + timedelta(seconds=1)) is None
+    assert point_in_time_rate(obs, d0 + 2 * DAY) is None
+    # d3 のスナップショットが来たら、その値がそのまま使われる(平滑化しない)
+    assert point_in_time_rate(obs, d3) == pytest.approx(0.10)
+
+
+def test_t46_gap_produces_no_signal_rather_than_an_imputed_one():
+    c = 0.0030
+    perp, spot = 100_500.0, 100_000.0
+    base = rho_exact(perp, spot, 0.0)
+    obs = [_snapshot(T0, base - (arb_bound_upper(c) + 1.0))]
+    rows = [
+        RhoInputs(T0, perp, spot, point_in_time_rate(obs, T0)),
+        RhoInputs(T0 + 2 * DAY, perp, spot, point_in_time_rate(obs, T0 + 2 * DAY)),
+    ]
+    pts = generate_arm_r_signals(rows, c)
+    assert pts[0].signal is Signal.ENTER
+    assert pts[1].signal is Signal.NO_RATE and pts[1].rho is None
+
+
+def test_t47_market_splices_stop_at_v3_core_and_never_reach_v4():
+    """§27.2: V4 へ移行しない。V3 Core が終端。"""
+    assert "aave_v4" in P.RATE_MARKET_EXCLUDED_VERSIONS
+    cases = {
+        datetime(2019, 6, 1, tzinfo=UTC): None,  # V1 稼働前
+        datetime(2020, 1, 8, tzinfo=UTC): "aave_v1",
+        datetime(2020, 12, 2, tzinfo=UTC): "aave_v1",
+        datetime(2020, 12, 3, tzinfo=UTC): "aave_v2",
+        datetime(2023, 1, 26, tzinfo=UTC): "aave_v2",
+        datetime(2023, 1, 27, tzinfo=UTC): "aave_v3_core",
+        datetime(2026, 3, 30, tzinfo=UTC): "aave_v3_core",  # V4 ローンチ日でも V3
+        datetime(2027, 1, 1, tzinfo=UTC): "aave_v3_core",
+    }
+    for ts, expected in cases.items():
+        assert aave_market_for(ts) == expected, ts
+    # layer 2 と layer 3 は同じ世代であること(§27.2 の帰結)
+    assert aave_market_for(P.LAYER1_END) == aave_market_for(P.LAYER3_START) == "aave_v3_core"
+
+
+def test_t47_splices_are_contiguous_and_recorded():
+    """接合日が provenance に残せる形で凍結されていること。"""
+    spl = P.RATE_MARKET_SPLICES
+    assert spl[0][1] == datetime(2020, 1, 8, tzinfo=UTC), "V1 genesis"
+    for (_, _, end), (_, nxt, _) in zip(spl, spl[1:]):
+        assert end == nxt, "接合に隙間や重なりがない"
+    assert spl[-1][2] is None, "最終区間は開いている(V4 へ移らない)"
+
+
+def test_t48_source_sensitivity_disposition_is_frozen():
+    """§29: 符号が逆なら GO ではなく source_sensitive。"""
+    assert P.SOURCE_SENSITIVE_DISPOSITION == "source_sensitive"
+    rule = P.SOURCE_SENSITIVITY_RULE
+    assert "kenneth_french" in rule and "source_sensitive" in rule
+    assert "not GO" in rule
+    # 感応度は維持されている(primary の置換ではない)
+    assert P.RATE_SENSITIVITY_SOURCE == "kenneth_french_daily_rf"
+    assert P.RATE_SOURCE != P.RATE_SENSITIVITY_SOURCE

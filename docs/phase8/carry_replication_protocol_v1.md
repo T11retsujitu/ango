@@ -1,6 +1,6 @@
-# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.8.2**(**FROZEN**)
+# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.8.3**(**FROZEN**)
 
-- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5** → **v1.6** → **v1.7** → **v1.8** → **v1.8.1** → **v1.8.2**)
+- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5** → **v1.6** → **v1.7** → **v1.8** → **v1.8.1** → **v1.8.2** → **v1.8.3**)
 - 対象: [Phase 8.0 選定メモ](phase8_selection_memo_v1.md) が第1位に選んだ **P8-C1**
 - **再現アンカー(唯一)**: **A2** *Fundamentals of Perpetual Futures* —
   He, Manela, Ross, von Wachter. arXiv `2212.06888`(v6 2024-08-21)。**`VERIFIED-FULL`**
@@ -1290,6 +1290,8 @@ LIQUIDATION_FEE_STATUS         = "pending_authoritative_read"
 | §24.5 | §11.3 の清算損失の扱い | 価格損失は一度だけ。`liquidation_fee_usdt` は clearance fee のみ |
 | §24.6 | `liquidation_slippage_bps = 0.0`(暗黙の既定) | **未凍結。H14 として実験をブロック** |
 | **§26** | **§4.2 の `r` の記述(Aave の版・network・market を特定していない)** | **H15 として未解決登録** |
+| **§27** | **§26 の「未解決」と、そこで提案した version-current proxy** | **部分 proxy を採用。V4 へは移行しない** |
+| **§28** | **`MAX_STALE_SECONDS = 9h`(funding 用)を rho にも適用していた記述** | **系列ごとに分離。rho は 24h** |
 
 ---
 
@@ -1337,3 +1339,121 @@ RATE_MARKET_IDENTITY_STATUS = "unresolved_source_fidelity_limitation"
   `r` を**明示的な入力**にすることで、ソース同定と独立に検証できるからである。
 - 提案 proxy は調査記録 §5 に **1つだけ**記載した。**採否は人間が決める。**
   **本改訂は proxy を採用していない。**
+
+---
+
+## 27. H15 解決 — Aave 金利市場を**部分 proxy として**採用する
+
+- 承認: 2026-08-17 決定ログ
+- 調査記録: [h15_aave_source_investigation_v1](h15_aave_source_investigation_v1.md)
+- **§25 の優先順位規則により、本節は §4.2 / §26 の `r` に関する記述を supersede する。**
+
+### 27.1 位置づけ(**厳密再現ではない**)
+
+```text
+RATE_SOURCE_FIDELITY = "partial_proxy_not_exact_A2"
+```
+
+> **A2 の厳密な再構成であるとは主張しない。**
+> A2 は version / network / market / 提供元を書いていない(§26)。
+> 以下は **部分的な source fidelity を持つ proxy** であり、そう明記して報告する。
+
+**§26 で提案した "canonical-Ethereum, version-current" をそのままは採用しない。**
+V4 の扱いが異なる(下記 27.2)。
+
+### 27.2 凍結する市場と接合
+
+| 期間 | 適用する市場 |
+|---|---|
+| 2020-01-08 〜 2020-12-03 | **Aave V1**(Ethereum mainnet) |
+| 2020-12-03 〜 2023-01-27 | **Aave V2**(Ethereum mainnet) |
+| 2023-01-27 〜 **以降ずっと** | **Aave V3 Core**(Ethereum mainnet) |
+
+- **network は Ethereum mainnet のみ。** L2 を含めない。
+- **V4 へは移行しない。** 理由: **V4 は担保依存のリスクプレミアムによって
+  借入金利の構造そのものを変える**一方、**V3 は引き続き利用可能な market として
+  存在する**。したがって Phase 8 は V3 Core に留まる方が系列として一貫する。
+  (V4 の Ethereum ローンチ 2026-03-30 は参照として記録するが**使わない**。)
+- **接合日は provenance に必ず記録する**(§27.6)。平滑化・補間・遡及再計算をしない。
+
+> **帰結**: §26.3 で挙げた「layer 3 が V4 世代になる」問題は**解消した**。
+> layer 1 は V1→V2→V3、layer 2 と layer 3 はいずれも **V3 Core** である。
+
+### 27.3 系列の特定化と basket
+
+```text
+rate   : variable borrow APR          ← 明示的な proxy specialization
+assets : USDT / USDC / DAI の等加重平均
+```
+
+- `variable` は **A2 に根拠のある値ではなく、明示的に選んだ proxy 特定化**である
+  (V1/V2 には stable borrow rate もあった。§26.1)。**そう明記して報告する。**
+- **3成分すべてを要求する。** どれか1つでも欠けたらその日は **r なし**とする。
+  **黙って basket 構成を変えない**(2成分平均への退化を禁じる)。
+
+### 27.4 観測の時刻規約
+
+```text
+毎日 00:00 UTC の point-in-time スナップショット
+その時刻**以前**に確定したチェーン状態のみを使う
+補間・平滑化をしない(RATE_INTERPOLATION = "none")
+```
+
+**スナップショットの「年齢」は、その日 00:00 UTC のスナップショット時刻から測る。**
+基礎となる reserve 更新イベントの時刻からではない(§28 と対で読むこと)。
+
+### 27.5 感応度は維持する
+
+**Kenneth-French daily RF は事前登録した感応度として維持する**(§4.2 のまま)。
+primary の置換ではない。
+
+### 27.6 provenance の要求
+
+artifact に次を必ず残す: 使用した版と接合日、日次スナップショット時刻、
+3成分それぞれの生値、欠測日の一覧(補完していないことの証跡)、
+`RATE_SOURCE_FIDELITY` の値。
+
+---
+
+## 28. H16 — 陳腐化ガードを系列ごとに分離する(**v1.8.2 の実装の誤りを是正**)
+
+**v1.8.2 までは単一の `MAX_STALE_SECONDS = 9h` しか無く、
+`point_in_time_rate()` がそれを既定にしていた。これは funding 系列の定数であり、
+A2 の Aave 金利入力は日次なので誤りである**(9h では同じ暦日の午前中に陳腐化する)。
+
+```text
+FUNDING_MAX_STALE_SECONDS = 9  * 3600      … funding(8h 間隔 + 余裕)
+RATE_MAX_STALE_SECONDS    = 24 * 3600      … Aave 日次スナップショット
+```
+
+- `point_in_time_rate()` は **`RATE_MAX_STALE_SECONDS` を使う**。
+- **`MAX_STALE_SECONDS` は廃止する**(§25 規則4: モジュールは最新の凍結値のみを持つ)。
+- **funding の 9h が ρ に影響してはならない。** テストで固定する。
+
+---
+
+## 29. source-sensitivity disposition
+
+```text
+if sign(Aave proxy での最終的な経済判定) != sign(Kenneth-French RF での判定):
+        → source_sensitive と分類する。**GO とはしない。**
+```
+
+**根拠**: 結論が金利ソースの選択で反転するなら、それは機序についての結論ではなく
+**ソース選択についての結論**である。§27 が部分 proxy であることを認めた以上、
+この分類は必須である。
+
+`source_sensitive` は NO-GO でもない。**「この設計では判定できない」**という第3の帰結であり、
+§19 の negative result 条件とは別に記録する。
+
+### 29.1 v1.8.3 で追加するテスト
+
+| # | テスト |
+|---|---|
+| **T42** | 日次レートが**同じ UTC 日のあいだ有効**であり続ける |
+| **T43** | 翌日のスナップショットが欠けたら、凍結した rate horizon を過ぎて陳腐化する |
+| **T44** | **funding の 9h 定数が ρ に影響しない** |
+| **T45** | 3ステーブルコインすべてが必要(1つ欠けたら r なし) |
+| **T46** | 欠測日をまたいで**補間しない** |
+| **T47** | V4 へ移行しない(接合が V3 Core で止まる) |
+| **T48** | `source_sensitive` の分類規則が凍結されている |
