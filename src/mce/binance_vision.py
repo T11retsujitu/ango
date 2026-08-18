@@ -10,6 +10,16 @@
 | `metrics_5m` | 日次dump | derivatives state(OI・long/short ratio・taker L/S vol ratio) |
 | `premium_index_5m` | 月次dump | perp/index premium(basis) |
 
+Phase 8 で次の2系列を**一級の入力**として追加した(F1 / F2):
+
+| dataset | 粒度 | market | 情報集合 |
+|---|---|---|---|
+| `mark_price_5m` | 月次dump | USD-M perp | **mark 価格**の OHLC。清算トリガーの入力 |
+| `spot_klines_5m` | 月次dump | **spot** | spot 脚の OHLC と約定フロー |
+
+**mark 価格と約定価格を混同しないこと。** `mark_price_5m` は清算の判定に使い、
+執行価格の代理には使わない(逆も同じ)。
+
 方針(既存の raw 層と同じ):
 
 - **immutable**: 一度落とした zip は上書きしない。公開 `.CHECKSUM`(SHA-256)で検証し、
@@ -40,6 +50,11 @@ DEFAULT_SYMBOL = "BTCUSDT"
 MARKET_TYPE = "perp_linear"
 SOURCE = "binance"
 
+# --- Phase 8 で追加する市場(F2)---------------------------------------------
+# **spot は別 market である。** path も market_type も perp と分けて持ち回る。
+SPOT_MARKET_PATH = "data/spot"
+SPOT_MARKET_TYPE = "spot"
+
 MIN_INTERVAL_SEC = 0.05
 MAX_RETRIES = 5
 RETRY_STATUS = {429, 500, 502, 503, 504}
@@ -54,6 +69,14 @@ class DatasetSpec:
     name: str
     cadence: str  # "monthly" / "daily"
     path_template: str  # {sym} / {period} で展開
+    # **dataset ごとの market_type。** 既定は Phase 7 の3系列と同じ perp_linear。
+    # spot dump はこれを "spot" にして、正規化層まで持ち回る。
+    market_type: str = MARKET_TYPE
+    # `close_time` の意味論。**dump ごとに違う**(実測):
+    #   "exact"           : close_time == open_time + 5m - 1ms(perp / mark / premium)
+    #   "last_trade_time" : close_time は**そのバーの最終約定時刻**。空バーでは
+    #                       open_time より前になることすらある(spot で実測)
+    close_time_policy: str = "exact"
 
     def relative_path(self, symbol: str, period: str) -> str:
         return self.path_template.format(sym=symbol, period=period)
@@ -71,6 +94,21 @@ DATASETS: dict[str, DatasetSpec] = {
     # metrics は月次dumpが公開されていない(2026-08-16 実測)ため日次のみ
     "metrics_5m": DatasetSpec(
         "metrics_5m", "daily", f"{MARKET_PATH}/daily/metrics/{{sym}}/{{sym}}-metrics-{{period}}.zip"
+    ),
+    # --- Phase 8 の入力(F1 / F2)。**Phase 7 の3系列とは別 ledger・別 digest** ---
+    # F1: 清算トリガーの判定に使う mark 価格。**約定価格ではない。**
+    "mark_price_5m": DatasetSpec(
+        "mark_price_5m",
+        "monthly",
+        f"{MARKET_PATH}/monthly/markPriceKlines/{{sym}}/5m/{{sym}}-5m-{{period}}.zip",
+    ),
+    # F2: spot 脚。**別 market なので market_type を分ける。**
+    "spot_klines_5m": DatasetSpec(
+        "spot_klines_5m",
+        "monthly",
+        f"{SPOT_MARKET_PATH}/monthly/klines/{{sym}}/5m/{{sym}}-5m-{{period}}.zip",
+        market_type=SPOT_MARKET_TYPE,
+        close_time_policy="last_trade_time",
     ),
 }
 

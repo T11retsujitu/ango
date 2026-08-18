@@ -21,12 +21,14 @@ FREEZE_V1_8 = REPO / "experiments" / "phase8" / "carry_freeze.json"
 FREEZE_V1_8_1 = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_1.json"
 FREEZE_V1_8_2 = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_2.json"
 FREEZE_V1_8_3 = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_3.json"
-FREEZE = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_4.json"  # active
+FREEZE_V1_8_4 = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_4.json"
+FREEZE = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_5.json"  # active
 PREDECESSORS = (
     (FREEZE_V1_8, "v1.8"),
     (FREEZE_V1_8_1, "v1.8.1"),
     (FREEZE_V1_8_2, "v1.8.2"),
     (FREEZE_V1_8_3, "v1.8.3"),
+    (FREEZE_V1_8_4, "v1.8.4"),
 )
 
 pytestmark = pytest.mark.skipif(not FREEZE.exists(), reason="phase8 freeze 記録が無い")
@@ -118,6 +120,9 @@ def test_frozen_spec_was_not_edited_after_the_freeze():
         "signal_module",
         "rate_adapter",
         "probe_findings",
+        "mark_path_module",
+        "input_plumbing_notes",
+        "mark_probe_findings",
     ):
         entry = rec[key]
         path = REPO / entry["path"]
@@ -130,7 +135,7 @@ def test_frozen_spec_was_not_edited_after_the_freeze():
 def test_protocol_declares_itself_frozen():
     rec = _record()
     assert rec["state"] == "FROZEN"
-    assert rec["protocol_version"] == P.PROTOCOL_VERSION == "v1.8.4"
+    assert rec["protocol_version"] == P.PROTOCOL_VERSION == "v1.8.5"
     text = (REPO / rec["prereg_doc"]["path"]).read_text(encoding="utf-8")
     assert "FROZEN" in text
 
@@ -245,7 +250,7 @@ def test_v1_8_record_is_preserved_immutably():
     assert old["state"] == "FROZEN"
     # v1.8.1 は v1.8 を明示的に supersede すると宣言していること
     rec = _record()
-    assert rec["supersedes"]["version"] == "v1.8.3"
+    assert rec["supersedes"]["version"] == "v1.8.4"
     assert any("v1.8" in c for c in rec["supersedes"]["chain"])
     for path, ver in PREDECESSORS:
         assert path.exists(), f"{ver} の凍結記録が消えている"
@@ -287,25 +292,48 @@ def test_g2_g3_g4_are_frozen():
     assert P.MARGIN_TOPUP_TRIGGER > P.MAINT_MARGIN_RATE_TIER1
 
 
-def test_h14_is_unresolved_and_blocks_experiments():
+def test_h14a_is_unresolved_and_blocks_experiments():
     assert P.LIQUIDATION_CLEARANCE_FEE_RATE is None
     assert P.LIQUIDATION_FEE_STATUS == "pending_authoritative_read"
-    h14 = _record()["unresolved_at_freeze"]["H14"]
+    h14 = _record()["unresolved_at_freeze"]["H14a"]
     assert h14["orders_placed"] is False
     assert h14["established"], "確認できた事実が記録されていること"
     assert h14["not_obtainable"], "取得できなかった経路が記録されていること"
     policy = _record()["post_freeze_policy"]
     assert policy["experiments_permitted"] is False
     # 全体集合は test_all_three_blockers_gate_experiments が検査する
-    assert "H14" in policy["blocked_by"]
+    assert "H14a" in policy["blocked_by"]
 
 
-def test_liquidation_slippage_zero_was_not_silently_retained():
-    """決定ログ: liquidation_slippage_bps=0.0 を黙って維持しない。"""
+def test_liquidation_slippage_zero_was_never_silently_retained():
+    """決定ログ: liquidation_slippage_bps=0.0 を黙って維持しない。
+
+    v1.8.1〜v1.8.4 では**未凍結パラメータとして保持**することで維持を防いだ。
+    v1.8.5 §31 で H14b が解決し、**パラメータ自体を廃止**した(滑りは市場状態
+    依存であり取引所の固定値ではないため)。ゼロが既定として入り込む経路が
+    存在しないことを、より強い形で固定する。
+    """
+    from mce.backtest import two_leg
     from mce.backtest.two_leg import UNFROZEN_PARAMETERS
 
-    assert "liquidation_slippage_bps" in UNFROZEN_PARAMETERS
-    assert "liquidation_clearance_fee_rate" in UNFROZEN_PARAMETERS
+    assert set(UNFROZEN_PARAMETERS) == {"liquidation_clearance_fee_rate"}
+    assert P.LIQUIDATION_FIXED_SLIPPAGE_ALLOWED is False
+    import dataclasses
+
+    names = {f.name for f in dataclasses.fields(two_leg.TwoLegConfig)}
+    assert "liquidation_slippage_bps" not in names
+    src = (REPO / "src" / "mce" / "backtest" / "two_leg.py").read_text(encoding="utf-8")
+    code = "\n".join(
+        ln for ln in src.splitlines() if not ln.lstrip().startswith("#")
+    )
+    assert "liquidation_slippage_bps" not in code, "コメント以外に識別子が残っている"
+    assert "slip_bps" not in code
+    with pytest.raises(TypeError):
+        two_leg.TwoLegConfig(
+            cost=two_leg.TwoLegCostConfig("x", 1.0, 1.0),
+            liquidation_clearance_fee_rate=0.0,
+            liquidation_slippage_bps=0.0,
+        )
 
 
 # --------------------------------------------------------------------------
@@ -362,7 +390,7 @@ def test_remaining_blockers_gate_experiments():
     """H15 は解決したが H13 / H14 は残る。"""
     policy = _record()["post_freeze_policy"]
     assert policy["experiments_permitted"] is False
-    assert set(policy["blocked_by"]) == {"H13", "H14"}
+    assert set(policy["blocked_by"]) == {"H13", "H14a"}
 
 
 # --------------------------------------------------------------------------
@@ -370,10 +398,10 @@ def test_remaining_blockers_gate_experiments():
 # --------------------------------------------------------------------------
 
 
-def test_all_four_predecessor_records_are_preserved_byte_for_byte():
-    """v1.8 / v1.8.1 / v1.8.2 / v1.8.3 を**1バイトも変えていない**こと。"""
+def test_all_predecessor_records_are_preserved_byte_for_byte():
+    """v1.8 〜 v1.8.4 を**1バイトも変えていない**こと。"""
     frozen = _record()["preserved_predecessors"]
-    assert len(frozen) == 4
+    assert len(frozen) == 5
     for path, ver in PREDECESSORS:
         assert path.exists(), f"{ver} の凍結記録が消えている"
         assert _sha256(path) == frozen[ver], f"{ver} の凍結記録が書き換えられている"
@@ -437,7 +465,7 @@ def test_o1_valid_launch_era_values_are_not_altered():
 
 def test_v1_8_4_did_not_touch_the_hypothesis_or_the_seal():
     """§30 は入力データ源のみ。仮説・layer・封印・ブロッカーは不変。"""
-    scope = _record()["amendment_scope"]
+    scope = json.loads(FREEZE_V1_8_4.read_text(encoding="utf-8"))["amendment_scope"]
     assert set(scope["changed"]) == {"D1", "H17", "O1"}
     assert splits.FINAL_OOS_START == datetime(2026, 1, 1, tzinfo=UTC)
     assert splits.PHASE8_PROSPECTIVE_START == datetime(2026, 9, 1, tzinfo=UTC)
@@ -449,11 +477,104 @@ def test_v1_8_4_did_not_touch_the_hypothesis_or_the_seal():
     assert P.SOURCE_SENSITIVE_DISPOSITION == "source_sensitive"
 
 
-def test_h13_h14_still_block_experiments_after_v1_8_4():
+def test_h13_h14a_still_block_experiments_after_v1_8_5():
     policy = _record()["post_freeze_policy"]
     assert policy["experiments_permitted"] is False
-    assert set(policy["blocked_by"]) == {"H13", "H14"}
+    assert set(policy["blocked_by"]) == {"H13", "H14a"}
     assert P.COMMISSION_RATE_STATUS == "pending_authenticated_read"
     assert P.LIQUIDATION_FEE_STATUS == "pending_authoritative_read"
     # v1.8.4 は入力データ源のみを扱い、ブロッカーを解除していない
     assert _record()["resolved_in_v1_8_4"]["unblocks_experiments"] is False
+
+
+# --------------------------------------------------------------------------
+# v1.8.5(§31–§35。P3 / P4 / H14b / mark 経路 / gate 順序 / H14a / H13)
+# --------------------------------------------------------------------------
+
+
+def test_p3_preserves_m6a_m6b_and_adds_no_close_time_filter():
+    p3 = _record()["resolved_in_v1_8_5"]["P3"]
+    assert p3["decision"] == "preserve_m6a_m6b_semantics_for_spot_gaps"
+    assert p3["special_filter_for_anomalous_close_time"] is False
+
+
+def test_h14b_execution_model_is_frozen_with_exclusive_roles():
+    rec = _record()["resolved_in_v1_8_5"]["P4_H14b"]
+    assert rec["model"] == P.LIQUIDATION_EXECUTION_MODEL
+    assert rec["trigger_field"] == P.LIQUIDATION_TRIGGER_FIELD == "mark_high"
+    assert rec["execution_field"] == P.LIQUIDATION_ADVERSE_FIELD == "perp_high"
+    assert rec["roles_are_exclusive"] is True
+    assert rec["fixed_slippage_removed"] is True
+    assert rec["fill_rule_binding"] == list(P.FILL_RULE_BINDINGS)
+    assert rec["missing_execution_proxy"] == P.LIQUIDATION_STATE_UNKNOWN_DISPOSITION
+
+
+def test_mark_path_observability_is_machine_readable_and_survives_joins():
+    rec = _record()["resolved_in_v1_8_5"]["mark_path_observability"]
+    assert rec["machine_readable"] is True and rec["survives_joins"] is True
+    assert "retains missing bars" in rec["no_inner_join"]
+    assert rec["statuses"] == list(P.MARK_PATH_STATUSES)
+    assert rec["acceptable_while_open"] == list(P.MARK_PATH_ACCEPTABLE)
+    assert rec["violation_disposition"] == P.LIQUIDATION_STATE_UNKNOWN_DISPOSITION
+    assert rec["not_counted_as_zero_liquidations"] is True
+    assert rec["carry_forward_is_not_evidence_of_intrabar_adverse_path"] is True
+
+
+def test_current_p1_p2_are_unverified_not_unobservable():
+    rec = _record()["resolved_in_v1_8_5"]["mark_path_observability"]
+    assert rec["current_P1"] == P.MARK_PATH_CURRENT_P1_STATUS == "route_unverified"
+    assert rec["current_P2"] == P.MARK_PATH_CURRENT_P2_STATUS == "stale_unverified"
+    assert rec["P1_is_not_source_unobservable"] is True
+    probe = _record()["mark_gap_probe"]
+    assert "no interval classified source_unobservable" in probe["result"]
+
+
+def test_gate_order_is_frozen_in_the_record():
+    assert _record()["resolved_in_v1_8_5"]["gate_order"] == list(P.GATE_ORDER)
+    assert P.GATE_ORDER[0] == "mark_path_observability"
+    assert P.GATE_ORDER.index("liquidation_count") > P.GATE_ORDER.index(
+        "mark_path_observability"
+    )
+    assert P.GATE_ORDER.index("h14a_fee_gate") < P.GATE_ORDER.index("economic_metrics")
+
+
+def test_h14a_is_conditional_and_never_zero_substituted():
+    rec = _record()["resolved_in_v1_8_5"]["H14a"]
+    assert rec["conditional"] is True
+    assert rec["no_liquidation"] == "non_binding"
+    assert rec["liquidation_with_unresolved_fee"] == (
+        P.LIQUIDATION_MODEL_BLOCKED_DISPOSITION
+    )
+    assert rec["zero_fee_substitution_allowed"] is False
+    assert P.LIQUIDATION_FEE_ZERO_SUBSTITUTION_ALLOWED is False
+
+
+def test_h13_is_recorded_as_the_sole_arm_r_hard_blocker():
+    rec = _record()["resolved_in_v1_8_5"]["H13"]
+    assert "sole hard blocker" in rec["status"]
+    assert "rho_u(C)" in rec["reason"]
+    assert P.ARM_R_SIGNAL_HARD_BLOCKER == "H13"
+
+
+def test_v1_8_5_does_not_unblock_experiments():
+    assert _record()["resolved_in_v1_8_5"]["unblocks_experiments"] is False
+    permitted = _record()["permitted_after_this_freeze"]
+    assert permitted["conformance_and_unit_tests"] is True
+    for key in ("empirical_arm_r_signals", "rho_over_empirical_data", "returns_pnl",
+                "layer_1_2_3", "final_oos_read"):
+        assert permitted[key] is False, key
+
+
+def test_v1_8_5_did_not_touch_the_hypothesis_or_the_seal():
+    scope = _record()["amendment_scope"]
+    assert set(scope["changed"]) == {
+        "P3", "P4", "H14b", "H14a", "mark_path_observability", "gate_order"
+    }
+    for item in ("hypothesis", "family", "layer boundaries", "promotion rules",
+                 "event order (§24.4)", "liquidation accounting (§24.5)",
+                 "FINAL_OOS_START", "seals", "H13"):
+        assert item in scope["unchanged"], item
+    assert splits.FINAL_OOS_START == datetime(2026, 1, 1, tzinfo=UTC)
+    assert P.KAPPA == 1095.0 and P.A2_VARIANT == "long_spot_only"
+    assert P.MAINT_MARGIN_RATE_TIER1 == 0.004
+    assert P.EVENT_ORDER == "funding_then_margin_then_topup_then_liquidation"

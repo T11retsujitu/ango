@@ -1,0 +1,21 @@
+{
+  "columns": [
+    "ts",
+    "mark_open",
+    "mark_high",
+    "mark_low",
+    "mark_close",
+    "mark_samples",
+    "symbol",
+    "source",
+    "market_type"
+  ],
+  "expected_rows": 631296,
+  "file": "mark_price_BTCUSDT_5m.parquet",
+  "missing_rows": 2318,
+  "rows": 628978,
+  "sha256": "21bd9ff91365fc76a163219122cf5e4d11ab3ef90051072e9ed1b4145da8f018",
+  "size_bytes": 15894895,
+  "ts_max": "2025-12-31T23:55:00+00:00",
+  "ts_min": "2020-01-01T00:00:00+00:00"
+}

@@ -20,7 +20,6 @@ from mce.aave_rates import (
     DailyObservation,
     ReserveListReading,
     ReserveReading,
-    TokenSpec,
     daily_observation,
     generation_for,
     _decode_address_array,
@@ -116,11 +115,6 @@ def test_ray_conversion_is_apr_not_apy():
     # APY 化していたら (1 + apr/n)**n - 1 になり値が変わる
     apy = (1 + apr / 365) ** 365 - 1
     assert apy != pytest.approx(apr, rel=1e-6)
-
-
-def test_word_decoder_splits_32_byte_words():
-    payload = "0x" + "00" * 31 + "01" + "00" * 31 + "02"
-    assert _words(payload) == [1, 2]
 
 
 def test_word_decoder_splits_32_byte_words():

@@ -22,7 +22,7 @@ from typing import Final
 UTC = timezone.utc
 
 PROTOCOL: Final = "phase8_carry_replication_v1"
-PROTOCOL_VERSION: Final = "v1.8.4"
+PROTOCOL_VERSION: Final = "v1.8.5"
 FROZEN_AT: Final = "2026-08-18"
 
 # ---------------------------------------------------------------------------
@@ -135,6 +135,58 @@ RATE_VALUE_TREATMENT: Final = "no_filter_no_clip_no_smoothing_no_winsorization"
 # 同一フィールドについて複数の記述があるとき、**後の凍結改訂節が先の記述を
 # supersede する**。先行する矛盾記述は削除せず歴史的監査証跡として残す。
 SPEC_PRECEDENCE: Final = "later_frozen_amendment_supersedes_earlier_text_for_the_same_field"
+
+# --- v1.8.5 §31 H14b: 強制清算の執行モデル ---------------------------------
+# 滑りは市場状態に依存する。**固定の bps を置かない。**
+#     short perp:
+#         candidate        = max(trigger_price, perp_high)
+#         liquidation_fill = min(candidate, bankruptcy_price)
+LIQUIDATION_EXECUTION_MODEL: Final = "adverse_trade_extreme_capped_at_bankruptcy"
+LIQUIDATION_FILL_FLOOR: Final = "liquidation_trigger_price"
+LIQUIDATION_FILL_CAP: Final = "bankruptcy_price"  # = trigger * (1 + maint_margin_rate)
+LIQUIDATION_ADVERSE_FIELD: Final = "perp_high"  # 執行価格の代理。**判定には使わない**
+LIQUIDATION_TRIGGER_FIELD: Final = "mark_high"  # 清算判定の入力。**執行には使わない**
+LIQUIDATION_FIXED_SLIPPAGE_ALLOWED: Final = False
+FILL_RULE_BINDINGS: Final = ("floor", "observed", "cap")
+
+# --- v1.8.5 §32: mark 経路の観測可能性(**機械可読。join で消えない**)-------
+# 欠測の Vision mark バーを inner join で消してはならない。canonical な5分
+# タイムラインを保持し、mark データと**品質状態**を付ける。
+MARK_PATH_STATUSES: Final = (
+    "observed",            # Vision に実在し、mark_samples > 0
+    "verified_repair",     # 一次情報で復元し、重複窓で完全一致した
+    "route_unverified",    # 経路が塞がれていて未判定。**source の欠測ではない**
+    "stale_unverified",    # mark_samples == 0(前値横引き)。未検証
+    "source_unobservable",  # 一次情報が応答した上で復元できない/不一致
+)
+#: 建玉中に許容できる状態。**これ以外は layer を中断させる。**
+MARK_PATH_ACCEPTABLE: Final = ("observed", "verified_repair")
+#: 現況(2026-08-18)。egress 遮断のため P1/P2 とも未判定である。
+MARK_PATH_CURRENT_P1_STATUS: Final = "route_unverified"
+MARK_PATH_CURRENT_P2_STATUS: Final = "stale_unverified"
+LIQUIDATION_STATE_UNKNOWN_DISPOSITION: Final = "liquidation_state_unknown"
+
+# --- v1.8.5 §33: gate の順序(**この順序でしか評価しない**)------------------
+# mark 経路の観測可能性 → 清算検出 → 清算件数 → H14a の手数料 gate → 経済指標
+# 観測可能性が満たされない経路を **liquidation_count == 0 と数えてはならない**。
+GATE_ORDER: Final = (
+    "mark_path_observability",
+    "liquidation_detection",
+    "liquidation_count",
+    "h14a_fee_gate",
+    "economic_metrics",
+)
+
+# --- v1.8.5 §34 H14a: 清算手数料 gate(条件付き)---------------------------
+#     liquidation_count == 0                    -> 拘束しない
+#     liquidation_count >  0 かつ 手数料未解決   -> liquidation_model_blocked
+LIQUIDATION_FEE_FALLBACK: Final = "non_binding_if_no_liquidation_else_blocked"
+LIQUIDATION_FEE_ZERO_SUBSTITUTION_ALLOWED: Final = False
+LIQUIDATION_MODEL_BLOCKED_DISPOSITION: Final = "liquidation_model_blocked"
+
+# --- v1.8.5 §35: H13 は Arm-R シグナル生成の**唯一の hard blocker** ----------
+# 実測 taker rate はコスト依存のエントリ境界 rho_u(C) = kappa*log(1+C) に入る。
+ARM_R_SIGNAL_HARD_BLOCKER: Final = "H13"
 
 
 def arb_bound_upper(round_trip_cost: float) -> float:

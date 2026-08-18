@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from mce import phase8_prereg as P
+from mce import phase8_prereg as P  # noqa: F401
 from mce.aave_series import manifest, merge, to_record
 from mce.aave_rates import ReserveListReading, ReserveReading, DailyObservation
 
@@ -203,7 +203,9 @@ def test_manifest_matches_the_series_on_disk():
     rows = _rows()
     assert man["days_total"] == len(rows)
     assert man["days_complete"] == sum(1 for r in rows if r["mean_apr"] is not None)
-    assert man["protocol_version"] == P.PROTOCOL_VERSION == "v1.8.4"
+    # 系列は **v1.8.4 の下で再構成され、完了として受理された**。
+    # 後続の改訂で作り直さないので、manifest の版は v1.8.4 のまま正しい。
+    assert man["protocol_version"] == "v1.8.4"
 
 
 # --------------------------------------------------------------------------

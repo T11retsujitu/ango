@@ -88,23 +88,74 @@ def _epoch_ms(value: str) -> int:
     return raw
 
 
-def _provenance(df: pl.DataFrame, symbol: str) -> pl.DataFrame:
+def _provenance(
+    df: pl.DataFrame, symbol: str, market_type: str = MARKET_TYPE
+) -> pl.DataFrame:
+    """出所を行に焼き込む。**market_type は dataset ごとに違う**(spot / perp_linear)。"""
     return df.with_columns(
         pl.lit(symbol).alias("symbol"),
         pl.lit(SOURCE).alias("source"),
-        pl.lit(MARKET_TYPE).alias("market_type"),
+        pl.lit(market_type).alias("market_type"),
     ).select(["ts", *[c for c in df.columns if c != "ts"], "symbol", "source", "market_type"])
 
 
-def normalize_klines(rows: list[list[str]], symbol: str = DEFAULT_SYMBOL) -> pl.DataFrame:
-    """kline 行 → 共通形式(taker buy 数量と約定件数を保持する)。"""
+def _check_close_time(
+    open_ms: list[int], close_ms: list[int], policy: str, stats: dict | None
+) -> None:
+    """`close_time` を dump の意味論に従って検査し、逸脱を**分類して数える**。
+
+    - `"exact"`: `close_time == open_time + 5m - 1ms` を要求する
+      (Phase 7 の perp / premium と F1 の mark。**挙動を変えない**)
+    - `"last_trade_time"`: `close_time` は**そのバーの最終約定時刻**であって
+      バー終端ではない。この場合は `open_time` が5分グリッド上にあることを
+      不変条件とし、`close_time` の逸脱は**落とさずに分類して記録する**。
+      空バー(出来高0)では最終約定が `open_time` より前になることがある。
+    """
+    if policy == "exact":
+        for o, c in zip(open_ms, close_ms):
+            if c != o + BAR_MS - 1:
+                raise BinanceNormalizationError(
+                    f"close_time が open_time+5m-1ms でない: {o} {c}"
+                )
+        return
+    if policy != "last_trade_time":
+        raise BinanceNormalizationError(f"未知の close_time policy: {policy!r}")
+    not_bar_end = before_open = 0
+    for o, c in zip(open_ms, close_ms):
+        if o % BAR_MS != 0:
+            raise BinanceNormalizationError(f"open_time が5分グリッド上にない: {o}")
+        if c != o + BAR_MS - 1:
+            not_bar_end += 1
+            if c < o:
+                before_open += 1
+    if stats is not None:
+        stats["close_time_not_bar_end_rows"] = (
+            stats.get("close_time_not_bar_end_rows", 0) + not_bar_end
+        )
+        stats["close_time_before_open_rows"] = (
+            stats.get("close_time_before_open_rows", 0) + before_open
+        )
+
+
+def normalize_klines(
+    rows: list[list[str]],
+    symbol: str = DEFAULT_SYMBOL,
+    market_type: str = MARKET_TYPE,
+    *,
+    close_time_policy: str = "exact",
+    stats: dict | None = None,
+) -> pl.DataFrame:
+    """kline 行 → 共通形式(taker buy 数量と約定件数を保持する)。
+
+    perp(`klines_5m`)と spot(`spot_klines_5m`)で**同じ列構成**を使い、
+    区別は `market_type` 列と出力ファイルで行う。
+    `close_time` の意味論は dump ごとに違うので `close_time_policy` で切り替える。
+    """
     if not rows:
         return pl.DataFrame()
     open_ms = [_epoch_ms(r[0]) for r in rows]
     close_ms = [_epoch_ms(r[6]) for r in rows]
-    for o, c in zip(open_ms, close_ms):
-        if c != o + BAR_MS - 1:
-            raise BinanceNormalizationError(f"close_time が open_time+5m-1ms でない: {o} {c}")
+    _check_close_time(open_ms, close_ms, close_time_policy, stats)
     df = pl.DataFrame(
         {
             "ts": open_ms,
@@ -119,10 +170,65 @@ def normalize_klines(rows: list[list[str]], symbol: str = DEFAULT_SYMBOL) -> pl.
             "taker_buy_quote": [float(r[10]) for r in rows],
         }
     ).with_columns(pl.col("ts").cast(_TS))
-    return _provenance(df, symbol)
+    return _provenance(df, symbol, market_type)
 
 
-def normalize_premium_index(rows: list[list[str]], symbol: str = DEFAULT_SYMBOL) -> pl.DataFrame:
+def normalize_mark_price(
+    rows: list[list[str]],
+    symbol: str = DEFAULT_SYMBOL,
+    market_type: str = MARKET_TYPE,
+    *,
+    close_time_policy: str = "exact",
+    stats: dict | None = None,
+) -> pl.DataFrame:
+    """markPriceKlines 行 → **mark 価格**の OHLC(F1)。
+
+    **これは約定価格ではない。** 清算トリガーの判定にだけ使う値である。
+    `volume` / `quote_volume` / `taker_*` は常に 0(mark は板の約定ではない)なので
+    捨てる。`count` は5分間の mark サンプル数(300 = 毎秒1本)であり、
+    `mark_samples` として保持する。
+
+    列名を `mark_open/high/low/close` にするのは、**約定価格の
+    `open/high/low/close` と取り違えられないようにするため**である。
+    """
+    if not rows:
+        return pl.DataFrame()
+    open_ms = [_epoch_ms(r[0]) for r in rows]
+    close_ms = [_epoch_ms(r[6]) for r in rows]
+    _check_close_time(open_ms, close_ms, close_time_policy, stats)
+    for r in rows:
+        for idx in (5, 7, 9, 10):  # volume / quote_volume / taker_buy_* は 0 のはず
+            if float(r[idx]) != 0.0:
+                raise BinanceNormalizationError(
+                    f"markPriceKlines の列 {idx} が 0 でない: {r[idx]!r}(約定量ではないはず)"
+                )
+    # `count` は5分間の mark サンプル数(通常 300 = 毎秒1本)。**0 は停止したバー**
+    # であり、mark が更新されないまま前値が横引きされている。値は捏造ではないので
+    # 落とさないが、**清算トリガーの入力としては品質が違う**ので数えて記録する。
+    if stats is not None:
+        stale = sum(1 for r in rows if int(r[8]) == 0)
+        stats["mark_stale_bars"] = stats.get("mark_stale_bars", 0) + stale
+    df = pl.DataFrame(
+        {
+            "ts": open_ms,
+            "mark_open": [float(r[1]) for r in rows],
+            "mark_high": [float(r[2]) for r in rows],
+            "mark_low": [float(r[3]) for r in rows],
+            "mark_close": [float(r[4]) for r in rows],
+            "mark_samples": [int(r[8]) for r in rows],
+        }
+    ).with_columns(pl.col("ts").cast(_TS))
+    return _provenance(df, symbol, market_type)
+
+
+def normalize_premium_index(
+    rows: list[list[str]],
+    symbol: str = DEFAULT_SYMBOL,
+    market_type: str = MARKET_TYPE,
+    *,
+    close_time_policy: str = "exact",
+    stats: dict | None = None,
+) -> pl.DataFrame:
     """premiumIndexKlines 行 → premium の OHLC。volume 系は常に0なので捨てる。"""
     if not rows:
         return pl.DataFrame()
@@ -136,7 +242,7 @@ def normalize_premium_index(rows: list[list[str]], symbol: str = DEFAULT_SYMBOL)
             "premium_samples": [int(r[8]) for r in rows],
         }
     ).with_columns(pl.col("ts").cast(_TS))
-    return _provenance(df, symbol)
+    return _provenance(df, symbol, market_type)
 
 
 def _optional_float(cell: str) -> float | None:
@@ -145,7 +251,14 @@ def _optional_float(cell: str) -> float | None:
     return float(text) if text else None
 
 
-def normalize_metrics(rows: list[list[str]], symbol: str = DEFAULT_SYMBOL) -> pl.DataFrame:
+def normalize_metrics(
+    rows: list[list[str]],
+    symbol: str = DEFAULT_SYMBOL,
+    market_type: str = MARKET_TYPE,
+    *,
+    close_time_policy: str = "exact",
+    stats: dict | None = None,
+) -> pl.DataFrame:
     """metrics 行 → derivatives state。`create_time` は UTC の naive 文字列。
 
     OI 2列は必須(空なら例外)。long/short 系 ratio は空欄がありうるので null にする。
@@ -176,13 +289,16 @@ def normalize_metrics(rows: list[list[str]], symbol: str = DEFAULT_SYMBOL) -> pl
         .str.to_datetime("%Y-%m-%d %H:%M:%S", time_unit="ms")
         .dt.replace_time_zone("UTC")
     )
-    return _provenance(df, symbol)
+    return _provenance(df, symbol, market_type)
 
 
 NORMALIZERS = {
     "klines_5m": (normalize_klines, _KLINE_COLUMNS, config.binance_klines_parquet),
     "premium_index_5m": (normalize_premium_index, _KLINE_COLUMNS, config.binance_premium_index_parquet),
     "metrics_5m": (normalize_metrics, _METRIC_COLUMNS, config.binance_metrics_parquet),
+    # --- Phase 8 の入力(F1 / F2)---
+    "mark_price_5m": (normalize_mark_price, _KLINE_COLUMNS, config.binance_mark_price_parquet),
+    "spot_klines_5m": (normalize_klines, _KLINE_COLUMNS, config.binance_spot_klines_parquet),
 }
 
 
@@ -205,6 +321,9 @@ def scan_dataset(
     会計は品質レポートの入力でもある(重複・封印落ちは normalized からは見えない)。
     """
     normalizer, columns, _ = NORMALIZERS[dataset]
+    spec = DATASETS[dataset]
+    market_type = spec.market_type
+    time_stats: dict[str, int] = {}
     fmt = "%Y-%m" if DATASETS[dataset].cadence == "monthly" else "%Y-%m-%d"
     source_dir = source_dir or raw_dir(dataset, symbol)
     files = sorted(source_dir.glob("*.zip"))
@@ -214,7 +333,10 @@ def scan_dataset(
     for path in files:
         rows = read_zip_rows(path, columns)
         raw_rows += len(rows)
-        df = normalizer(rows, symbol)
+        df = normalizer(
+            rows, symbol, market_type,
+            close_time_policy=spec.close_time_policy, stats=time_stats,
+        )
         df, dropped = apply_screening_cutoff(df, cutoff)
         sealed_dropped += dropped
         if not df.is_empty():
@@ -224,10 +346,13 @@ def scan_dataset(
     accounting = {
         "dataset": dataset,
         "symbol": symbol,
+        "market_type": market_type,
+        "close_time_policy": spec.close_time_policy,
         "files": len(files),
         "raw_rows": raw_rows,
         "sealed_rows_dropped": sealed_dropped,
         "cutoff": cutoff.isoformat(),
+        **time_stats,
     }
     if combined.is_empty():
         return combined, accounting

@@ -56,5 +56,18 @@ def binance_premium_index_parquet(symbol: str = BINANCE_SYMBOL, bar: str = BAR) 
     return NORMALIZED_DIR / BINANCE_SOURCE / f"premium_index_{symbol}_{bar}.parquet"
 
 
+# --- Phase 8 の入力(F1 / F2)。perp / mark / spot を**別ファイル**に分ける ---
+
+
+def binance_mark_price_parquet(symbol: str = BINANCE_SYMBOL, bar: str = BAR) -> Path:
+    """F1: USD-M perp の mark 価格。**清算トリガーの入力であって約定価格ではない。**"""
+    return NORMALIZED_DIR / BINANCE_SOURCE / f"mark_price_{symbol}_{bar}.parquet"
+
+
+def binance_spot_klines_parquet(symbol: str = BINANCE_SYMBOL, bar: str = BAR) -> Path:
+    """F2: spot の klines。**perp の klines とは別 market・別ファイル。**"""
+    return NORMALIZED_DIR / BINANCE_SOURCE / f"spot_klines_{symbol}_{bar}.parquet"
+
+
 def binance_features_parquet(symbol: str = BINANCE_SYMBOL, bar: str = BAR) -> Path:
     return FEATURES_DIR / f"{BINANCE_SOURCE}_{symbol}_{bar}.parquet"

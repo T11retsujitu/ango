@@ -32,6 +32,9 @@ def _datasets() -> dict[str, tuple[Path, int | None]]:
         "binance_metrics": (config.binance_metrics_parquet(), config.BAR_MS),
         "binance_premium_index": (config.binance_premium_index_parquet(), config.BAR_MS),
         "binance_features": (config.binance_features_parquet(), config.BAR_MS),
+        # Phase 8 の入力(F1 / F2)。**mark と spot は別 dataset・別 digest**。
+        "binance_mark_price": (config.binance_mark_price_parquet(), config.BAR_MS),
+        "binance_spot_klines": (config.binance_spot_klines_parquet(), config.BAR_MS),
     }
 
 

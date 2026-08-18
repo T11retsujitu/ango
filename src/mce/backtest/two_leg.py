@@ -53,12 +53,15 @@ __all__ = [
 # v1.8 では 3件(reserve / funding-margin / post-liquidation)が未凍結だったが、
 # **v1.8.1 §24.1–24.3 ですべて凍結された**。残るのは H14(清算コスト)だけである。
 #
-# H14 は既定値を持たない。呼び出し側が明示的に渡さなければならない。
-# `liquidation_slippage_bps = 0.0` を黙って維持しないため(§24.6)。
+# v1.8.5 §31 で H14 は H14a / H14b へ分割され、**H14b は解決した**:
+# 執行価格は観測された約定価格の不利側極値を破産価格で頭打ちにして決まる。
+# **固定の `liquidation_slippage_bps` は廃止した**(市場状態依存であり、
+# 取引所の固定パラメータではないため)。
+#
+# 残るのは H14a(清算 clearance fee 率)だけである。既定値を持たない。
 # ---------------------------------------------------------------------------
 UNFROZEN_PARAMETERS: tuple[str, ...] = (
-    "liquidation_clearance_fee_rate",  # §24.6 H14: rate の数値が取得できていない
-    "liquidation_slippage_bps",  # §24.6 H14: 成行 IOC の滑りが未凍結
+    "liquidation_clearance_fee_rate",  # §34 H14a: 権威ある率が未取得
 )
 
 
@@ -69,6 +72,18 @@ class Bar:
     `mark_high` は markPriceKlines 由来。清算判定はこれで行い、
     `perp_close`(last price)では行わない(§11.3 / 監査 Y38)。
     いずれかが None のバーは「片脚が無い」扱いになる(§9 M6a / M6b)。
+
+    v1.8.5 §31:
+
+    - **`mark_high` は清算判定にのみ使う**(trigger-only)
+    - **`perp_high` は執行価格の代理にのみ使う**(execution-proxy-only)
+
+    **この2つを入れ替えてはならない。** 入れ替えると、板に無い価格で約定した
+    ことにするか、清算されない局面で清算したことにするかのどちらかになる。
+
+    `mark_path_status` は §32 の品質状態。**合成バーは既定で "observed"**
+    (合成した時点で mark 経路は完全に指定されているため)。経験データの
+    loader は canonical タイムラインから**必ず明示的に**設定する。
     """
 
     ts: datetime
@@ -76,8 +91,10 @@ class Bar:
     spot_close: float | None
     perp_open: float | None
     perp_close: float | None
-    mark_high: float | None = None
+    perp_high: float | None = None  # 約定価格の高値。**執行代理専用**
+    mark_high: float | None = None  # mark の高値。**清算判定専用**
     mark_close: float | None = None
+    mark_path_status: str = "observed"  # §32
 
     @property
     def both_legs_present(self) -> bool:
@@ -104,13 +121,12 @@ class FundingEvent:
 class TwoLegConfig:
     """執行器の設定。凍結値は `phase8_prereg` から既定を取る(v1.8.1)。
 
-    `liquidation_clearance_fee_rate` / `liquidation_slippage_bps` だけは
-    **既定を持たない**(H14 未解決。`UNFROZEN_PARAMETERS`)。
+    `liquidation_clearance_fee_rate` だけは **既定を持たない**
+    (H14a 未解決。`UNFROZEN_PARAMETERS`)。
     """
 
     cost: TwoLegCostConfig
     liquidation_clearance_fee_rate: float | None
-    liquidation_slippage_bps: float | None
     capital_base_usdt: float = P.CAPITAL_BASE_USDT
     reserve_usdt: float = P.MARGIN_RESERVE_USDT
     funding_counts_toward_margin: bool = P.FUNDING_COUNTS_TOWARD_MARGIN
@@ -144,23 +160,20 @@ class TwoLegConfig:
 
     @property
     def liquidation_cost_is_resolved(self) -> bool:
-        """H14 が解決済みか。未解決なら experiment runner を起動してはならない。"""
-        return (
-            self.liquidation_clearance_fee_rate is not None
-            and self.liquidation_slippage_bps is not None
-        )
+        """H14a が解決済みか。**滑りはもう設定項目ではない**(§31)。"""
+        return self.liquidation_clearance_fee_rate is not None
 
-    def require_liquidation_cost(self) -> tuple[float, float]:
-        """H14 の値を取り出す。未解決なら明示的に落とす。"""
+    def require_liquidation_cost(self) -> float:
+        """H14a の clearance fee 率を取り出す。未解決なら明示的に落とす。
+
+        **ゼロでの代替は行わない**(§34)。
+        """
         if not self.liquidation_cost_is_resolved:
             raise ValueError(
-                "H14 未解決: 清算清算手数料率と成行滑りが凍結されていない(§24.6)。"
-                "清算経路を評価するには両方を明示的に与えること。"
+                "H14a 未解決: 清算 clearance fee 率が凍結されていない(§34)。"
+                "ゼロで代替してはならない。"
             )
-        return (
-            float(self.liquidation_clearance_fee_rate),  # type: ignore[arg-type]
-            float(self.liquidation_slippage_bps),  # type: ignore[arg-type]
-        )
+        return float(self.liquidation_clearance_fee_rate)  # type: ignore[arg-type]
 
     @property
     def position_capital_usdt(self) -> float:
@@ -267,6 +280,10 @@ class TradeResult:
     topup_count: int = 0
     topup_total_usdt: float = 0.0
     lot_residual_btc: float = 0.0
+    # --- v1.8.5 §31 / §32 ---
+    fill_rule_binding: str | None = None  # "floor" / "observed" / "cap"
+    disposition: str | None = None  # "liquidation_state_unknown" など
+    unobservable_mark_bars: int = 0
     bar_states: list[BarState] = field(default_factory=list)
 
     @property
@@ -496,6 +513,13 @@ def simulate_trade(
             continue
         if result.liquidated:
             break
+        # --- §32/§33 gate 1: mark 経路の観測可能性を**最初に**見る -----------
+        # 観測できない経路を「清算が起きなかった」と数えてはならない。
+        if bar.mark_path_status not in P.MARK_PATH_ACCEPTABLE:
+            result.disposition = P.LIQUIDATION_STATE_UNKNOWN_DISPOSITION
+            result.unobservable_mark_bars += 1
+            break
+
         mark = bar.mark_close if bar.mark_close is not None else bar.perp_close
         mark_adverse = bar.mark_high if bar.mark_high is not None else mark
         if mark is None or mark_adverse is None:
@@ -532,12 +556,23 @@ def simulate_trade(
 
         # --- 4. 追証の後、なお維持証拠金以下なら清算する ----------------------
         if ratio <= cfg.maint_margin_rate:
-            fee_rate, slip_bps = cfg.require_liquidation_cost()
+            fee_rate = cfg.require_liquidation_cost()
             trigger = _liquidation_price(
                 fut_w.entry_price, fut_w.margin_usdt, q, cfg.maint_margin_rate
             )
-            # 成行 IOC。short にとってトリガー価格より良い約定はしない(§24.6)
-            fill = trigger * (1.0 + slip_bps * 1e-4)
+            bankruptcy = trigger * (1.0 + cfg.maint_margin_rate)
+            # **執行は約定価格の不利側極値**(§31)。mark ではない。
+            if bar.perp_high is None:
+                result.disposition = P.LIQUIDATION_STATE_UNKNOWN_DISPOSITION
+                result.unobservable_mark_bars += 1
+                break
+            candidate = max(trigger, float(bar.perp_high))
+            fill = min(candidate, bankruptcy)
+            result.fill_rule_binding = (
+                "cap" if candidate > bankruptcy
+                else "floor" if candidate <= trigger
+                else "observed"
+            )
             result.liquidated = True
             result.liquidation_ts = bar.ts
             result.liquidation_fill = fill

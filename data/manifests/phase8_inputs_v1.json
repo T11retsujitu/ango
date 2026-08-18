@@ -1,0 +1,261 @@
+{
+  "inventory": "phase8_inputs_v1",
+  "purpose": "input-data plumbing only; not joined into a trade series; no rho, no signals, no liquidation incidence, no returns, no PnL",
+  "built_at_utc": "2026-08-18T21:53:27.774202+00:00",
+  "datasets": [
+    {
+      "dataset": "mark_price_5m",
+      "symbol": "BTCUSDT",
+      "source": "binance",
+      "base_url": "https://data.binance.vision",
+      "market_type": "perp_linear",
+      "cadence": "monthly",
+      "path_template": "data/futures/um/monthly/markPriceKlines/{sym}/5m/{sym}-5m-{period}.zip",
+      "close_time_policy": "exact",
+      "ledger": "data/raw/binance/vision/mark_price_5m/BTCUSDT/download_ledger.jsonl",
+      "source_digest": {
+        "present": true,
+        "periods_with_file": 72,
+        "periods_absent": 0,
+        "checksum_verified": 72,
+        "digest": "212c61ae8892afe32f8f8c693e4a82b8a4823130eae3bdb0adde767ecf1828bf"
+      },
+      "timestamp_semantics": {
+        "field": "open_time",
+        "meaning": "bar start; row t covers [ts, ts+5m)",
+        "grid_ms": 300000,
+        "timezone": "UTC",
+        "seal_cutoff": "2026-01-01T00:00:00+00:00"
+      },
+      "normalized_path": "data/normalized/binance/mark_price_BTCUSDT_5m.parquet",
+      "normalized_present": true,
+      "parquet": {
+        "file": "mark_price_BTCUSDT_5m.parquet",
+        "sha256": "21bd9ff91365fc76a163219122cf5e4d11ab3ef90051072e9ed1b4145da8f018",
+        "size_bytes": 15894895,
+        "rows": 628978,
+        "columns": [
+          "ts",
+          "mark_open",
+          "mark_high",
+          "mark_low",
+          "mark_close",
+          "mark_samples",
+          "symbol",
+          "source",
+          "market_type"
+        ],
+        "ts_min": "2020-01-01T00:00:00+00:00",
+        "ts_max": "2025-12-31T23:55:00+00:00",
+        "expected_rows": 631296,
+        "missing_rows": 2318
+      },
+      "gaps": {
+        "bars": 628978,
+        "expected_bars": 631296,
+        "missing_bars": 2318,
+        "gap_runs": 8,
+        "largest_gap_bars": 1152,
+        "gap_runs_detail": [
+          {
+            "after_utc": "2020-01-19T13:05:00+00:00",
+            "resume_utc": "2020-01-19T13:35:00+00:00",
+            "missing_bars": 5
+          },
+          {
+            "after_utc": "2020-12-17T07:30:00+00:00",
+            "resume_utc": "2020-12-17T07:55:00+00:00",
+            "missing_bars": 4
+          },
+          {
+            "after_utc": "2021-06-30T23:55:00+00:00",
+            "resume_utc": "2021-07-02T00:00:00+00:00",
+            "missing_bars": 288
+          },
+          {
+            "after_utc": "2021-07-23T23:55:00+00:00",
+            "resume_utc": "2021-07-28T00:00:00+00:00",
+            "missing_bars": 1152
+          },
+          {
+            "after_utc": "2022-07-30T23:55:00+00:00",
+            "resume_utc": "2022-08-01T00:00:00+00:00",
+            "missing_bars": 288
+          },
+          {
+            "after_utc": "2022-10-01T23:55:00+00:00",
+            "resume_utc": "2022-10-03T00:00:00+00:00",
+            "missing_bars": 288
+          },
+          {
+            "after_utc": "2023-02-23T23:55:00+00:00",
+            "resume_utc": "2023-02-25T00:00:00+00:00",
+            "missing_bars": 288
+          },
+          {
+            "after_utc": "2023-11-10T03:35:00+00:00",
+            "resume_utc": "2023-11-10T04:05:00+00:00",
+            "missing_bars": 5
+          }
+        ]
+      },
+      "raw_accounting": {
+        "files": 72,
+        "raw_rows": 628978,
+        "sealed_rows_dropped": 0,
+        "duplicate_rows_dropped": 0,
+        "conflicting_duplicates": 0,
+        "conflicts_resolved_by_owning_file": 0,
+        "unresolved_conflicts": 0,
+        "mark_stale_bars": 43
+      }
+    },
+    {
+      "dataset": "spot_klines_5m",
+      "symbol": "BTCUSDT",
+      "source": "binance",
+      "base_url": "https://data.binance.vision",
+      "market_type": "spot",
+      "cadence": "monthly",
+      "path_template": "data/spot/monthly/klines/{sym}/5m/{sym}-5m-{period}.zip",
+      "close_time_policy": "last_trade_time",
+      "ledger": "data/raw/binance/vision/spot_klines_5m/BTCUSDT/download_ledger.jsonl",
+      "source_digest": {
+        "present": true,
+        "periods_with_file": 72,
+        "periods_absent": 0,
+        "checksum_verified": 72,
+        "digest": "b6d13ee3b315c1618b8a0d7e179f7e4885dbda50d6b48eb8a3673053b97e4037"
+      },
+      "timestamp_semantics": {
+        "field": "open_time",
+        "meaning": "bar start; row t covers [ts, ts+5m)",
+        "grid_ms": 300000,
+        "timezone": "UTC",
+        "seal_cutoff": "2026-01-01T00:00:00+00:00"
+      },
+      "normalized_path": "data/normalized/binance/spot_klines_BTCUSDT_5m.parquet",
+      "normalized_present": true,
+      "parquet": {
+        "file": "spot_klines_BTCUSDT_5m.parquet",
+        "sha256": "a5702d8f9b299e7576cb93ecfafd626a44c7ad2bef13ffe544bdd7502c90e8a0",
+        "size_bytes": 28287643,
+        "rows": 630834,
+        "columns": [
+          "ts",
+          "open",
+          "high",
+          "low",
+          "close",
+          "volume",
+          "volume_quote",
+          "trades",
+          "taker_buy_volume",
+          "taker_buy_quote",
+          "symbol",
+          "source",
+          "market_type"
+        ],
+        "ts_min": "2020-01-01T00:00:00+00:00",
+        "ts_max": "2025-12-31T23:55:00+00:00",
+        "expected_rows": 631296,
+        "missing_rows": 462
+      },
+      "gaps": {
+        "bars": 630834,
+        "expected_bars": 631296,
+        "missing_bars": 462,
+        "gap_runs": 15,
+        "largest_gap_bars": 70,
+        "gap_runs_detail": [
+          {
+            "after_utc": "2020-02-09T01:55:00+00:00",
+            "resume_utc": "2020-02-09T03:00:00+00:00",
+            "missing_bars": 12
+          },
+          {
+            "after_utc": "2020-02-19T11:35:00+00:00",
+            "resume_utc": "2020-02-19T17:30:00+00:00",
+            "missing_bars": 70
+          },
+          {
+            "after_utc": "2020-03-04T09:20:00+00:00",
+            "resume_utc": "2020-03-04T11:30:00+00:00",
+            "missing_bars": 25
+          },
+          {
+            "after_utc": "2020-04-25T01:55:00+00:00",
+            "resume_utc": "2020-04-25T04:30:00+00:00",
+            "missing_bars": 30
+          },
+          {
+            "after_utc": "2020-06-28T01:55:00+00:00",
+            "resume_utc": "2020-06-28T05:30:00+00:00",
+            "missing_bars": 42
+          },
+          {
+            "after_utc": "2020-11-30T05:55:00+00:00",
+            "resume_utc": "2020-11-30T07:00:00+00:00",
+            "missing_bars": 12
+          },
+          {
+            "after_utc": "2020-12-21T14:05:00+00:00",
+            "resume_utc": "2020-12-21T18:00:00+00:00",
+            "missing_bars": 46
+          },
+          {
+            "after_utc": "2020-12-25T01:55:00+00:00",
+            "resume_utc": "2020-12-25T03:00:00+00:00",
+            "missing_bars": 12
+          },
+          {
+            "after_utc": "2021-02-11T03:40:00+00:00",
+            "resume_utc": "2021-02-11T05:00:00+00:00",
+            "missing_bars": 15
+          },
+          {
+            "after_utc": "2021-03-06T01:55:00+00:00",
+            "resume_utc": "2021-03-06T03:30:00+00:00",
+            "missing_bars": 18
+          },
+          {
+            "after_utc": "2021-04-20T01:55:00+00:00",
+            "resume_utc": "2021-04-20T04:30:00+00:00",
+            "missing_bars": 30
+          },
+          {
+            "after_utc": "2021-04-25T04:00:00+00:00",
+            "resume_utc": "2021-04-25T08:45:00+00:00",
+            "missing_bars": 56
+          },
+          {
+            "after_utc": "2021-08-13T01:55:00+00:00",
+            "resume_utc": "2021-08-13T06:30:00+00:00",
+            "missing_bars": 54
+          },
+          {
+            "after_utc": "2021-09-29T06:55:00+00:00",
+            "resume_utc": "2021-09-29T09:00:00+00:00",
+            "missing_bars": 24
+          },
+          {
+            "after_utc": "2023-03-24T12:35:00+00:00",
+            "resume_utc": "2023-03-24T14:00:00+00:00",
+            "missing_bars": 16
+          }
+        ]
+      },
+      "raw_accounting": {
+        "files": 72,
+        "raw_rows": 630834,
+        "sealed_rows_dropped": 0,
+        "duplicate_rows_dropped": 0,
+        "conflicting_duplicates": 0,
+        "conflicts_resolved_by_owning_file": 0,
+        "unresolved_conflicts": 0,
+        "close_time_not_bar_end_rows": 8,
+        "close_time_before_open_rows": 1
+      }
+    }
+  ]
+}
