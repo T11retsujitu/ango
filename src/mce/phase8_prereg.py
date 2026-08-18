@@ -1,6 +1,6 @@
 """Phase 8.1 carry replication — 凍結パラメータの機械可読定義。
 
-正は docs/phase8/carry_replication_protocol_v1.md(v1.8.1)。本モジュールは
+正は docs/phase8/carry_replication_protocol_v1.md(v1.8.2)。本モジュールは
 その数値を実行器が読める形へ書き写したものであり、**結果を見た後に変更しない**。
 
 凍結の作法(Phase 7 と同じ):
@@ -22,7 +22,7 @@ from typing import Final
 UTC = timezone.utc
 
 PROTOCOL: Final = "phase8_carry_replication_v1"
-PROTOCOL_VERSION: Final = "v1.8.1"
+PROTOCOL_VERSION: Final = "v1.8.2"
 FROZEN_AT: Final = "2026-08-17"
 
 # ---------------------------------------------------------------------------
@@ -51,6 +51,23 @@ R_PRIME: Final = 0.0  # Arm R は spot をショートしないため supply rat
 
 # 事前登録した感応度(primary ではない)
 RATE_SENSITIVITY_SOURCE: Final = "kenneth_french_daily_rf"
+
+# --- v1.8.2 H15: Aave 金利市場の同定(§26。**未解決。実験をブロックする**)-----
+# A2 は Aave の version / network / market / データ提供元を**一切書いていない**
+# (全文中の言及は7箇所。確定できるのは 3 ステーブルコインの等加重平均・日次・
+#  perp > spot 側では borrowing rate、という点のみ)。
+# 金利データの起点 2020-01-08 は Aave V1 の Ethereum mainnet ローンチ日と一致するが、
+# A2 のサンプルは V1 → V2 → V3 の3世代をまたぎ、接合方法は記載が無い。
+# **提案 proxy は調査記録に1つだけ記載してある。本モジュールは採用していない。**
+RATE_MARKET_IDENTITY_STATUS: Final = "unresolved_source_fidelity_limitation"
+RATE_MARKET_VERSION: Final = None  # V1/V2/V3/V4 のいずれとも確定していない
+RATE_MARKET_NETWORK: Final = None  # Ethereum mainnet と推定されるが未確定
+RATE_MARKET_INSTANCE: Final = None  # Core / Prime / EtherFi 等が未確定
+
+# --- v1.8.2 §25: 仕様の優先順位 -------------------------------------------
+# 同一フィールドについて複数の記述があるとき、**後の凍結改訂節が先の記述を
+# supersede する**。先行する矛盾記述は削除せず歴史的監査証跡として残す。
+SPEC_PRECEDENCE: Final = "later_frozen_amendment_supersedes_earlier_text_for_the_same_field"
 
 
 def arb_bound_upper(round_trip_cost: float) -> float:

@@ -18,7 +18,8 @@ from mce.backtest import splits
 REPO = Path(__file__).resolve().parents[1]
 # v1.8 は不変の歴史記録として保存する。整合検査は**現行(active)記録**に対して行う。
 FREEZE_V1_8 = REPO / "experiments" / "phase8" / "carry_freeze.json"
-FREEZE = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_1.json"  # active
+FREEZE_V1_8_1 = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_1.json"
+FREEZE = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_2.json"  # active
 
 pytestmark = pytest.mark.skipif(not FREEZE.exists(), reason="phase8 freeze 記録が無い")
 
@@ -105,6 +106,8 @@ def test_frozen_spec_was_not_edited_after_the_freeze():
         "a3_source_review",
         "splits_module",
         "conformance_notes",
+        "h15_investigation",
+        "signal_module",
     ):
         entry = rec[key]
         path = REPO / entry["path"]
@@ -117,7 +120,7 @@ def test_frozen_spec_was_not_edited_after_the_freeze():
 def test_protocol_declares_itself_frozen():
     rec = _record()
     assert rec["state"] == "FROZEN"
-    assert rec["protocol_version"] == P.PROTOCOL_VERSION == "v1.8.1"
+    assert rec["protocol_version"] == P.PROTOCOL_VERSION == "v1.8.2"
     text = (REPO / rec["prereg_doc"]["path"]).read_text(encoding="utf-8")
     assert "FROZEN" in text
 
@@ -230,8 +233,10 @@ def test_v1_8_record_is_preserved_immutably():
     assert old["state"] == "FROZEN"
     # v1.8.1 は v1.8 を明示的に supersede すると宣言していること
     rec = _record()
-    assert rec["supersedes"]["version"] == "v1.8"
-    assert rec["supersedes"]["record"].endswith("carry_freeze.json")
+    assert rec["supersedes"]["version"] == "v1.8.1"
+    assert any("v1.8" in c for c in rec["supersedes"]["chain"])
+    assert FREEZE_V1_8_1.exists(), "v1.8.1 の凍結記録が消えている"
+    assert json.loads(FREEZE_V1_8_1.read_text(encoding="utf-8"))["protocol_version"] == "v1.8.1"
     # v1.8 のハッシュは**現行ファイルと一致しない**(改訂したのだから当然)
     assert old["prereg_doc"]["sha256"] != rec["prereg_doc"]["sha256"]
 
@@ -278,7 +283,8 @@ def test_h14_is_unresolved_and_blocks_experiments():
     assert h14["not_obtainable"], "取得できなかった経路が記録されていること"
     policy = _record()["post_freeze_policy"]
     assert policy["experiments_permitted"] is False
-    assert set(policy["blocked_by"]) == {"H13", "H14"}
+    # 全体集合は test_all_three_blockers_gate_experiments が検査する
+    assert "H14" in policy["blocked_by"]
 
 
 def test_liquidation_slippage_zero_was_not_silently_retained():
@@ -287,3 +293,36 @@ def test_liquidation_slippage_zero_was_not_silently_retained():
 
     assert "liquidation_slippage_bps" in UNFROZEN_PARAMETERS
     assert "liquidation_clearance_fee_rate" in UNFROZEN_PARAMETERS
+
+
+# --------------------------------------------------------------------------
+# v1.8.2 — 仕様の優先順位と H15
+# --------------------------------------------------------------------------
+
+
+def test_specification_precedence_is_declared():
+    """§25: 後の凍結改訂節が同一フィールドの先行記述を supersede する。"""
+    assert P.SPEC_PRECEDENCE.startswith("later_frozen_amendment_supersedes_earlier")
+    rec = _record()
+    assert "supersedes_earlier" in rec["spec_precedence"]
+    text = (REPO / rec["prereg_doc"]["path"]).read_text(encoding="utf-8")
+    assert "仕様の優先順位" in text
+    assert "歴史的な監査証跡" in text
+
+
+def test_h15_is_unresolved_and_no_proxy_was_adopted():
+    assert P.RATE_MARKET_IDENTITY_STATUS == "unresolved_source_fidelity_limitation"
+    assert P.RATE_MARKET_VERSION is None
+    assert P.RATE_MARKET_NETWORK is None
+    assert P.RATE_MARKET_INSTANCE is None
+    h15 = _record()["unresolved_at_freeze"]["H15"]
+    assert h15["proxy_adopted"] is False, "proxy を黙って採用していないこと"
+    assert h15["proposed_proxy_count"] == 1, "提案する proxy はちょうど1つ"
+    assert h15["established"], "確認できた事実が記録されていること"
+    assert h15["not_specified_by_a2"], "A2 が書いていない項目が記録されていること"
+
+
+def test_all_three_blockers_gate_experiments():
+    policy = _record()["post_freeze_policy"]
+    assert policy["experiments_permitted"] is False
+    assert set(policy["blocked_by"]) == {"H13", "H14", "H15"}
