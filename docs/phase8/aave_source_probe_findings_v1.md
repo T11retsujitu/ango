@@ -273,3 +273,53 @@ primitive は世代ごとに凍結した。**V1 だけ名前が違う**:
 仮説、family、layer 境界、昇格規則、コスト、証拠金規則、`FINAL_OOS_START`、封印、
 そして **H13(taker commission)と H14(liquidation slippage)の実験ブロッカー状態**。
 v1.8.4 は入力データ源のみを扱い、**実験を解禁していない**。
+
+---
+
+## 8. 系列再構成で判明した取得側の欠陥(**凍結規則の変更ではない**)
+
+v1.8.4 封印後に日次系列の再構成を始めたところ、**取得パイプライン側の欠陥**が出た。
+凍結規則の問題ではないので再凍結は不要だが、記録する。
+
+### 8.1 D2 — transport の失敗が「レートが無い日」と区別できていなかった
+
+`eth.merkle.io` が非 JSON 応答を返す状態になり、その endpoint に割り当てた
+202 日分が**すべて `mean_apr = null`** になった。凍結アダプタの挙動自体は正しい
+(`note` に「ブロック解決に失敗」と残る)。しかし系列に載せてしまうと、
+
+- **protocol state としての欠測**(§30.2。reserve が未上場)
+- **私の取得が失敗しただけの日**
+
+が同じ null として並ぶ。これは経済的な記録を偽ることになる。
+
+**対処**(`src/mce/aave_series.py`。**凍結対象外**):
+
+- 各行を `complete` / `missing_by_protocol` / `integrity_error` / `transport_failure` へ分類する。
+  判定は adapter の error 文言による。「空応答(」で始まるものは protocol state の不在、
+  それ以外の RPC error は transport の失敗。
+- `transport_failure` は **観測として採用しない**。検証済み endpoint を巡回して再取得する。
+- 規定回数で取れなければ**系列を書かずに中断**する。
+  取得できなかった日を「レートが無い日」として記録しない。
+- manifest に `days_transport_failure` を出し、テストで **0 であること**を固定する。
+
+**凍結規則は変えていない。** §30.2 の null は protocol state についての言明であり、
+本節はその言明を取得失敗で汚さないための取得側の規律である。
+
+### 8.2 D3 — 既定 endpoint 一覧の記述が実態と違っていた
+
+凍結済み `aave_rates.py` の `DEFAULT_RPC_ENDPOINTS` には
+「認証不要で履歴 eth_call が通ることを実測したもの」と注記していた。再実測の結果:
+
+| endpoint | 再実測(2026-08-18) |
+|---|---|
+| `eth-mainnet.public.blastapi.io` | ✓ cid=1, reserve list 25 件, USDT 2.6039524726649894% |
+| `rpc.mevblocker.io` | ✓ 同一の値 |
+| `gateway.tenderly.co/public/mainnet` | ✓ 同一の値 |
+| `eth.merkle.io` | **✗ `eth_chainId` が非 JSON**(現時点で利用不能) |
+
+3本は**同一ブロックで完全に同じ値**を返す。これは transport が経済的な源では
+ないこと(§30.1)の実地確認でもある。
+
+`DEFAULT_RPC_ENDPOINTS` は凍結モジュール内にあるため**編集しない**。
+一覧は候補であって、実際に使う endpoint は実行時に `chain_id` 検証を通ったものだけである。
+系列再構成では検証済みの3本のみを指定した。
