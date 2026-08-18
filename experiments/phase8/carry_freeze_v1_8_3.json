@@ -76,7 +76,7 @@
     "sha256": "6bd1341dcf6fc5abab60a0dba1e9cf062041dbe217d4308644cd13a4d7b08f97",
     "note": "Recorded for provenance. The engine is implementation, not specification; conformance is enforced by tests, not by this hash."
   },
-  "source_commit": "7d91febe4f35284cdf074810cd882765c9d3efb4",
+  "source_commit": "bdbdc7a042b83696a06946cf6b41424b110121f9",
   "uv_lock_sha256": "4f187f1a8ed2d64e2e949b0e1f6b8e6b9252e81201a28dc60d898870ea2d8ca8",
   "seal_invariants": {
     "FINAL_OOS_START": "2026-01-01T00:00:00+00:00",
@@ -175,7 +175,7 @@
       "H14"
     ]
   },
-  "source_commit_note": "Set to 7d91febe4f35284cdf074810cd882765c9d3efb4, the commit containing the v1.8.2 artifacts. File hashes are unaffected.",
+  "source_commit_note": "Set to bdbdc7a042b83696a06946cf6b41424b110121f9, the commit containing the v1.8.3 artifacts. File hashes are unaffected.",
   "h15_investigation": {
     "path": "docs/phase8/h15_aave_source_investigation_v1.md",
     "sha256": "48d9be07aee850c3b402d0ba38c20f8f712777df2bd9083e0f1e9f620e85e429"
