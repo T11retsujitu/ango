@@ -9,6 +9,15 @@ NORMALIZED_DIR = DATA_DIR / "normalized"
 FEATURES_DIR = DATA_DIR / "features"
 LABELS_DIR = DATA_DIR / "labels"
 MANIFESTS_DIR = DATA_DIR / "manifests"
+ANALYSIS_DIR = DATA_DIR / "analysis"
+
+# 収集運用層(supervisor / quality gate / 日次 ingest)の artifact 置き場。
+# raw は再取得不能なので削除しない。品質検査に落ちた session は消さずに
+# QUARANTINE_DIR へ隔離し、再調査できる状態で残す。
+COLLECTOR_LEDGER_DIR = ANALYSIS_DIR / "collector"
+ALERTS_DIR = ANALYSIS_DIR / "alerts"
+COLLECTION_DAYS_DIR = ANALYSIS_DIR / "collection_days"
+QUARANTINE_DIR = DATA_DIR / "quarantine"
 
 # PoC の対象は BTC の USDT 無期限スワップのみ
 INST_ID = "BTC-USDT-SWAP"

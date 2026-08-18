@@ -22,11 +22,19 @@ OKX WebSocket (public + business)
 data/raw/okx/ws/           … 接続到着順のimmutable gzip JSONL
 data/raw/okx/rest/         … contract / tick / lotの初期・日次snapshot
 data/raw/host/clock_quality/ … Linux adjtimexの起動時・60秒周期sample
+    ↓  src/mce/collector_supervisor.py … プロセス健全性の監督とrun ledger
+    ↓  src/mce/session_gate.py         … closed rawのvalid/invalid/pending判定とquarantine
+    ↓  src/mce/daily_ingest.py         … gate→正規化→収集日manifest→health ledger
     ↓  src/mce/normalize_microstructure.py
 data/normalized/okx/microstructure/v3/ … schema/到着UTC日/hour partitionのParquet shard
+data/quarantine/           … 品質検査に落ちたraw(削除せず理由つきで隔離)
+data/analysis/collector/   … run / gate / normalize / health のappend-only ledger
+data/analysis/collection_days/ … UTC日ごとの収集台帳(covered / uncovered区間)
+data/analysis/alerts/      … 無収集・quarantine・fail-closed停止のalert artifact
 ```
 
-データソース比較と選定理由は [docs/data_sources.md](docs/data_sources.md) を参照。
+データソース比較と選定理由は [docs/data_sources.md](docs/data_sources.md)、
+ローカル常時収集の運用層は [docs/local_collection_ops.md](docs/local_collection_ops.md) を参照。
 
 ## セットアップ
 
@@ -77,6 +85,21 @@ uv run python -m mce.phase3_summary --json experiments/phase3/bakeoff_summary.js
 
 # ローカルデータ在庫(manifest・OHLCV系・microstructure shard/raw の有無と期間)
 uv run python -m mce.data_inventory --json data/analysis/data_inventory.json
+
+# --- ローカル常時収集(docs/local_collection_ops.md)---
+
+# collector をsupervisor越しに常駐させる(異常終了を限定回数だけ再起動。上限で fail-closed)
+uv run python -m mce.collector_supervisor -- --inst-id BTC-USDT-SWAP
+
+# 日次: closed raw を検証 → valid のみ正規化 → 収集日manifest・health ledger を更新
+uv run python -m mce.daily_ingest
+
+# 判定だけ先に見る(invalid は data/quarantine/ へ隔離される)
+uv run python -m mce.session_gate --no-quarantine
+
+# Binance Vision: watermark から「最後の閉じたperiod」までを差分取得
+uv run python -m mce.binance_vision --through-latest-closed
+uv run python -m mce.binance_vision --report-only
 
 # 約定・BBO・400段板を60秒だけ疎通確認（省略時はSIGINT/SIGTERMまで継続）
 uv run python -m mce.collect_microstructure --duration 60

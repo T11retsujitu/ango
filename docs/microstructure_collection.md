@@ -180,3 +180,23 @@ uv run python -m mce.normalize_microstructure \
 normalized schema version / arrival UTC日/hourでpartitionする。REST初期metadataとWS更新は
 同一schemaで `origin` を区別し、受信時刻から因果的に適用できる。全行にraw座標と
 archive/logical SHA-256を残し、同じclosed rawの再実行は同じshardの内容を検証して再利用する。
+
+## 常時収集の運用
+
+上のCLIを手で回す代わりに、supervisorと日次ingestを使う。
+
+```sh
+# collectorのプロセス健全性を監督し、run ledgerを残す(fail-closedあり)
+uv run python -m mce.collector_supervisor -- --inst-id BTC-USDT-SWAP
+
+# closed rawをvalid/invalid/pendingへ判定し、validだけを正規化して収集日台帳を更新する
+uv run python -m mce.daily_ingest
+```
+
+supervisorは板sequenceなど取引所データの内容を判断せず、exit code、signal、空き容量、
+clock quality rawの有無だけを見る。連続異常終了・容量不足・clock品質欠落では再起動せず
+fail-closedし、`data/analysis/alerts/` へ理由を残す。invalid sessionは削除せず
+`data/quarantine/` へ隔離するため、normalizedには `valid` なsessionだけが入る。
+
+運用層の詳細(判定条件、収集日manifest、health ledger、Binance Visionの差分同期)は
+[local_collection_ops.md](local_collection_ops.md) を参照。
