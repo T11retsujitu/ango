@@ -148,7 +148,7 @@
     },
     "result": "12/12 intervals probe_blocked_by_egress; no interval classified source_unobservable"
   },
-  "source_commit": "PENDING",
+  "source_commit": "d9cc30851a7eb784c5636b2ee635138ed0019422",
   "uv_lock_sha256": "4f187f1a8ed2d64e2e949b0e1f6b8e6b9252e81201a28dc60d898870ea2d8ca8",
   "seal_invariants": {
     "FINAL_OOS_START": "2026-01-01T00:00:00+00:00",
@@ -429,5 +429,6 @@
     "layer_1_2_3": false,
     "final_oos_read": false,
     "note": "H13 未解決のためエントリ境界が未定。実験は解禁していない。"
-  }
+  },
+  "source_commit_note": "Set to d9cc30851a7eb784c5636b2ee635138ed0019422, the commit containing the v1.8.5 artifacts. File hashes are unaffected."
 }
