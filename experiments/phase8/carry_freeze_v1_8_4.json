@@ -117,7 +117,7 @@
       "sha256": "ef0e170287aa7fe65ac179435959200282388e4a4f2ab4278e75f7c8d84ae7ea"
     }
   },
-  "source_commit": "PENDING",
+  "source_commit": "a57d4fdfe6a791cfa370c4a4912a1f432daebd1a",
   "uv_lock_sha256": "4f187f1a8ed2d64e2e949b0e1f6b8e6b9252e81201a28dc60d898870ea2d8ca8",
   "seal_invariants": {
     "FINAL_OOS_START": "2026-01-01T00:00:00+00:00",
@@ -320,5 +320,6 @@
     "signals_returns_pnl": false,
     "phase8_outcome": false,
     "note": "v1.8.4 封印後に許されるのは Aave 日次レート入力系列の再構成のみ。"
-  }
+  },
+  "source_commit_note": "Set to a57d4fdfe6a791cfa370c4a4912a1f432daebd1a, the commit containing the v1.8.4 artifacts. File hashes are unaffected."
 }
