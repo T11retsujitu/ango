@@ -1,6 +1,6 @@
-# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.8.3**(**FROZEN**)
+# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.8.4**(**FROZEN**)
 
-- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5** → **v1.6** → **v1.7** → **v1.8** → **v1.8.1** → **v1.8.2** → **v1.8.3**)
+- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5** → **v1.6** → **v1.7** → **v1.8** → **v1.8.1** → **v1.8.2** → **v1.8.3** → **v1.8.4**)
 - 対象: [Phase 8.0 選定メモ](phase8_selection_memo_v1.md) が第1位に選んだ **P8-C1**
 - **再現アンカー(唯一)**: **A2** *Fundamentals of Perpetual Futures* —
   He, Manela, Ross, von Wachter. arXiv `2212.06888`(v6 2024-08-21)。**`VERIFIED-FULL`**
@@ -1457,3 +1457,127 @@ if sign(Aave proxy での最終的な経済判定) != sign(Kenneth-French RF で
 | **T46** | 欠測日をまたいで**補間しない** |
 | **T47** | V4 へ移行しない(接合が V3 Core で止まる) |
 | **T48** | `source_sensitive` の分類規則が凍結されている |
+
+---
+
+## 30. v1.8.4 修正条項(**入力データ源の確定。仮説は変更していない**)
+
+**適用範囲**: Aave 金利入力の (i) 源と経路の定義、(ii) 完全性の定義、(iii) 有効値の扱い。
+**変更していないもの**: 仮説、family、layer 境界、昇格規則、コスト、証拠金規則、
+`FINAL_OOS_START`、封印、H13 / H14 のブロッカー状態。
+
+§25 の優先順位により、**本節は同一フィールドについて §27 の記述を supersede する**。
+§27 の先行記述は削除せず歴史的監査証跡として残す。
+
+根拠となる実測: [aave_source_probe_findings_v1](aave_source_probe_findings_v1.md)。
+
+### 30.1 D1 — source of truth と access route
+
+Aave 自身の subgraph は利用不能である(hosted service は HTTP 301 で sunset、
+decentralized gateway は API key 必須)。§27 の source 指定は
+"Aave's own protocol subgraph / **historical protocol state** where available" という
+**or** であり、後者を採る。これは**以前から許されていた source 定義への適合**であって、
+別プロバイダへの差し替えではない。
+
+```text
+RATE_SOURCE_OF_TRUTH      = "aave_contract_state_on_ethereum_mainnet"
+RATE_ACCESS_ROUTE         = "archive_rpc_eth_call"
+RATE_ACCESS_PROVIDER_ROLE = "transport_not_economic_source"
+RATE_CHAIN_ID             = 1
+```
+
+**RPC 提供者は transport であって経済的なデータ源ではない。** したがって提供者を
+替えても source は変わらない。ただし観測が**どのチェーンのどのブロックの state か**は
+検証可能でなければならないため、**全観測**が次を保持する:
+
+```text
+RATE_PROVENANCE_REQUIRED = ("chain_id", "block_number", "block_timestamp", "block_hash")
+```
+
+`chain_id != 1` の観測は integrity error として破棄する。
+
+### 30.2 H17 — 完全性を **reserve list membership** で定義する(option B + protocol membership semantics)
+
+**問題**(v1.8.3 までの穴): `getReserveData()` は**未上場 reserve に対しても revert せず
+全語ゼロを成功応答として返す**。「3資産すべてを要求」を*読み取りの成否*で判定すると、
+未上場 reserve が **0% として basket に混入する**。実測では V3 Core の USDT が
+2023-01-27 から 2023-02-13 まで未上場であり、2023-01-27 は3資産とも未上場で
+平均が丸ごと 0.0000% になっていた。
+
+**解決**: 「3資産が揃っている」を次のように再定義する。
+
+> USDT / USDC / DAI の凍結アドレスが、**rate 観測に使ったのと同じ履歴ブロック**において、
+> protocol の**初期化済み(configured)reserve list の member である**こと。
+
+世代ごとの primitive(**V1 だけ名前が違う。共通名で呼べると仮定しない**):
+
+| 世代 | primitive | selector |
+|---|---|---|
+| aave_v1 | `getReserves()` | `0x0902f1ac` |
+| aave_v2 | `getReservesList()` | `0xd1946dbc` |
+| aave_v3_core | `getReservesList()` | `0xd1946dbc` |
+
+```text
+RATE_COMPLETENESS_RULE   = "initialized_reserve_list_membership_at_observation_block"
+RATE_MEMBERSHIP_BLOCK_RULE = "same_block_as_rate_read"
+```
+
+**いずれかの成分が初期化されていない日**:
+
+- `mean_apr = null`
+- 欠落/未初期化の成分を記録する
+- **0 で代替しない**(`RATE_ZERO_SUBSTITUTION_ALLOWED = False`)
+- **basket を2資産へ縮めない**(`RATE_TWO_ASSET_FALLBACK_ALLOWED = False`)
+- **前の Aave 世代を延長しない**(`RATE_GENERATION_EXTENSION_ALLOWED = False`)
+- **凍結 splice 日を動かさない**(`RATE_SPLICE_DATES_MOVABLE = False`)
+- **補間も forward-fill もしない**(`RATE_FORWARD_FILL_ALLOWED = False`)
+
+**全語ゼロ構造体の検出は独立した cross-check としてのみ残す**
+(`RATE_ZERO_STRUCT_DIAGNOSTIC = "independent_cross_check_only"`)。
+membership と食い違ったら:
+
+```text
+RATE_INTEGRITY_DISAGREEMENT_ACTION = "emit_integrity_error_and_no_rate_value"
+```
+
+**どちらか一方の解釈を選ばない。** integrity error を出し、その日は値を出さない。
+
+**期待される帰結**: 既にプローブした V3 launch 期(2023-01-27〜2023-02-13)は
+「不完全な basket の日」から「レート欠測の日」へ変わる。
+**この期待を日付のハードコード規則にしてはならない**
+(`RATE_LAUNCH_GAP_DERIVATION = "derived_from_historical_reserve_membership"`)。
+欠測は**履歴上の reserve membership から導出**される。
+
+欠測日の下流での扱いは §28(H16)のとおり: `RATE_MAX_STALE_SECONDS = 24h` を
+超えた時点で r は陳腐化し、**シグナルが成立しない**。値は補完されない。
+
+### 30.3 O1 — launch 期の有効値を加工しない
+
+V1→V2 接合直後(2020-12-03 以降)の V2 レートは 0.53%〜21.2% の範囲で激しく振れ、
+USDT 単体では 51.669% を記録する日がある。これは**未初期化ではなく実データ**であり、
+薄商いに由来する実際の借入金利である。
+
+```text
+RATE_VALUE_TREATMENT = "no_filter_no_clip_no_smoothing_no_winsorization"
+```
+
+**有効な非ゼロの launch 期金利を filter / clip / smooth / winsorize しない。**
+極端さを理由に落とすことは、結果を見てからの標本選択に等しい。
+
+### 30.4 v1.8.4 で追加するテスト
+
+| # | テスト |
+|---|---|
+| **T49** | 未初期化 reserve は **0% として basket に入れない** |
+| **T50** | 初期化済み reserve の**本物の 0% 借入金利**は有効な 0% 観測として残る |
+| **T51** | membership は **rate 読み取りと同一の履歴ブロック**で検査される |
+| **T52** | 3資産のうち1つでも欠ければ**その日の basket 全体が null** |
+| **T53** | V2→V3 の接合は **2023-01-27 のまま** |
+| **T54** | **2資産へ縮退する経路が存在しない** |
+| **T55** | 全語ゼロ診断と membership の**食い違いは出力をブロックする** |
+| **T56** | 食い違い時に**どちらの側にも寄せていない** |
+| **T57** | 全観測が chain id / block number / timestamp / hash を保持する |
+| **T58** | mainnet 以外の chain id を拒否する |
+| **T59** | `hint` による探索の高速化が**答えを変えない** |
+| **T60** | launch 期の極端だが有効な値を**加工していない** |
+| **T61** | reserve list primitive が**世代ごとに凍結**されている(V1 のみ別名) |

@@ -22,8 +22,8 @@ from typing import Final
 UTC = timezone.utc
 
 PROTOCOL: Final = "phase8_carry_replication_v1"
-PROTOCOL_VERSION: Final = "v1.8.3"
-FROZEN_AT: Final = "2026-08-17"
+PROTOCOL_VERSION: Final = "v1.8.4"
+FROZEN_AT: Final = "2026-08-18"
 
 # ---------------------------------------------------------------------------
 # 1. layer 境界(§13.1。決定ログ 2026-08-17 で H5 承認)
@@ -87,6 +87,49 @@ RATE_BASKET_REQUIRE_ALL: Final = True
 # 日次 point-in-time スナップショット(§27.4)
 RATE_SNAPSHOT_HOUR_UTC: Final = 0  # 00:00 UTC
 RATE_INTERPOLATION: Final = "none"  # 補間・平滑化をしない
+
+# --- v1.8.4 D1: source of truth と access route(§30.1)---------------------
+# 経済的な source は **Ethereum mainnet 上の Aave コントラクト state** である。
+# RPC 提供者は **transport にすぎず、経済的なデータ源ではない**。
+# したがって提供者の差し替えは source の変更にあたらないが、
+# **chain id / block number / block timestamp / block hash は全観測に保持する**。
+RATE_SOURCE_OF_TRUTH: Final = "aave_contract_state_on_ethereum_mainnet"
+RATE_ACCESS_ROUTE: Final = "archive_rpc_eth_call"
+RATE_ACCESS_PROVIDER_ROLE: Final = "transport_not_economic_source"
+RATE_CHAIN_ID: Final = 1  # Ethereum mainnet
+RATE_PROVENANCE_REQUIRED: Final = (
+    "chain_id", "block_number", "block_timestamp", "block_hash",
+)
+
+# --- v1.8.4 H17: 完全性を **reserve list membership** で定義する(§30.2)-----
+# 「3資産が揃っている」とは、**rate 観測に使ったのと同じ履歴ブロック**において
+# USDT / USDC / DAI の凍結アドレスが protocol の初期化済み reserve list の
+# member であることを意味する。未上場 reserve は revert せず全語ゼロを返すため、
+# 「読めたか」で判定すると 0% が basket へ混入する(v1.8.3 までの穴)。
+RATE_COMPLETENESS_RULE: Final = "initialized_reserve_list_membership_at_observation_block"
+RATE_RESERVE_LIST_PRIMITIVE: Final = (
+    ("aave_v1", "getReserves()"),
+    ("aave_v2", "getReservesList()"),
+    ("aave_v3_core", "getReservesList()"),
+)
+RATE_MEMBERSHIP_BLOCK_RULE: Final = "same_block_as_rate_read"
+# 欠落時の扱い。**いずれも黙って行わない。**
+RATE_MISSING_COMPONENT_ACTION: Final = "null_mean_and_record_missing_components"
+RATE_ZERO_SUBSTITUTION_ALLOWED: Final = False
+RATE_TWO_ASSET_FALLBACK_ALLOWED: Final = False
+RATE_GENERATION_EXTENSION_ALLOWED: Final = False
+RATE_SPLICE_DATES_MOVABLE: Final = False
+RATE_FORWARD_FILL_ALLOWED: Final = False
+# 全語ゼロ構造体の検出は **独立した cross-check としてのみ**残す。
+RATE_ZERO_STRUCT_DIAGNOSTIC: Final = "independent_cross_check_only"
+RATE_INTEGRITY_DISAGREEMENT_ACTION: Final = "emit_integrity_error_and_no_rate_value"
+# 期待される帰結(V3 launch 期が欠測になる)は **membership から導出する**。
+# **日付をハードコードした規則にしない。**
+RATE_LAUNCH_GAP_DERIVATION: Final = "derived_from_historical_reserve_membership"
+
+# --- v1.8.4 O1: launch 期の有効値を加工しない(§30.3)------------------------
+# 初期の薄商いに由来する高い借入金利も、**有効な非ゼロ観測である限りそのまま残す**。
+RATE_VALUE_TREATMENT: Final = "no_filter_no_clip_no_smoothing_no_winsorization"
 
 # --- v1.8.2 §25: 仕様の優先順位 -------------------------------------------
 # 同一フィールドについて複数の記述があるとき、**後の凍結改訂節が先の記述を

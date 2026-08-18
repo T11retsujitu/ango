@@ -20,7 +20,14 @@ REPO = Path(__file__).resolve().parents[1]
 FREEZE_V1_8 = REPO / "experiments" / "phase8" / "carry_freeze.json"
 FREEZE_V1_8_1 = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_1.json"
 FREEZE_V1_8_2 = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_2.json"
-FREEZE = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_3.json"  # active
+FREEZE_V1_8_3 = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_3.json"
+FREEZE = REPO / "experiments" / "phase8" / "carry_freeze_v1_8_4.json"  # active
+PREDECESSORS = (
+    (FREEZE_V1_8, "v1.8"),
+    (FREEZE_V1_8_1, "v1.8.1"),
+    (FREEZE_V1_8_2, "v1.8.2"),
+    (FREEZE_V1_8_3, "v1.8.3"),
+)
 
 pytestmark = pytest.mark.skipif(not FREEZE.exists(), reason="phase8 freeze 記録が無い")
 
@@ -109,6 +116,8 @@ def test_frozen_spec_was_not_edited_after_the_freeze():
         "conformance_notes",
         "h15_investigation",
         "signal_module",
+        "rate_adapter",
+        "probe_findings",
     ):
         entry = rec[key]
         path = REPO / entry["path"]
@@ -121,7 +130,7 @@ def test_frozen_spec_was_not_edited_after_the_freeze():
 def test_protocol_declares_itself_frozen():
     rec = _record()
     assert rec["state"] == "FROZEN"
-    assert rec["protocol_version"] == P.PROTOCOL_VERSION == "v1.8.3"
+    assert rec["protocol_version"] == P.PROTOCOL_VERSION == "v1.8.4"
     text = (REPO / rec["prereg_doc"]["path"]).read_text(encoding="utf-8")
     assert "FROZEN" in text
 
@@ -236,9 +245,9 @@ def test_v1_8_record_is_preserved_immutably():
     assert old["state"] == "FROZEN"
     # v1.8.1 は v1.8 を明示的に supersede すると宣言していること
     rec = _record()
-    assert rec["supersedes"]["version"] == "v1.8.2"
+    assert rec["supersedes"]["version"] == "v1.8.3"
     assert any("v1.8" in c for c in rec["supersedes"]["chain"])
-    for path, ver in ((FREEZE_V1_8, "v1.8"), (FREEZE_V1_8_1, "v1.8.1"), (FREEZE_V1_8_2, "v1.8.2")):
+    for path, ver in PREDECESSORS:
         assert path.exists(), f"{ver} の凍結記録が消えている"
         assert json.loads(path.read_text(encoding="utf-8"))["protocol_version"] == ver
     # v1.8 のハッシュは**現行ファイルと一致しない**(改訂したのだから当然)
@@ -354,3 +363,97 @@ def test_remaining_blockers_gate_experiments():
     policy = _record()["post_freeze_policy"]
     assert policy["experiments_permitted"] is False
     assert set(policy["blocked_by"]) == {"H13", "H14"}
+
+
+# --------------------------------------------------------------------------
+# v1.8.4(§30。D1 / H17 / O1)
+# --------------------------------------------------------------------------
+
+
+def test_all_four_predecessor_records_are_preserved_byte_for_byte():
+    """v1.8 / v1.8.1 / v1.8.2 / v1.8.3 を**1バイトも変えていない**こと。"""
+    frozen = _record()["preserved_predecessors"]
+    assert len(frozen) == 4
+    for path, ver in PREDECESSORS:
+        assert path.exists(), f"{ver} の凍結記録が消えている"
+        assert _sha256(path) == frozen[ver], f"{ver} の凍結記録が書き換えられている"
+
+
+def test_d1_source_of_truth_and_transport_are_separated():
+    """§30.1: 経済的な源は contract state。RPC 提供者は transport。"""
+    assert P.RATE_SOURCE_OF_TRUTH == "aave_contract_state_on_ethereum_mainnet"
+    assert P.RATE_ACCESS_ROUTE == "archive_rpc_eth_call"
+    assert P.RATE_ACCESS_PROVIDER_ROLE == "transport_not_economic_source"
+    assert P.RATE_CHAIN_ID == 1
+    assert set(P.RATE_PROVENANCE_REQUIRED) == {
+        "chain_id", "block_number", "block_timestamp", "block_hash"
+    }
+    rec = _record()["resolved_in_v1_8_4"]["D1"]
+    assert rec["provider_is"] == "transport_not_economic_source"
+
+
+def test_h17_completeness_is_reserve_list_membership():
+    """§30.2: 完全性は**同一ブロックでの初期化済み reserve list membership**。"""
+    assert P.RATE_COMPLETENESS_RULE == (
+        "initialized_reserve_list_membership_at_observation_block"
+    )
+    assert P.RATE_MEMBERSHIP_BLOCK_RULE == "same_block_as_rate_read"
+    assert dict(P.RATE_RESERVE_LIST_PRIMITIVE) == {
+        "aave_v1": "getReserves()",
+        "aave_v2": "getReservesList()",
+        "aave_v3_core": "getReservesList()",
+    }
+    assert P.RATE_BASKET_REQUIRE_ALL is True
+
+
+def test_h17_forbidden_repairs_are_all_declared_false():
+    """0 代替 / 2資産 fallback / 世代延長 / splice 移動 / forward-fill を禁じる。"""
+    assert P.RATE_ZERO_SUBSTITUTION_ALLOWED is False
+    assert P.RATE_TWO_ASSET_FALLBACK_ALLOWED is False
+    assert P.RATE_GENERATION_EXTENSION_ALLOWED is False
+    assert P.RATE_SPLICE_DATES_MOVABLE is False
+    assert P.RATE_FORWARD_FILL_ALLOWED is False
+    assert P.RATE_INTERPOLATION == "none"
+    assert P.RATE_MISSING_COMPONENT_ACTION == "null_mean_and_record_missing_components"
+
+
+def test_h17_zero_struct_is_only_a_cross_check_and_disagreement_blocks():
+    assert P.RATE_ZERO_STRUCT_DIAGNOSTIC == "independent_cross_check_only"
+    assert P.RATE_INTEGRITY_DISAGREEMENT_ACTION == "emit_integrity_error_and_no_rate_value"
+
+
+def test_h17_launch_gap_is_derived_not_hard_coded():
+    """期待帰結を日付規則にしていないこと。"""
+    assert P.RATE_LAUNCH_GAP_DERIVATION == "derived_from_historical_reserve_membership"
+    adapter = (REPO / "src" / "mce" / "aave_rates.py").read_text(encoding="utf-8")
+    # 欠測を作り出す日付リテラルが実装に無いこと
+    for banned in ("2023-01-27", "2023-02-13", "2023-02-14"):
+        assert banned not in adapter, f"欠測期間が日付でハードコードされている: {banned}"
+
+
+def test_o1_valid_launch_era_values_are_not_altered():
+    assert P.RATE_VALUE_TREATMENT == "no_filter_no_clip_no_smoothing_no_winsorization"
+
+
+def test_v1_8_4_did_not_touch_the_hypothesis_or_the_seal():
+    """§30 は入力データ源のみ。仮説・layer・封印・ブロッカーは不変。"""
+    scope = _record()["amendment_scope"]
+    assert set(scope["changed"]) == {"D1", "H17", "O1"}
+    assert splits.FINAL_OOS_START == datetime(2026, 1, 1, tzinfo=UTC)
+    assert splits.PHASE8_PROSPECTIVE_START == datetime(2026, 9, 1, tzinfo=UTC)
+    assert P.KAPPA == 1095.0
+    assert P.A2_VARIANT == "long_spot_only"
+    assert P.RATE_ASSETS == ("USDT", "USDC", "DAI")
+    assert P.RATE_SOURCE == "aave_variable_borrow_apr"
+    assert P.RATE_SENSITIVITY_SOURCE == "kenneth_french_daily_rf"
+    assert P.SOURCE_SENSITIVE_DISPOSITION == "source_sensitive"
+
+
+def test_h13_h14_still_block_experiments_after_v1_8_4():
+    policy = _record()["post_freeze_policy"]
+    assert policy["experiments_permitted"] is False
+    assert set(policy["blocked_by"]) == {"H13", "H14"}
+    assert P.COMMISSION_RATE_STATUS == "pending_authenticated_read"
+    assert P.LIQUIDATION_FEE_STATUS == "pending_authoritative_read"
+    # v1.8.4 は入力データ源のみを扱い、ブロッカーを解除していない
+    assert _record()["resolved_in_v1_8_4"]["unblocks_experiments"] is False

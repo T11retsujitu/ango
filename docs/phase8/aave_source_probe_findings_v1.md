@@ -1,12 +1,12 @@
 # Phase 8.1 — Aave 履歴レート源の可用性プローブ 所見 (v1)
 
 - 日付: 2026-08-18 (UTC)
-- 対象凍結版: **v1.8.3**(`experiments/phase8/carry_freeze_v1_8_3.json`)
+- 対象凍結版: 報告時 **v1.8.3** → **v1.8.4 で解決済み**(§7 を参照)
 - 作業区分: **入力データ再構成のみ**。rho を BTC 実データへ適用していない。
   entry も return も PnL も生成していない。Phase 8 実験は一切実行していない。
 - Layer 1/2/3 の outcome データ、Final OOS、封印済み prior register は**読んでいない**。
 - **H13(taker commission)と H14(liquidation slippage)は実験ブロッカーのまま。**
-  本書は新たに **H17** と **O1** を追加報告する。**どれも本書では解決しない。**
+  本書は新たに **H17** と **O1** を追加報告した。**§1〜§6 は報告時点の記述である**(v1.8.4 の決定は §7)。
 
 ---
 
@@ -213,3 +213,63 @@ uv run python -m mce.aave_probe --mode splice \
 
 **H17 が未解決の間、rate 系列を確定させない。** 系列を確定させれば、そのまま
 2023-01-27 の 0.0000% を「観測された無リスク金利」として下流へ流すことになる。
+
+---
+
+## 7. v1.8.4 での決定(2026-08-18。**§1〜§6 は報告時点の記述として残す**)
+
+人間の決定により、**D1 は適合として受理**、**H17 は option B を protocol membership
+semantics で強化して解決**、**O1 は加工しないことを凍結**した。
+凍結条文は [protocol §30](carry_replication_protocol_v1.md#30-v184-修正条項入力データ源の確定仮説は変更していない)。
+
+### 7.1 D1 の決定
+
+archive contract-state 経路は、**以前から許されていた source 定義への適合**として受理された。
+
+```text
+RATE_SOURCE_OF_TRUTH      = "aave_contract_state_on_ethereum_mainnet"
+RATE_ACCESS_ROUTE         = "archive_rpc_eth_call"
+RATE_ACCESS_PROVIDER_ROLE = "transport_not_economic_source"
+```
+
+RPC 提供者は transport であって経済的な源ではない。全観測が
+chain id / block number / block timestamp / block hash を保持する。
+
+### 7.2 H17 の決定 — §1 の選択肢のうち **B**(membership で強化)
+
+「3資産が揃っている」を、**rate 観測と同じ履歴ブロック**における
+**初期化済み reserve list membership** として再定義した。
+§2.4 の C(splice 日移動)と D(basket 縮小)は**採用されなかった**。
+
+primitive は世代ごとに凍結した。**V1 だけ名前が違う**:
+`getReserves()`(V1) / `getReservesList()`(V2, V3 Core)。
+
+再実行後の結果(**同じプローブ日、同じブロック番号**):
+
+| 日付 | v1.8.3 の挙動 | **v1.8.4 の挙動** |
+|---|---|---|
+| 2023-01-27 | `mean_apr = 0.0000%`(「完全」として通過) | **欠測**。missing = USDT, USDC, DAI |
+| 2023-01-28 〜 2023-02-13 | `mean_apr` が真値の約 2/3 | **欠測**。missing = USDT |
+| 2020-12-08 | 21.2078%(USDT 51.669%) | **21.2078% のまま**(O1: 加工しない) |
+| 2020-01-08 | 欠測 | **欠測**(reserve list 自体が空応答) |
+
+接合窓25日のうち **10日が欠測**、可用性プローブ17日のうち **4日が欠測**。
+
+**integrity error は 0 件**である。すなわち membership 判定と全語ゼロ診断は、
+実測したすべての日で**一致した**。これは片方が他方の言い換えではないことを確認したうえでの
+一致であり、cross-check として機能している。
+
+欠測は **membership から導出**されている。実装に `2023-01-27` などの
+日付リテラルは存在せず、テスト `test_h17_launch_gap_is_derived_not_hard_coded` が
+それを機械的に固定している。
+
+### 7.3 O1 の決定
+
+`RATE_VALUE_TREATMENT = "no_filter_no_clip_no_smoothing_no_winsorization"`。
+2020-12-08 の USDT 51.669% を含む launch 期の有効値は**そのまま残す**。
+
+### 7.4 変わっていないもの
+
+仮説、family、layer 境界、昇格規則、コスト、証拠金規則、`FINAL_OOS_START`、封印、
+そして **H13(taker commission)と H14(liquidation slippage)の実験ブロッカー状態**。
+v1.8.4 は入力データ源のみを扱い、**実験を解禁していない**。

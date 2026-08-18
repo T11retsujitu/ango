@@ -15,7 +15,13 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from mce import phase8_prereg as P
-from mce.aave_rates import DEFAULT_RPC_ENDPOINTS, GENERATIONS, daily_observation
+from mce.aave_rates import (
+    DEFAULT_RPC_ENDPOINTS,
+    ETHEREUM_MAINNET_CHAIN_ID,
+    GENERATIONS,
+    chain_id_of,
+    daily_observation,
+)
 
 UTC = timezone.utc
 
@@ -51,11 +57,17 @@ SPLICE_DATES: tuple[str, ...] = _window("2020-11-30", 12) + _window("2023-01-24"
 
 
 def run(endpoint: str, dates: tuple[str, ...], *, probe_name: str) -> dict:
+    cid = chain_id_of(endpoint)
+    if cid != ETHEREUM_MAINNET_CHAIN_ID:
+        raise SystemExit(f"chain id が mainnet ではない: {cid}")
     cache: dict[int, int] = {}
     rows = []
+    hint: int | None = None
     for d in dates:
         day = datetime.fromisoformat(d).replace(tzinfo=UTC)
-        obs = daily_observation(endpoint, day, cache=cache)
+        obs = daily_observation(endpoint, day, cache=cache, hint=hint, chain_id=cid)
+        if obs.block_number is not None:
+            hint = obs.block_number
         rows.append(asdict(obs))
     complete = sum(1 for r in rows if r["mean_apr"] is not None)
     # H17: 未初期化 reserve の 0% が平均へ混入した日を明示的に集計する。
@@ -63,17 +75,33 @@ def run(endpoint: str, dates: tuple[str, ...], *, probe_name: str) -> dict:
     anomalies = [
         {"date_utc": r["date_utc"], "generation": r["generation"],
          "uninitialised_reserves": list(r["uninitialised_reserves"]),
-         "mean_apr": r["mean_apr"]}
-        for r in rows if r["mean_apr"] is not None and r["uninitialised_reserves"]
+         "missing_reserves": list(r["missing_reserves"]), "mean_apr": r["mean_apr"]}
+        for r in rows if r["uninitialised_reserves"]
+    ]
+    integrity = [
+        {"date_utc": r["date_utc"], "integrity_error": r["integrity_error"]}
+        for r in rows if r["integrity_error"]
+    ]
+    incomplete = [
+        {"date_utc": r["date_utc"], "generation": r["generation"],
+         "missing_reserves": list(r["missing_reserves"]), "note": r["note"]}
+        for r in rows if r["mean_apr"] is None
     ]
     return {
         "probe": probe_name,
         "purpose": "input-data reconstruction availability only; no rho, no signals, no returns",
         "protocol_version": P.PROTOCOL_VERSION,
+        "source_of_truth": P.RATE_SOURCE_OF_TRUTH,
+        "access_route": P.RATE_ACCESS_ROUTE,
+        "access_provider_role": P.RATE_ACCESS_PROVIDER_ROLE,
+        "chain_id": cid,
+        "completeness_rule": P.RATE_COMPLETENESS_RULE,
         "source_fidelity": P.RATE_SOURCE_FIDELITY,
         "frozen_generations": [
             {"name": g.name, "pool": g.pool_address, "rate_word_index": g.rate_word_index,
              "expected_word_count": g.expected_word_count,
+             "reserve_list_signature": g.reserve_list_signature,
+             "reserve_list_selector": g.reserve_list_selector,
              "start": g.start.isoformat(), "end": g.end.isoformat() if g.end else None,
              "tokens": [{"symbol": t.symbol, "address": t.address, "decimals": t.decimals}
                         for t in g.tokens]}
@@ -82,7 +110,9 @@ def run(endpoint: str, dates: tuple[str, ...], *, probe_name: str) -> dict:
         "endpoint": endpoint,
         "dates_probed": len(rows),
         "dates_complete": complete,
-        "h17_uninitialised_reserve_days": anomalies,
+        "h17_zero_struct_diagnostic_days": anomalies,
+        "integrity_errors": integrity,
+        "incomplete_days": incomplete,
         "observations": rows,
     }
 
@@ -103,11 +133,12 @@ def main() -> None:
         mean = row["mean_apr"]
         shown = f"{mean:.6f}" if mean is not None else "None"
         print(f"{row['date_utc']}  {str(row['generation']):13s} "
-              f"blk={str(row['block_number']):>9s}  mean_apr={shown:>10s}  {row['note'] or ''}")
+              f"blk={str(row['block_number']):>9s}  mean_apr={shown:>10s}  "
+              f"{row['integrity_error'] or row['note'] or ''}")
     print(f"\n{report['dates_complete']}/{report['dates_probed']} dates complete")
-    if report["h17_uninitialised_reserve_days"]:
-        print(f"H17: 未初期化 reserve が平均に混入した日 = "
-              f"{len(report['h17_uninitialised_reserve_days'])}")
+    print(f"membership 不成立で欠測 = {len(report['incomplete_days'])}, "
+          f"全語ゼロ診断が反応した日 = {len(report['h17_zero_struct_diagnostic_days'])}, "
+          f"integrity error = {len(report['integrity_errors'])}")
 
 
 if __name__ == "__main__":
