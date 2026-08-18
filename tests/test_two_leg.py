@@ -31,21 +31,22 @@ BAR = timedelta(minutes=5)
 
 
 def _cfg(**kw) -> TwoLegConfig:
-    """H14 は未凍結なので**テストが明示的に値を与える**(既定に頼らない)。
+    """H14a は未凍結なので**テストが明示的に値を与える**(既定に頼らない)。
 
     ここで渡す 0.0 は「凍結値」ではなくテスト用の既知入力である。
     実験実行は `liquidation_cost_is_resolved` で別途ブロックされる。
+    v1.8.5 §31 で滑りは設定項目ではなくなった(観測価格から決まる)。
     """
     base = dict(
         cost=TwoLegCostConfig("base_taker", P.SPOT_TAKER_BPS, P.PERP_TAKER_BPS),
         liquidation_clearance_fee_rate=0.0,
-        liquidation_slippage_bps=0.0,
     )
     base.update(kw)
     return TwoLegConfig(**base)  # type: ignore[arg-type]
 
 
-def _bars(n: int, spot: float, perp: float, *, mark_high=None, step=0.0) -> list[Bar]:
+def _bars(n: int, spot: float, perp: float, *, mark_high=None, perp_high=None,
+          status: str = "observed", step=0.0) -> list[Bar]:
     out = []
     for i in range(n):
         s = spot + step * i
@@ -57,8 +58,12 @@ def _bars(n: int, spot: float, perp: float, *, mark_high=None, step=0.0) -> list
                 spot_close=s,
                 perp_open=p,
                 perp_close=p,
+                perp_high=(
+                    perp_high[i] if perp_high else (mark_high[i] if mark_high else p)
+                ),
                 mark_high=(mark_high[i] if mark_high else p),
                 mark_close=p,
+                mark_path_status=status,
             )
         )
     return out
@@ -73,7 +78,7 @@ def test_t3_pnl_identity_holds_between_basis_form_and_leg_form():
     """PnL = q(D_in − D_out) + Funding が脚ごとの積み上げと一致すること(§6.2)。"""
     bars = _bars(12, spot=100_000.0, perp=100_050.0)
     # exit バーで basis を縮める
-    bars[10] = Bar(bars[10].ts, 100_200.0, 100_200.0, 100_210.0, 100_210.0, 100_210.0, 100_210.0)
+    bars[10] = Bar(bars[10].ts, 100_200.0, 100_200.0, 100_210.0, 100_210.0, perp_high=100_210.0, mark_high=100_210.0, mark_close=100_210.0)
     r = simulate_trade(bars, [], T0, T0 + BAR * 9, _cfg())
     assert r.opened
     assert r.pnl_gross == pytest.approx(r.pnl_gross_by_legs, rel=1e-12, abs=1e-9)
@@ -127,7 +132,7 @@ def test_t4_legs_are_modelled_separately_not_as_one_synthetic_fill():
 
 def test_t5_m6a_missing_leg_at_entry_skips_the_trade():
     bars = _bars(6, spot=100_000.0, perp=100_050.0)
-    bars[1] = Bar(bars[1].ts, None, None, 100_050.0, 100_050.0, 100_050.0, 100_050.0)
+    bars[1] = Bar(bars[1].ts, None, None, 100_050.0, 100_050.0, perp_high=100_050.0, mark_high=100_050.0, mark_close=100_050.0)
     cfg = _cfg()
     object.__setattr__(cfg.execution, "cancel_after_ms", 5 * 60_000)  # 1 バーで打ち切り
     r = simulate_trade(bars, [], T0, T0 + BAR * 3, cfg)
@@ -138,7 +143,7 @@ def test_t5_m6a_missing_leg_at_entry_skips_the_trade():
 def test_t5_m6b_missing_leg_at_exit_rolls_forward_without_voiding_entry():
     bars = _bars(10, spot=100_000.0, perp=100_050.0)
     # exit 予定バー(index 5)の spot が欠損 → 次に両脚が揃うバーへ roll-forward
-    bars[5] = Bar(bars[5].ts, None, None, 100_050.0, 100_050.0, 100_050.0, 100_050.0)
+    bars[5] = Bar(bars[5].ts, None, None, 100_050.0, 100_050.0, perp_high=100_050.0, mark_high=100_050.0, mark_close=100_050.0)
     r = simulate_trade(bars, [], T0, T0 + BAR * 4, _cfg())
     assert r.opened, "exit 側の欠損で entry を遡って無効化してはならない"
     assert r.exit_fill_ts == bars[6].ts
@@ -326,7 +331,7 @@ def test_t16_leverage_invariance_is_exact_before_lot_rounding():
 def test_t16_leverage_invariance_holds_up_to_lot_quantisation():
     """丸め後は lot step 1つ分までしかずれないこと(清算ゼロ時)。"""
     bars = _bars(12, spot=100_000.0, perp=100_400.0)
-    bars[10] = Bar(bars[10].ts, 100_000.0, 100_000.0, 100_100.0, 100_100.0, 100_100.0, 100_100.0)
+    bars[10] = Bar(bars[10].ts, 100_000.0, 100_000.0, 100_100.0, 100_100.0, perp_high=100_100.0, mark_high=100_100.0, mark_close=100_100.0)
     seen = []
     for lev in P.LEVERAGE_SENSITIVITY:
         cfg = _cfg(leverage=lev)
@@ -402,12 +407,9 @@ def test_tracking_error_is_recorded_every_bar_without_threshold_exclusion():
     assert len(r.bar_states) == 8
 
 
-def test_only_h14_remains_unfrozen_and_has_no_default():
-    """v1.8.1 §24.1–24.3 で3件が凍結され、残るのは H14 だけ。"""
-    assert set(UNFROZEN_PARAMETERS) == {
-        "liquidation_clearance_fee_rate",
-        "liquidation_slippage_bps",
-    }
+def test_only_h14a_remains_unfrozen_and_has_no_default():
+    """v1.8.5 §31 で H14b が解決し、残るのは H14a(清算手数料)だけ。"""
+    assert set(UNFROZEN_PARAMETERS) == {"liquidation_clearance_fee_rate"}
     with pytest.raises(TypeError):
         TwoLegConfig(cost=TwoLegCostConfig("x", 1.0, 1.0))  # type: ignore[call-arg]
     # v1.8.1 で凍結された3件は既定で入る
@@ -515,7 +517,7 @@ def test_t38_spot_unwinds_at_first_causal_open_after_liquidation():
 def test_t38_spot_unwind_rolls_forward_over_a_missing_spot_bar():
     """欠損 spot バーは §9 M6b の roll-forward で飛ばす。"""
     bars = _liq_bars(spike_at=3)
-    bars[4] = Bar(bars[4].ts, None, None, 100_050.0, 100_050.0, 100_050.0, 100_050.0)
+    bars[4] = Bar(bars[4].ts, None, None, 100_050.0, 100_050.0, perp_high=100_050.0, mark_high=100_050.0, mark_close=100_050.0)
     r = simulate_trade(bars, [], T0, T0 + BAR * 8, _cfg(reserve_usdt=0.0))
     assert r.liquidated
     assert r.spot_unwind_ts == bars[5].ts
@@ -566,27 +568,25 @@ def test_t40_topup_is_processed_before_liquidation():
     assert not with_reserve.liquidated, "追証が清算より先に処理されること"
 
 
-def test_t41_h14_unresolved_blocks_the_liquidation_path():
-    """§24.6: H14 未解決なら清算経路を評価できない(既定のゼロを黙って使わない)。"""
+def test_t41_h14a_unresolved_blocks_the_liquidation_path():
+    """§34: H14a 未解決なら清算経路を評価できない(既定のゼロを黙って使わない)。"""
     cfg = TwoLegConfig(
         cost=TwoLegCostConfig("base_taker", P.SPOT_TAKER_BPS, P.PERP_TAKER_BPS),
         liquidation_clearance_fee_rate=None,
-        liquidation_slippage_bps=None,
         reserve_usdt=0.0,
     )
     assert not cfg.liquidation_cost_is_resolved
     assert P.LIQUIDATION_CLEARANCE_FEE_RATE is None
     assert P.LIQUIDATION_FEE_STATUS == "pending_authoritative_read"
-    with pytest.raises(ValueError, match="H14 未解決"):
+    with pytest.raises(ValueError, match="H14a 未解決"):
         simulate_trade(_liq_bars(), [], T0, T0 + BAR * 8, cfg)
 
 
-def test_t41_non_liquidating_path_still_runs_with_h14_unresolved():
-    """清算しない限り H14 は必要ない(不必要に止めない)。"""
+def test_t41_non_liquidating_path_still_runs_with_h14a_unresolved():
+    """清算しない限り H14a は必要ない(不必要に止めない)。"""
     cfg = TwoLegConfig(
         cost=TwoLegCostConfig("base_taker", P.SPOT_TAKER_BPS, P.PERP_TAKER_BPS),
         liquidation_clearance_fee_rate=None,
-        liquidation_slippage_bps=None,
     )
     r = simulate_trade(_bars(10, 100_000.0, 100_050.0), [], T0, T0 + BAR * 7, cfg)
     assert r.opened and not r.liquidated

@@ -1,6 +1,6 @@
-# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.8.4**(**FROZEN**)
+# Phase 8.1 — BTC spot–perp funding carry:再現プロトコル **v1.8.5**(**FROZEN**)
 
-- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5** → **v1.6** → **v1.7** → **v1.8** → **v1.8.1** → **v1.8.2** → **v1.8.3** → **v1.8.4**)
+- 作成日: 2026-08-17(v1) / 改訂: 2026-08-17(**v1.2** → **v1.3** → **v1.4** → **v1.5** → **v1.6** → **v1.7** → **v1.8** → **v1.8.1** → **v1.8.2** → **v1.8.3** → **v1.8.4** → **v1.8.5**)
 - 対象: [Phase 8.0 選定メモ](phase8_selection_memo_v1.md) が第1位に選んだ **P8-C1**
 - **再現アンカー(唯一)**: **A2** *Fundamentals of Perpetual Futures* —
   He, Manela, Ross, von Wachter. arXiv `2212.06888`(v6 2024-08-21)。**`VERIFIED-FULL`**
@@ -1581,3 +1581,171 @@ RATE_VALUE_TREATMENT = "no_filter_no_clip_no_smoothing_no_winsorization"
 | **T59** | `hint` による探索の高速化が**答えを変えない** |
 | **T60** | launch 期の極端だが有効な値を**加工していない** |
 | **T61** | reserve list primitive が**世代ごとに凍結**されている(V1 のみ別名) |
+
+---
+
+## 31. v1.8.5 §31 — H14b 強制清算の執行モデル(**H14b を解決する**)
+
+**適用範囲**: 清算時の執行価格、mark 経路の観測可能性、gate の順序、H14a の条件化。
+**変更していないもの**: 仮説、family、layer 境界、昇格規則、コスト、証拠金規則、
+イベント順序(§24.4)、清算会計(§24.5)、`FINAL_OOS_START`、封印、**H13**。
+
+§25 の優先順位により、本節以降は同一フィールドについて §24.6 を supersede する。
+
+```text
+LIQUIDATION_EXECUTION_MODEL = "adverse_trade_extreme_capped_at_bankruptcy"
+```
+
+short perp について:
+
+```text
+trigger_price    = (margin + q·entry) / (q(1 + mmr))
+bankruptcy_price = trigger_price · (1 + mmr)
+candidate        = max(trigger_price, perp_high)
+liquidation_fill = min(candidate, bankruptcy_price)
+```
+
+### 31.1 2つの価格の役割は排他である
+
+| 量 | 役割 | 供給源 |
+|---|---|---|
+| **`mark_high`** | **清算判定のみ**(trigger-only) | `mark_price_5m`(markPriceKlines) |
+| **`perp_high`** | **執行価格の代理のみ**(execution-proxy-only) | `klines_5m`(perp の約定) |
+
+**入れ替えてはならない。** 入れ替えると、板に無い価格で約定したことにするか、
+清算されない局面で清算したことにするかのどちらかになる。
+`test_mark_high_is_trigger_only_and_perp_high_is_execution_only` が、
+入れ替えたときに binding と fill が変わることを固定する。
+
+### 31.2 固定滑りの廃止
+
+**`liquidation_slippage_bps` は廃止した。** 滑りは板の深さ・清算の連鎖・
+そのバーのボラティリティで決まるのであって、取引所が公表する定数ではない。
+`UNFROZEN_PARAMETERS` から削除し、`TwoLegConfig` からも消した。
+ソースに当該識別子が存在しないことをテストで固定する。
+
+### 31.3 破産価格による上限
+
+上限は、**利用者の建玉に帰属する損失が破産境界を越えて伸びるのを防ぐ**。
+破産境界を越えた市場損失は取引所の保険基金 / ADL 機構が負担するものであり、
+**清算された口座へ再び計上されるべきものではない**。
+
+`bankruptcy − trigger = mmr`(tier 1 で 40 bps)であるため、
+どの枝が効いたかを必ず記録する:
+
+```text
+fill_rule_binding ∈ {"floor", "observed", "cap"}
+```
+
+### 31.4 執行代理が無いバー
+
+清算バーに `perp_high` が無ければ、**清算を評価しない**。
+`disposition = liquidation_state_unknown` とし、**清算が無かったとも仮定しない**。
+
+---
+
+## 32. v1.8.5 §32 — mark 経路の観測可能性(**機械可読。join で消えない**)
+
+**欠測の Vision mark バーを inner join で消してはならない。**
+canonical な5分タイムラインを端から端まで構成し、mark データと**品質状態**を付ける。
+欠測バーも**行として残る**(値は `None`。捏造しない)。
+
+```text
+MARK_PATH_STATUSES = (
+    "observed",             # Vision に実在し mark_samples > 0
+    "verified_repair",      # 一次情報で復元し、重複窓で完全一致した
+    "route_unverified",     # 経路が塞がれていて未判定。**source の欠測ではない**
+    "stale_unverified",     # mark_samples == 0(前値横引き)。未検証
+    "source_unobservable",  # 一次情報が応答した上で復元できない/不一致
+)
+MARK_PATH_ACCEPTABLE = ("observed", "verified_repair")
+```
+
+### 32.1 現況(2026-08-18 の実測に基づく)
+
+| 対象 | 状態 |
+|---|---|
+| **P1**(Vision 欠測 8 区間 2,318 本) | **`route_unverified`**。`source_unobservable` では**ない** |
+| **P2**(`mark_samples == 0` 4 区間 43 本) | **`stale_unverified`** |
+
+egress が地域制限で塞がれているため一次情報に到達できていない
+([P1/P2 プローブ所見](p1_p2_mark_availability_probe_v1.md))。
+**「取れなかった」を「存在しない」と書かない。**
+許可された地域からプローブを再実行して `candidate_deterministic_repair` が付けば、
+その区間は `verified_repair` へ昇格し、`observed` と同等に扱える。
+
+**前値の横引きを「バー内の不利側 mark 経路」の証拠として扱わない。**
+横引きは「その5分間に mark の更新が無かった」ことしか意味しない。
+
+### 32.2 建玉中の扱い
+
+建玉中のバーのうち **1本でも** `observed` / `verified_repair` 以外があれば:
+
+- その trade を**落とさない**
+- 清算が起きなかったと**仮定しない**
+- **経済指標より前に layer を中断**し `disposition = liquidation_state_unknown`
+
+---
+
+## 33. v1.8.5 §33 — gate の順序(**この順序でしか評価しない**)
+
+```text
+mark 経路の観測可能性 → 清算検出 → 清算件数 → H14a の手数料 gate → 経済指標
+```
+
+**観測可能性を満たさない経路を `liquidation_count == 0` と数えてはならない。**
+数えれば「観測できなかった」が「清算は起きなかった」に化ける。
+`evaluate_gates()` は観測可能性で先に返し、**そこで件数を見ない**。
+
+---
+
+## 34. v1.8.5 §34 — H14a の条件化
+
+```text
+liquidation_count == 0                        → H14a は拘束しない(non-binding)
+liquidation_count >  0 かつ 手数料が未解決     → liquidation_model_blocked
+```
+
+**ゼロ手数料での代替は決して行わない。**
+`liquidation_count` は会計上の件数であって経済的な帰結の指標ではない。
+この分岐に return も PnL も要らない。
+
+`liquidation_model_blocked` と `liquidation_state_unknown` は GO でも NO-GO でもない。
+§29 の `source_sensitive` と同じく**「この設計では判定できない」**という帰結である。
+
+---
+
+## 35. v1.8.5 §35 — H13 は Arm-R シグナル生成の**唯一の hard blocker**
+
+実測 taker rate は**コスト依存のエントリ境界**に入る:
+
+```text
+ρ_u(C) = κ · log(1 + C)          C は往復コスト(taker を含む)
+Arm R entry:  ρ > ρ_u(C)
+```
+
+H13 が未解決である限り境界そのものが未定であり、**経験的な Arm-R シグナルを
+生成できない**。v1.8.5 は **experiments を解禁しない**。
+
+---
+
+## 36. v1.8.5 で追加するテスト
+
+| # | テスト |
+|---|---|
+| **T62** | 固定滑りが設定にも凍結集合にもソースにも存在しない |
+| **T63** | fill が破産価格を越えない(`cap`) |
+| **T64** | perp_high がトリガーより良いとき下限が効く(`floor`) |
+| **T65** | バンド内では観測値が効く(`observed`) |
+| **T66** | `fill_rule_binding` が常に凍結値のいずれか |
+| **T67** | **mark_high と perp_high を入れ替えると結果が変わる** |
+| **T68** | 清算バーに `perp_high` が無ければ `liquidation_state_unknown` |
+| **T69** | 清算経路でも損益恒等式が成り立つ |
+| **T70** | 欠測バーが**行として残る**(inner join で消えない) |
+| **T71** | `mark_samples == 0` が `stale_unverified` になる |
+| **T72** | プローブの分類が状態へ正しく写る |
+| **T73** | **遮断が `source_unobservable` へ降格しない** |
+| **T74** | 建玉中の許容外状態が `liquidation_state_unknown` を出し、清算なしと数えない |
+| **T75** | gate が観測可能性で先に返り、件数を見ない |
+| **T76** | H14a が件数 0 で非拘束、件数 > 0 かつ未解決で `liquidation_model_blocked` |
+| **T77** | P1 が `route_unverified`、P2 が `stale_unverified` に凍結されている |
