@@ -69,5 +69,29 @@ def binance_spot_klines_parquet(symbol: str = BINANCE_SYMBOL, bar: str = BAR) ->
     return NORMALIZED_DIR / BINANCE_SOURCE / f"spot_klines_{symbol}_{bar}.parquet"
 
 
+def binance_funding_rate_parquet(symbol: str = BINANCE_SYMBOL) -> Path:
+    """F4: USD-M perp の funding **決済イベント**。
+
+    **バー系列ではないので `bar` を取らない。** Phase 7 由来の
+    `funding_rate/binance_BTCUSDT.parquet`(OKX 側と同じ棚に置かれた別資産)
+    とは**別ファイル**であり、そちらを上書きしない。
+    """
+    return NORMALIZED_DIR / BINANCE_SOURCE / f"funding_rate_{symbol}.parquet"
+
+
+def binance_funding_rate_rest_parquet(symbol: str = BINANCE_SYMBOL) -> Path:
+    """公式 REST の funding 決済(markPrice 付き)。
+
+    **Vision 系列とは別ファイル。** canonical は Vision 側であり、
+    REST はそれを**置換せず照合するだけ**である。
+    """
+    return NORMALIZED_DIR / BINANCE_SOURCE / f"funding_rate_rest_{symbol}.parquet"
+
+
+def binance_funding_reconciliation_parquet(symbol: str = BINANCE_SYMBOL) -> Path:
+    """Vision(canonical)× REST の一対一照合表。"""
+    return NORMALIZED_DIR / BINANCE_SOURCE / f"funding_reconciliation_{symbol}.parquet"
+
+
 def binance_features_parquet(symbol: str = BINANCE_SYMBOL, bar: str = BAR) -> Path:
     return FEATURES_DIR / f"{BINANCE_SOURCE}_{symbol}_{bar}.parquet"

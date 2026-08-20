@@ -65,8 +65,17 @@ observable feature の各列は `mce.features.AVAILABILITY` に availability 種
 ## 6. 欠損・重複
 
 - 欠損バーは補間しない。検出は report / manifest が行う。
-- normalized へのマージは `(source, symbol, ts)` で重複排除(冪等)。
+- normalized へのマージは **`(source, symbol, market_type, ts)`** で重複排除(冪等)。
 - 未確定足(OKX `confirm != "1"`)は normalized に入れない。
+
+**`market_type` をキーに含める理由(Y23)**: Binance の spot と USD-M perp は
+**どちらも `source="binance"` / `symbol="BTCUSDT"`** である。`(source, symbol, ts)`
+だけでは同一時刻の spot 行と perp 行が同じキーになり、**一方が他方を上書きしうる**。
+実装 (`mce.normalize_binance.KEY_COLS`) は本節と一致していなければならない。
+
+**イベント系列**(下記 §8 の funding 決済など)は 5分グリッド上に無い。
+グリッドを前提とする「欠測バー」の概念を当てはめない。manifest も期待間隔を
+持たせない(持たせると存在しない欠測を数えてしまう)。
 
 ## 7. clock 系列の定義
 
@@ -83,7 +92,26 @@ observable feature の各列は `mce.features.AVAILABILITY` に availability 種
 
 - `funding_rate` は as-of join(backward, tolerance 9h)。`ts`(バー開始)以前に
   **決済確定**した直近値のみ(OKX `fundingTime` = 決済時刻)。
-- Binance 代理 funding(source="binance")はキャリー統計専用。OKX 執行 PnL には使わない。
+- Binance 代理 funding(source="binance")はキャリー統計専用。**OKX 執行 PnL には使わない。**
+  この禁止は維持する。**別 venue の執行 PnL に他 venue の funding を持ち込まない。**
+
+### 8.1 Binance USD-M funding 決済イベントの availability(Y27)
+
+Phase 8 は Binance の funding を **Binance 自身の two-leg carry PnL** の中で使う。
+上の禁止(別 venue へ持ち込まない)と矛盾しない: 同一 venue 内での使用である。
+
+| 項目 | 定義 |
+|---|---|
+| 系列 | `data/normalized/binance/funding_rate_<symbol>.parquet`(**イベント系列**) |
+| `ts` | **決済時刻**(Vision `calc_time` = 公式 REST `fundingTime`)。バー開始時刻ではない |
+| availability | **`ts`(決済確定時刻)以後**。決済が確定した時点で初めて観測可能になる |
+| 決定時点での参照 | **`funding_key = ts + DELTA_PUB` に対する as-of backward** で引く。tolerance を広げることは未来参照の防止にならない(公開遅延はキーのシフトで表す) |
+| `funding_interval_hours` | **直前の決済との時刻差から導出**する。**8 をハードコードしない**(cap/floor 到達時に恒久的に1時間へ切り替わる規則がある) |
+| 補間 | **しない。** 最初のイベントの間隔は null(直前の決済が観測範囲に無い) |
+| `mark_price` | **この dump には無い**(実測)。決済時点の mark が要るときは別ソースから供給する。**null 列で代用しない** |
+
+- observable feature へ昇格させる列は、従来どおり `mce.features.AVAILABILITY` へ
+  宣言してから使う(§3)。**本節はまだ feature を定義していない**(入力層の契約のみ)。
 - OI は公開遅延未実測・遡及約5日のため、**observable feature に昇格させない**
   (normalized 保持のみ。Phase 7 で再検討)。
 

@@ -20,6 +20,16 @@ Phase 8 で次の2系列を**一級の入力**として追加した(F1 / F2):
 **mark 価格と約定価格を混同しないこと。** `mark_price_5m` は清算の判定に使い、
 執行価格の代理には使わない(逆も同じ)。
 
+さらに funding 決済イベントを追加した(F4):
+
+| dataset | 粒度 | market | 情報集合 |
+|---|---|---|---|
+| `funding_rate` | 月次dump | USD-M perp | **funding 決済**(決済時刻・レート・間隔) |
+
+**`funding_rate` はバー系列ではなくイベント系列である。** 5分グリッドを仮定しない。
+決済間隔は cap/floor 到達時に恒久的に1時間へ切り替わる規則があるため
+(protocol X5)、**8時間をハードコードしない**。
+
 方針(既存の raw 層と同じ):
 
 - **immutable**: 一度落とした zip は上書きしない。公開 `.CHECKSUM`(SHA-256)で検証し、
@@ -77,6 +87,11 @@ class DatasetSpec:
     #   "last_trade_time" : close_time は**そのバーの最終約定時刻**。空バーでは
     #                       open_time より前になることすらある(spot で実測)
     close_time_policy: str = "exact"
+    # 系列の種類。**バー系列とイベント系列は別物である。**
+    #   "bar_5m" : 5分グリッド上の OHLC / スナップショット(欠測は「欠測バー」)
+    #   "event"  : 発生時刻が不定のイベント(funding 決済)。**グリッドを仮定しない。**
+    #              間隔は行ごとに実測する(8h をハードコードしない。protocol X5)
+    series_kind: str = "bar_5m"
 
     def relative_path(self, symbol: str, period: str) -> str:
         return self.path_template.format(sym=symbol, period=period)
@@ -109,6 +124,16 @@ DATASETS: dict[str, DatasetSpec] = {
         f"{SPOT_MARKET_PATH}/monthly/klines/{{sym}}/5m/{{sym}}-5m-{{period}}.zip",
         market_type=SPOT_MARKET_TYPE,
         close_time_policy="last_trade_time",
+    ),
+    # F4: funding 決済イベント。**バーではない。**
+    # path はファイル名パターンも interval ディレクトリの有無も klines と違う
+    # (`{sym}-fundingRate-{period}.zip`、`5m/` 相当の階層が無い)。実測で確認した。
+    "funding_rate": DatasetSpec(
+        "funding_rate",
+        "monthly",
+        f"{MARKET_PATH}/monthly/fundingRate/{{sym}}/{{sym}}-fundingRate-{{period}}.zip",
+        close_time_policy="not_applicable",
+        series_kind="event",
     ),
 }
 
@@ -230,7 +255,16 @@ def download_period(
             raise BinanceVisionError(
                 f"既存 raw が公開 checksum と一致しない(手で消してから再取得する): {target}"
             )
-        record |= {"status": "cached", "sha256": local, "bytes": target.stat().st_size}
+        # cached 経路も**公開 checksum と突き合わせている**(不一致なら上で送出済み)。
+        # 検証したのに記録しないと、再実行のたびに ledger 上の検証済み件数が
+        # 0 へ落ちて「検証していない」ように見える。事実のとおり記録する。
+        record |= {
+            "status": "cached",
+            "sha256": local,
+            "published_sha256": published,
+            "checksum_verified": published is not None,
+            "bytes": target.stat().st_size,
+        }
         return record
 
     status, body = client.get(rel)

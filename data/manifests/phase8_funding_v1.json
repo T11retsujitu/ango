@@ -1,0 +1,84 @@
+{
+  "inventory": "phase8_funding_v1",
+  "purpose": "input-data plumbing only; not joined into a trade series; no rho, no signals, no liquidation incidence, no returns, no PnL",
+  "built_at_utc": "2026-08-20T11:19:44.626421+00:00",
+  "datasets": [
+    {
+      "dataset": "funding_rate",
+      "symbol": "BTCUSDT",
+      "source": "binance",
+      "base_url": "https://data.binance.vision",
+      "market_type": "perp_linear",
+      "cadence": "monthly",
+      "series_kind": "event",
+      "path_template": "data/futures/um/monthly/fundingRate/{sym}/{sym}-fundingRate-{period}.zip",
+      "ledger": "data/raw/binance/vision/funding_rate/BTCUSDT/download_ledger.jsonl",
+      "source_digest": {
+        "present": true,
+        "periods_with_file": 72,
+        "periods_absent": 0,
+        "checksum_verified": 72,
+        "digest": "d1ddb1207742acd139921fa0f04e10771b81834b8ca4a0335bfb6bf36c677c34"
+      },
+      "timestamp_semantics": {
+        "field": "calc_time",
+        "meaning": "funding settlement time (protocol X4: identical to REST fundingTime)",
+        "not_a_bar": "no [ts, ts+5m) interval semantics; this is an event series",
+        "timezone": "UTC",
+        "epoch_unit": "milliseconds",
+        "seal_cutoff": "2026-01-01T00:00:00+00:00"
+      },
+      "columns_absent_in_source": {
+        "mark_price": "not published in the Vision fundingRate dump (header is calc_time,funding_interval_hours,last_funding_rate); protocol 8.1 MarkPrice(s) must come from another source"
+      },
+      "normalized_path": "data/normalized/binance/funding_rate_BTCUSDT.parquet",
+      "normalized_present": true,
+      "parquet": {
+        "file": "funding_rate_BTCUSDT.parquet",
+        "sha256": "d621aa4adde976e0954252944f74ea665fc8d4ab3a6c3ded632049bdb4df2dcb",
+        "size_bytes": 66728,
+        "rows": 6576,
+        "columns": [
+          "ts",
+          "funding_rate",
+          "funding_interval_hours",
+          "funding_interval_ms",
+          "funding_interval_hours_declared",
+          "symbol",
+          "source",
+          "market_type"
+        ],
+        "ts_min": "2020-01-01T00:00:00+00:00",
+        "ts_max": "2025-12-31T16:00:00.001000+00:00"
+      },
+      "intervals": {
+        "events": 6576,
+        "intervals_derived": 6575,
+        "first_event_interval_is_null": true,
+        "distribution_hours": {
+          "8": 6575
+        },
+        "declared_distribution_hours": {
+          "8": 6576
+        },
+        "min_interval_hours": 7.9999875,
+        "max_interval_hours": 8.000013055555556
+      },
+      "raw_accounting": {
+        "files": 72,
+        "raw_rows": 6576,
+        "sealed_rows_dropped": 0,
+        "cutoff": "2026-01-01T00:00:00+00:00",
+        "duplicate_rows_dropped": 0,
+        "conflicting_duplicates": 0,
+        "conflicts_resolved_by_owning_file": 0,
+        "unresolved_conflicts": 0,
+        "funding_interval_rows_derived": 6575,
+        "funding_interval_first_event_null": 1,
+        "funding_interval_non_positive_rows": 0,
+        "funding_interval_disagrees_with_declared_rows": 0,
+        "funding_interval_max_deviation_ms": 47
+      }
+    }
+  ]
+}

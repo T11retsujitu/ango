@@ -13,6 +13,8 @@
   値は「その時刻の状態」であり区間集約ではない(`sum_taker_long_short_vol_ratio`
   だけは直前区間の集約とみなすのが自然だが、いずれも `ts` 時点で確定しているため
   観測可能性の判定は同じ)。
+- fundingRate の `calc_time` は**決済時刻**(protocol X4)。**バー開始時刻ではない。**
+  `funding_rate` は5分グリッド上の系列ではなく**イベント系列**である。
 
 **封印の継承**: 正規化時点で `ts >= FINAL_OOS_START (2026-01-01)` の行を落とす。
 別 venue のデータでも Final OOS と同じ暦期間を screening で見ないため
@@ -40,11 +42,19 @@ from mce.binance_vision import DATASETS, DEFAULT_SYMBOL, MARKET_TYPE, SOURCE, ra
 
 _TS = pl.Datetime(time_unit="ms", time_zone="UTC")
 BAR_MS = 5 * 60 * 1000
-KEY_COLS = ["source", "symbol", "ts"]
+HOUR_MS = 60 * 60 * 1000
+
+#: 重複排除キー(docs/data_contract.md §6)。
+#: **`market_type` を含む**(Y23)。spot と perp はどちらも `source="binance"` /
+#: `symbol="BTCUSDT"` なので、`market_type` が無いと spot が perp を上書きしうる。
+#: 契約と実装は同一コミットで一致させる。
+KEY_COLS = ["source", "symbol", "market_type", "ts"]
 
 # kline CSV の列順(header 有無どちらの版もこの順序)
 _KLINE_COLUMNS = 12
 _METRIC_COLUMNS = 8
+#: fundingRate CSV の列数。実測 header: calc_time,funding_interval_hours,last_funding_rate
+_FUNDING_COLUMNS = 3
 
 
 class BinanceNormalizationError(ValueError):
@@ -71,7 +81,8 @@ def read_zip_rows(path: Path, expected_columns: int) -> list[list[str]]:
 
 
 # header 行の先頭セル(metrics の1列目はデータ側も非数値なので、名前で判定する)
-_HEADER_FIRST_CELLS = {"open_time", "create_time"}
+# fundingRate dump は header 付き("calc_time,...")で公開されている(実測)。
+_HEADER_FIRST_CELLS = {"open_time", "create_time", "calc_time"}
 
 
 def _is_header(row: list[str]) -> bool:
@@ -245,6 +256,110 @@ def normalize_premium_index(
     return _provenance(df, symbol, market_type)
 
 
+def normalize_funding_rate(
+    rows: list[list[str]],
+    symbol: str = DEFAULT_SYMBOL,
+    market_type: str = MARKET_TYPE,
+    *,
+    close_time_policy: str = "not_applicable",
+    stats: dict | None = None,
+) -> pl.DataFrame:
+    """fundingRate 行 → funding **決済イベント**(F4)。
+
+    実測した dump の schema(2020-01 / 2025-12 の2か月を probe して確認した。
+    推測していない):
+
+        calc_time,funding_interval_hours,last_funding_rate
+
+    - **`calc_time` は決済時刻**(epoch ms)。protocol X4 のとおり公式 REST の
+      `fundingTime` と同じ量である。**バー開始時刻ではない**ので、
+      `[ts, ts+5m)` の区間解釈をしてはならない。
+    - `funding_interval_hours` は **dump 自身が宣言する**間隔。実測では 8 だが
+      **8 をハードコードしない**(cap/floor 到達時に恒久的に1時間へ切り替わる
+      規則がある。X5)。宣言値は `funding_interval_hours_declared` として保持し、
+      **実際に使う間隔は正規化の後段で直前の決済との ts 差から導出する**
+      (`add_funding_intervals`。未来行から逆算しない)。
+    - `last_funding_rate` は**その決済で確定したレート**。
+    - **markPrice 列は存在しない**(実測。header は上の3列のみ)。したがって
+      §8.1 の `MarkPrice(s)` はこの dump からは供給できない。
+      **null 列を作って埋めることはしない**(存在しないものを列にしない)。
+    """
+    if not rows:
+        return pl.DataFrame()
+    df = pl.DataFrame(
+        {
+            "ts": [_epoch_ms(r[0]) for r in rows],
+            "funding_rate": [float(r[2]) for r in rows],
+            # dump の宣言値。導出値と取り違えないよう列名を分ける。
+            "funding_interval_hours_declared": [int(r[1]) for r in rows],
+        }
+    ).with_columns(pl.col("ts").cast(_TS))
+    return _provenance(df, symbol, market_type)
+
+
+#: 決済時刻のサブ秒ジッタの許容(**間隔の切り替わりを隠さない幅**)。
+#: 実測(全 6,576 決済)では `calc_time` は必ず正時 + 0〜47ms に載っている。1分あれば
+#: ジッタは吸収でき、1h/4h/8h の切り替え(時間オーダ)は必ず検出される。
+FUNDING_INTERVAL_JITTER_TOLERANCE_MS = 60_000
+
+
+def add_funding_intervals(df: pl.DataFrame, stats: dict | None = None) -> pl.DataFrame:
+    """`funding_interval_hours` を **直前の決済との ts 差**から導出する。
+
+    - **未来行から逆算しない。** 行 t の間隔は `ts[t] - ts[t-1]` だけで決まる。
+    - **最初のイベントは null**(直前の決済が観測範囲に無いので不明。捏造しない)。
+    - **8時間に固定しない。** 1h / 4h / 8h いずれが現れてもそのまま保持する。
+    - **非正な間隔と、dump の宣言値と食い違う間隔は品質異常として数える。**
+      数えるだけで落とさない・丸めない(値は実データである)。
+
+    系列全体(全 zip を結合し重複排除して ts 昇順にしたもの)に対して1回だけ
+    適用する。月ファイル単位で適用すると各月の先頭が null になってしまう。
+    """
+    if df.is_empty():
+        return df
+    df = df.sort("ts").with_columns(
+        pl.col("ts").diff().dt.total_milliseconds().alias("funding_interval_ms")
+    )
+    # **`/ HOUR_MS` と書いてはいけない。** polars は定数除算を逆数の乗算へ最適化するため、
+    # ちょうど 8h(28,800,000ms)が 7.999999999999999 になる。整数部と剰余に分けると
+    # Python の除算と 1bit まで一致し、8h / 4h / 1h がそのままの値で出る
+    # (丸めているのではない。丸めなくても厳密になる書き方を選んでいる)。
+    df = df.with_columns(
+        (
+            (pl.col("funding_interval_ms") // HOUR_MS).cast(pl.Float64)
+            + (pl.col("funding_interval_ms") % HOUR_MS).cast(pl.Float64) / HOUR_MS
+        ).alias("funding_interval_hours")
+    )
+    if stats is not None:
+        observed = df.filter(pl.col("funding_interval_ms").is_not_null())
+        deviation = (
+            pl.col("funding_interval_ms")
+            - pl.col("funding_interval_hours_declared") * HOUR_MS
+        ).abs()
+        stats["funding_interval_rows_derived"] = observed.height
+        stats["funding_interval_first_event_null"] = int(df.height - observed.height)
+        stats["funding_interval_non_positive_rows"] = int(
+            observed.filter(pl.col("funding_interval_ms") <= 0).height
+        )
+        stats["funding_interval_disagrees_with_declared_rows"] = int(
+            observed.filter(deviation > FUNDING_INTERVAL_JITTER_TOLERANCE_MS).height
+        )
+        # 許容幅で「隠れた」ずれの最大値も必ず出す(閾値で丸めたことを見えなくしない)
+        worst = observed.select(deviation.max()).item() if observed.height else None
+        stats["funding_interval_max_deviation_ms"] = int(worst or 0)
+    ordered = [
+        "ts",
+        "funding_rate",
+        "funding_interval_hours",
+        "funding_interval_ms",
+        "funding_interval_hours_declared",
+        "symbol",
+        "source",
+        "market_type",
+    ]
+    return df.select([c for c in ordered if c in df.columns])
+
+
 def _optional_float(cell: str) -> float | None:
     """空セルは null。実 dump の ratio 列には空欄が存在する(値の捏造をしない)。"""
     text = cell.strip()
@@ -299,7 +414,24 @@ NORMALIZERS = {
     # --- Phase 8 の入力(F1 / F2)---
     "mark_price_5m": (normalize_mark_price, _KLINE_COLUMNS, config.binance_mark_price_parquet),
     "spot_klines_5m": (normalize_klines, _KLINE_COLUMNS, config.binance_spot_klines_parquet),
+    # --- Phase 8 の入力(F4)。**イベント系列**であってバーではない ---
+    "funding_rate": (normalize_funding_rate, _FUNDING_COLUMNS, config.binance_funding_rate_parquet),
 }
+
+
+#: **target ごとの封印 cutoff**(Y13)。グローバルな可変値にしない。
+#:
+#: Phase 7 の3系列の既定は `FINAL_OOS_START` のままで**1文字も変えない**
+#: (変えると Phase 7 の再現性が壊れる)。**H5 が承認されるまで Phase 8 の
+#: 系列も同じ値を使う**ので、現時点で全 dataset の値は一致している。
+#: 「一致していること」と「同じ1個のグローバルを共有していること」は違う。
+#: 将来 layer 3 を有効化するときは、**この表の Phase 8 側だけ**を動かす。
+SEAL_CUTOFFS: dict[str, datetime] = {dataset: FINAL_OOS_START for dataset in NORMALIZERS}
+
+
+def seal_cutoff_for(dataset: str) -> datetime:
+    """dataset の封印 cutoff。未登録の dataset は既定(Phase 7 と同じ)。"""
+    return SEAL_CUTOFFS.get(dataset, FINAL_OOS_START)
 
 
 def apply_screening_cutoff(df: pl.DataFrame, cutoff: datetime = FINAL_OOS_START) -> tuple[pl.DataFrame, int]:
@@ -314,7 +446,7 @@ def scan_dataset(
     dataset: str,
     symbol: str = DEFAULT_SYMBOL,
     source_dir: Path | None = None,
-    cutoff: datetime = FINAL_OOS_START,
+    cutoff: datetime | None = None,
 ) -> tuple[pl.DataFrame, dict]:
     """raw zip 群を読み、結合フレームと raw 段階の会計を返す(書き込みはしない)。
 
@@ -323,6 +455,7 @@ def scan_dataset(
     normalizer, columns, _ = NORMALIZERS[dataset]
     spec = DATASETS[dataset]
     market_type = spec.market_type
+    cutoff = seal_cutoff_for(dataset) if cutoff is None else cutoff
     time_stats: dict[str, int] = {}
     fmt = "%Y-%m" if DATASETS[dataset].cadence == "monthly" else "%Y-%m-%d"
     source_dir = source_dir or raw_dir(dataset, symbol)
@@ -348,6 +481,7 @@ def scan_dataset(
         "symbol": symbol,
         "market_type": market_type,
         "close_time_policy": spec.close_time_policy,
+        "series_kind": spec.series_kind,
         "files": len(files),
         "raw_rows": raw_rows,
         "sealed_rows_dropped": sealed_dropped,
@@ -384,7 +518,12 @@ def scan_dataset(
         ),
         "unresolved_conflicts": int(conflicting_ts.filter(pl.col("owning_rows") != 1).height),
     }
-    return resolved.drop("_period", "_owns"), accounting
+    resolved = resolved.drop("_period", "_owns")
+    if spec.series_kind == "event":
+        # **結合・重複排除の後に1回だけ**導出する。月ファイル単位で導出すると
+        # 各月の先頭行の間隔が(直前の月に決済があるのに)null になってしまう。
+        resolved = add_funding_intervals(resolved, accounting)
+    return resolved, accounting
 
 
 def period_of(path: Path) -> str:
@@ -392,12 +531,19 @@ def period_of(path: Path) -> str:
     return path.stem.split("-", 2)[2]
 
 
+def _write_parquet_atomic(path: Path, df: pl.DataFrame) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".parquet.tmp")
+    df.write_parquet(tmp)
+    tmp.replace(path)
+
+
 def normalize_dataset(
     dataset: str,
     symbol: str = DEFAULT_SYMBOL,
     source_dir: Path | None = None,
     out_path: Path | None = None,
-    cutoff: datetime = FINAL_OOS_START,
+    cutoff: datetime | None = None,
 ) -> dict:
     out_path = out_path or NORMALIZERS[dataset][2](symbol)
     combined, result = scan_dataset(dataset, symbol, source_dir, cutoff)
@@ -405,7 +551,18 @@ def normalize_dataset(
     if combined.is_empty():
         result["rows"] = 0
         return result
-    result["rows_added"] = store.merge_parquet(out_path, combined, KEY_COLS)
+    if DATASETS[dataset].series_kind == "event":
+        # **イベント系列は全再生成する。**
+        # `funding_interval_hours` は直前の決済との差から**導出**した列なので、
+        # 追記マージ(既存行を優先して残す)を使うと、後から過去月を足したときに
+        # 古い null / 古い間隔が居座る。全 zip から決定的に作り直せば、
+        # 「同じ raw なら同じ parquet」が構成上保証される(冪等)。
+        before = pl.read_parquet(out_path).height if out_path.exists() else 0
+        _write_parquet_atomic(out_path, combined.sort(KEY_COLS))
+        result["rows_added"] = combined.height - before
+        result["rebuilt"] = True
+    else:
+        result["rows_added"] = store.merge_parquet(out_path, combined, KEY_COLS)
     result["rows"] = pl.read_parquet(out_path).height
     return result
 
