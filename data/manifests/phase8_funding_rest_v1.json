@@ -1,0 +1,120 @@
+{
+  "inventory": "phase8_funding_rest_v1",
+  "purpose": "input-data plumbing only; not joined into a trade series; no rho, no signals, no liquidation incidence, no returns, no PnL",
+  "built_at_utc": "2026-08-20T11:43:11.394785+00:00",
+  "source": "binance",
+  "market_type": "perp_linear",
+  "rest_host": "https://fapi.binance.com",
+  "allowed_paths": [
+    "/fapi/v1/fundingRate"
+  ],
+  "authentication": "none (public endpoint only; no api key, no signature)",
+  "canonical_series": {
+    "path": "data/normalized/binance/funding_rate_BTCUSDT.parquet",
+    "role": "canonical funding events (Binance Vision monthly/fundingRate)",
+    "not_replaced_by_rest": true
+  },
+  "rest_series": {
+    "path": "data/normalized/binance/funding_rate_rest_BTCUSDT.parquet",
+    "role": "second observation supplying settlement-time markPrice",
+    "present": true,
+    "parquet": {
+      "file": "funding_rate_rest_BTCUSDT.parquet",
+      "sha256": "4e1426ae042795deacda3cce38367bee5b15aa2f0da0c5daefda04954d2c3a76",
+      "size_bytes": 72757,
+      "rows": 6576,
+      "columns": [
+        "rest_funding_time",
+        "funding_rate_rest",
+        "mark_price",
+        "mark_price_status",
+        "rate_type",
+        "symbol",
+        "source",
+        "market_type",
+        "retrieved_at_utc",
+        "response_sha256",
+        "page_index",
+        "page_requested_start_ms",
+        "page_requested_end_ms"
+      ]
+    },
+    "mark_price": {
+      "rows": 6576,
+      "by_status": {
+        "empty": 4198,
+        "present": 2378
+      },
+      "rows_with_mark_price": 2378,
+      "rows_without_mark_price": 4198,
+      "first_ts_with_mark_price": "2023-10-31T08:00:00+00:00",
+      "last_ts_without_mark_price": "2023-10-31T00:00:00.001000+00:00",
+      "min_mark_price": 34149.46365245,
+      "max_mark_price": 124946.2
+    },
+    "order": {
+      "rows": 6576,
+      "strictly_ascending": true,
+      "duplicate_funding_times": 0,
+      "min_gap_ms": 28799955,
+      "max_gap_ms": 28800047,
+      "rate_types": {
+        "Regular": 6576
+      }
+    }
+  },
+  "reconciliation": {
+    "path": "data/normalized/binance/funding_reconciliation_BTCUSDT.parquet",
+    "tolerance_ms": 1000,
+    "timestamp_exact_match_assumed": false,
+    "statuses": [
+      "matched",
+      "rate_mismatch",
+      "ambiguous_multiple_rest",
+      "ambiguous_shared_rest",
+      "unmatched_vision"
+    ],
+    "parquet": {
+      "file": "funding_reconciliation_BTCUSDT.parquet",
+      "sha256": "a892043a89002e38f2fca3d5bc7415abf600cb382c8daf380d551032befff9d5",
+      "size_bytes": 122283,
+      "rows": 6576,
+      "columns": [
+        "ts",
+        "rest_funding_time",
+        "funding_time_offset_ms",
+        "funding_rate",
+        "funding_rate_rest",
+        "mark_price",
+        "match_status"
+      ],
+      "ts_min": "2020-01-01T00:00:00+00:00",
+      "ts_max": "2025-12-31T16:00:00.001000+00:00"
+    },
+    "summary": {
+      "tolerance_ms": 1000,
+      "vision_events": 6576,
+      "rest_events": 6576,
+      "matched_one_to_one": 6576,
+      "unmatched_vision": 0,
+      "unmatched_rest": 0,
+      "rate_mismatch": 0,
+      "ambiguous_multiple_rest": 0,
+      "ambiguous_shared_rest": 0,
+      "offset_distribution_ms": {
+        "0": 6576
+      },
+      "max_abs_offset_ms": 0
+    },
+    "status_counts": {
+      "matched": 6576
+    }
+  },
+  "seal_cutoff": "2026-01-01T00:00:00+00:00",
+  "periods": {
+    "vision_ts_min": "2020-01-01T00:00:00+00:00",
+    "vision_ts_max": "2025-12-31T16:00:00.001000+00:00",
+    "rest_ts_min": "2020-01-01T00:00:00+00:00",
+    "rest_ts_max": "2025-12-31T16:00:00.001000+00:00"
+  }
+}
