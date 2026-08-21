@@ -1,0 +1,124 @@
+{
+  "inventory": "phase8_index_price_v1",
+  "purpose": "input-data plumbing only; not joined into a trade series; no rho, no signals, no liquidation incidence, no returns, no PnL",
+  "built_at_utc": "2026-08-20T23:35:01.680978+00:00",
+  "datasets": [
+    {
+      "dataset": "index_price_5m",
+      "symbol": "BTCUSDT",
+      "source": "binance",
+      "base_url": "https://data.binance.vision",
+      "market_type": "perp_linear",
+      "cadence": "monthly",
+      "path_template": "data/futures/um/monthly/indexPriceKlines/{sym}/5m/{sym}-5m-{period}.zip",
+      "close_time_policy": "exact",
+      "ledger": "data/raw/binance/vision/index_price_5m/BTCUSDT/download_ledger.jsonl",
+      "source_digest": {
+        "present": true,
+        "periods_with_file": 72,
+        "periods_absent": 0,
+        "checksum_verified": 72,
+        "digest": "2b20cb59c9a9d03095a2bc3083138ec15098fcfb5d77c67c8427e7058e98fc0d"
+      },
+      "timestamp_semantics": {
+        "field": "open_time",
+        "meaning": "bar start; row t covers [ts, ts+5m)",
+        "grid_ms": 300000,
+        "timezone": "UTC",
+        "seal_cutoff": "2026-01-01T00:00:00+00:00"
+      },
+      "normalized_path": "data/normalized/binance/index_price_BTCUSDT_5m.parquet",
+      "normalized_present": true,
+      "parquet": {
+        "file": "index_price_BTCUSDT_5m.parquet",
+        "sha256": "22112a499471d7f742bb2407b47693da2ec49f801fc3b141f12c84ff5841faaa",
+        "size_bytes": 17090929,
+        "rows": 628115,
+        "columns": [
+          "ts",
+          "index_open",
+          "index_high",
+          "index_low",
+          "index_close",
+          "index_samples",
+          "symbol",
+          "source",
+          "market_type"
+        ],
+        "ts_min": "2020-01-01T00:00:00+00:00",
+        "ts_max": "2025-12-31T23:55:00+00:00",
+        "expected_rows": 631296,
+        "missing_rows": 3181
+      },
+      "gaps": {
+        "bars": 628115,
+        "expected_bars": 631296,
+        "missing_bars": 3181,
+        "gap_runs": 10,
+        "largest_gap_bars": 576,
+        "gap_runs_detail": [
+          {
+            "after_utc": "2020-01-19T13:05:00+00:00",
+            "resume_utc": "2020-01-19T13:35:00+00:00",
+            "missing_bars": 5
+          },
+          {
+            "after_utc": "2020-12-17T07:30:00+00:00",
+            "resume_utc": "2020-12-17T07:55:00+00:00",
+            "missing_bars": 4
+          },
+          {
+            "after_utc": "2022-04-26T23:55:00+00:00",
+            "resume_utc": "2022-04-28T00:00:00+00:00",
+            "missing_bars": 288
+          },
+          {
+            "after_utc": "2022-07-23T23:55:00+00:00",
+            "resume_utc": "2022-07-26T00:00:00+00:00",
+            "missing_bars": 576
+          },
+          {
+            "after_utc": "2022-07-26T23:55:00+00:00",
+            "resume_utc": "2022-07-29T00:00:00+00:00",
+            "missing_bars": 576
+          },
+          {
+            "after_utc": "2022-07-29T23:55:00+00:00",
+            "resume_utc": "2022-08-01T00:00:00+00:00",
+            "missing_bars": 576
+          },
+          {
+            "after_utc": "2022-10-01T23:55:00+00:00",
+            "resume_utc": "2022-10-03T00:00:00+00:00",
+            "missing_bars": 288
+          },
+          {
+            "after_utc": "2023-02-23T23:55:00+00:00",
+            "resume_utc": "2023-02-25T00:00:00+00:00",
+            "missing_bars": 288
+          },
+          {
+            "after_utc": "2023-04-06T23:55:00+00:00",
+            "resume_utc": "2023-04-09T00:00:00+00:00",
+            "missing_bars": 576
+          },
+          {
+            "after_utc": "2023-11-10T03:40:00+00:00",
+            "resume_utc": "2023-11-10T04:05:00+00:00",
+            "missing_bars": 4
+          }
+        ]
+      },
+      "raw_accounting": {
+        "files": 72,
+        "raw_rows": 628115,
+        "sealed_rows_dropped": 0,
+        "duplicate_rows_dropped": 0,
+        "conflicting_duplicates": 0,
+        "conflicts_resolved_by_owning_file": 0,
+        "unresolved_conflicts": 0,
+        "index_stale_bars": 44
+      }
+    }
+  ]
+}

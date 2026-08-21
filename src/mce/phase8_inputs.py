@@ -30,11 +30,21 @@ from mce.normalize_binance import BAR_MS, scan_dataset
 
 UTC = timezone.utc
 
-#: Phase 8 が一級の入力として扱う dataset と、その正規化先。
+#: Phase 8 が一級の入力として扱う dataset と、その正規化先(**F1 / F2**)。
+#: **この registry は F1/F2 に固定されている**(テストが固定)。後から足した
+#: 系列をここへ入れると、既存の `phase8_inputs_v1.json` が別物になってしまう。
 PHASE8_INPUTS: dict[str, callable] = {
     "mark_price_5m": config.binance_mark_price_parquet,
     "spot_klines_5m": config.binance_spot_klines_parquet,
 }
+
+#: F5(protocol §4.1 の `IDX`)。**別 artifact に出す**ので registry を分ける。
+PHASE8_INDEX_INPUTS: dict[str, callable] = {
+    "index_price_5m": config.binance_index_price_parquet,
+}
+
+#: 5分バー系列の inventory を作れる dataset の全体(参照用)。
+_BAR_INPUTS: dict[str, callable] = {**PHASE8_INPUTS, **PHASE8_INDEX_INPUTS}
 
 
 def gap_report(df: pl.DataFrame) -> dict:
@@ -68,7 +78,7 @@ def gap_report(df: pl.DataFrame) -> dict:
 
 def inventory(dataset: str, symbol: str = "BTCUSDT") -> dict:
     spec = DATASETS[dataset]
-    path = PHASE8_INPUTS[dataset](symbol)
+    path = _BAR_INPUTS[dataset](symbol)
     record: dict = {
         "dataset": dataset,
         "symbol": symbol,
@@ -100,20 +110,36 @@ def inventory(dataset: str, symbol: str = "BTCUSDT") -> dict:
         "files", "raw_rows", "sealed_rows_dropped", "duplicate_rows_dropped",
         "conflicting_duplicates", "conflicts_resolved_by_owning_file",
         "unresolved_conflicts", "close_time_not_bar_end_rows",
-        "close_time_before_open_rows", "mark_stale_bars",
+        "close_time_before_open_rows", "mark_stale_bars", "index_stale_bars",
     ):
         if key in accounting:
             record.setdefault("raw_accounting", {})[key] = accounting[key]
     return record
 
 
-def build(symbol: str = "BTCUSDT") -> dict:
+def build(
+    symbol: str = "BTCUSDT",
+    datasets: "tuple[str, ...] | None" = None,
+    name: str = "phase8_inputs_v1",
+) -> dict:
+    """既定は **F1 / F2 のまま**(既存 artifact を作り直さない)。
+
+    `datasets=()` は「指定なし」ではなく「**空の指定**」として扱い、送出する。
+    黙って既定へ落とすと、`--datasets` を値なしで渡した人が F1/F2 の
+    artifact を意図せず作ってしまう。
+    """
+    if datasets is not None and len(tuple(datasets)) == 0:
+        raise ValueError("--datasets が空である(既定を使うなら指定そのものを省く)")
+    datasets = tuple(datasets) if datasets is not None else tuple(PHASE8_INPUTS)
+    unknown = [d for d in datasets if d not in _BAR_INPUTS]
+    if unknown:
+        raise ValueError(f"未知の dataset: {unknown}")
     return {
-        "inventory": "phase8_inputs_v1",
+        "inventory": name,
         "purpose": "input-data plumbing only; not joined into a trade series; "
                    "no rho, no signals, no liquidation incidence, no returns, no PnL",
         "built_at_utc": datetime.now(UTC).isoformat(),
-        "datasets": [inventory(d, symbol) for d in PHASE8_INPUTS],
+        "datasets": [inventory(d, symbol) for d in datasets],
     }
 
 
@@ -121,8 +147,11 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--symbol", default="BTCUSDT")
     ap.add_argument("--json", type=Path, default=None)
+    ap.add_argument("--datasets", nargs="*", default=None, choices=list(_BAR_INPUTS),
+                    help="既定は F1 / F2(既存 artifact を作り直さないため)")
+    ap.add_argument("--name", default="phase8_inputs_v1", help="artifact の名前")
     args = ap.parse_args()
-    report = build(args.symbol)
+    report = build(args.symbol, args.datasets, args.name)
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         args.json.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n",

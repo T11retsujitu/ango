@@ -16,6 +16,7 @@ Phase 8 で次の2系列を**一級の入力**として追加した(F1 / F2):
 |---|---|---|---|
 | `mark_price_5m` | 月次dump | USD-M perp | **mark 価格**の OHLC。清算トリガーの入力 |
 | `spot_klines_5m` | 月次dump | **spot** | spot 脚の OHLC と約定フロー |
+| `index_price_5m` | 月次dump | USD-M perp | **index 価格**の OHLC(protocol §4.1 の `IDX`) |
 
 **mark 価格と約定価格を混同しないこと。** `mark_price_5m` は清算の判定に使い、
 執行価格の代理には使わない(逆も同じ)。
@@ -124,6 +125,13 @@ DATASETS: dict[str, DatasetSpec] = {
         f"{SPOT_MARKET_PATH}/monthly/klines/{{sym}}/5m/{{sym}}-5m-{{period}}.zip",
         market_type=SPOT_MARKET_TYPE,
         close_time_policy="last_trade_time",
+    ),
+    # F5: index price klines(IDX)。**mark でも約定価格でもない**。
+    # protocol §4.1 の `IDX`。spot 現物の指数であって、perp の mark とは別系列である。
+    "index_price_5m": DatasetSpec(
+        "index_price_5m",
+        "monthly",
+        f"{MARKET_PATH}/monthly/indexPriceKlines/{{sym}}/5m/{{sym}}-5m-{{period}}.zip",
     ),
     # F4: funding 決済イベント。**バーではない。**
     # path はファイル名パターンも interval ディレクトリの有無も klines と違う

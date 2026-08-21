@@ -69,6 +69,15 @@ def binance_spot_klines_parquet(symbol: str = BINANCE_SYMBOL, bar: str = BAR) ->
     return NORMALIZED_DIR / BINANCE_SOURCE / f"spot_klines_{symbol}_{bar}.parquet"
 
 
+def binance_index_price_parquet(symbol: str = BINANCE_SYMBOL, bar: str = BAR) -> Path:
+    """F5: USD-M perp の index 価格(protocol §4.1 の `IDX`)。
+
+    **mark 価格でも約定価格でもない。** `mark_price_*` / `klines_*` とは
+    別ファイルに置き、列名も `index_*` で分ける。
+    """
+    return NORMALIZED_DIR / BINANCE_SOURCE / f"index_price_{symbol}_{bar}.parquet"
+
+
 def binance_funding_rate_parquet(symbol: str = BINANCE_SYMBOL) -> Path:
     """F4: USD-M perp の funding **決済イベント**。
 

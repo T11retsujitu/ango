@@ -232,6 +232,83 @@ def normalize_mark_price(
     return _provenance(df, symbol, market_type)
 
 
+def normalize_index_price(
+    rows: list[list[str]],
+    symbol: str = DEFAULT_SYMBOL,
+    market_type: str = MARKET_TYPE,
+    *,
+    close_time_policy: str = "exact",
+    stats: dict | None = None,
+) -> pl.DataFrame:
+    """indexPriceKlines 行 → **index 価格**の OHLC(F5 = protocol §4.1 の `IDX`)。
+
+    **mark 価格でも約定価格でもない。** index は複数の現物取引所から合成される
+    参照価格であり、`mark_price_5m`(清算トリガー)とも `klines_5m`(perp の約定)
+    とも別の系列である。列名を `index_open/high/low/close` にするのは、
+    **3者を取り違えられないようにするため**である。
+
+    実測(実装前に 2020-01 / 2025-12 を probe し、その後 72 か月全件で確認した):
+
+    - 12 列の kline 形式。**header の有無はファイルごとに違う**(あり 45 / なし 27)。
+      2022-01〜2022-06 は `なし → あり → なし → あり → なし → あり` と交互に現れるので、
+      **月から header の有無を推測してはならない**。`read_zip_rows` が1ファイルずつ
+      先頭セルで判定するので、この非単調性の影響は受けない
+    - `close_time == open_time + 5m − 1ms` が全行で成立(`close_time_policy="exact"`)
+    - `volume` / `quote_volume` / `taker_buy_*` / `ignore` は**全行 0**
+      (index は板の約定ではない)。0 でなければ**送出して止まる**
+    - `count` は5分間の index サンプル数(通常 300 = 毎秒1本)。
+      `index_samples` として保持する
+    """
+    if not rows:
+        return pl.DataFrame()
+    open_ms = [_epoch_ms(r[0]) for r in rows]
+    close_ms = [_epoch_ms(r[6]) for r in rows]
+    _check_close_time(open_ms, close_ms, close_time_policy, stats)
+    # **グリッドを明示的に検査する。** `_check_close_time` の `"exact"` 経路は
+    # `close_time` しか見ないので、`open_time` が5分グリッドから外れても素通りする
+    # (グリッド検査は `"last_trade_time"` 経路にしか無い)。実測では全行がグリッド上
+    # だったが、**「実測でそうだった」を不変条件の代わりにしない**。
+    # ここは IDX 固有の検査であり、Phase 7 系列の挙動は1文字も変えていない。
+    for o in open_ms:
+        if o % BAR_MS != 0:
+            raise BinanceNormalizationError(f"open_time が5分グリッド上にない: {o}")
+    # `ignore`(列 11)も含めて検査する。docstring と文書が「全行 0」と書いている
+    # 列は、**書いたとおりに全部検査する**(宣言より狭い実装にしない)。
+    for r in rows:
+        for idx in (5, 7, 9, 10, 11):  # volume / quote_volume / taker_buy_* / ignore
+            if float(r[idx]) != 0.0:
+                raise BinanceNormalizationError(
+                    f"indexPriceKlines の列 {idx} が 0 でない: {r[idx]!r}(約定量ではないはず)"
+                )
+    # **価格の正値性を検査する。** 実測 628,115 行では非正値 0 件だったが、
+    # 同じ関数が stale bar と grid について「実測で 0 件だったことに依存した規則に
+    # しない」と書いている以上、価格にだけ例外を作らない。非正の index 価格は
+    # 下流で log を取れば汚染源になる(J7 の log(0) と同型の失敗)。
+    for r in rows:
+        for idx in (1, 2, 3, 4):  # open / high / low / close
+            if float(r[idx]) <= 0.0:
+                raise BinanceNormalizationError(
+                    f"indexPriceKlines の価格が正でない: 列 {idx} = {r[idx]!r}"
+                )
+    # `count == 0` は index が更新されないまま前値が横引きされたバー。
+    # 実測の2か月では 0 件だったが、**0 件に依存した規則にしない**。
+    # 値は捏造ではないので落とさず、品質が違うので数えて記録する。
+    if stats is not None:
+        stale = sum(1 for r in rows if int(r[8]) == 0)
+        stats["index_stale_bars"] = stats.get("index_stale_bars", 0) + stale
+    df = pl.DataFrame(
+        {
+            "ts": open_ms,
+            "index_open": [float(r[1]) for r in rows],
+            "index_high": [float(r[2]) for r in rows],
+            "index_low": [float(r[3]) for r in rows],
+            "index_close": [float(r[4]) for r in rows],
+            "index_samples": [int(r[8]) for r in rows],
+        }
+    ).with_columns(pl.col("ts").cast(_TS))
+    return _provenance(df, symbol, market_type)
+
+
 def normalize_premium_index(
     rows: list[list[str]],
     symbol: str = DEFAULT_SYMBOL,
@@ -414,6 +491,8 @@ NORMALIZERS = {
     # --- Phase 8 の入力(F1 / F2)---
     "mark_price_5m": (normalize_mark_price, _KLINE_COLUMNS, config.binance_mark_price_parquet),
     "spot_klines_5m": (normalize_klines, _KLINE_COLUMNS, config.binance_spot_klines_parquet),
+    # --- Phase 8 の入力(F5 = protocol §4.1 の IDX)---
+    "index_price_5m": (normalize_index_price, _KLINE_COLUMNS, config.binance_index_price_parquet),
     # --- Phase 8 の入力(F4)。**イベント系列**であってバーではない ---
     "funding_rate": (normalize_funding_rate, _FUNDING_COLUMNS, config.binance_funding_rate_parquet),
 }

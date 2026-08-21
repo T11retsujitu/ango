@@ -35,6 +35,8 @@ def _datasets() -> dict[str, tuple[Path, int | None]]:
         # Phase 8 の入力(F1 / F2)。**mark と spot は別 dataset・別 digest**。
         "binance_mark_price": (config.binance_mark_price_parquet(), config.BAR_MS),
         "binance_spot_klines": (config.binance_spot_klines_parquet(), config.BAR_MS),
+        # Phase 8 の入力(F5 = IDX)。5分グリッドなので期待間隔を持つ。
+        "binance_index_price": (config.binance_index_price_parquet(), config.BAR_MS),
         # Phase 8 の入力(F4)。**イベント系列なので期待間隔を持たない。**
         # 8h を期待間隔として与えると「欠測」が捏造される(間隔は 1h へ切り替わりうる)。
         "binance_funding_rate": (config.binance_funding_rate_parquet(), None),
