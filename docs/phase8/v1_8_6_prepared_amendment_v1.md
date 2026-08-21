@@ -132,11 +132,11 @@ REST の公式 markPrice と **原文の Decimal** で突き合わせた結果:
 決済 s ごとに、次の順序で **1つだけ** 選ぶ:
 
   1. REST markPrice が **有効**(非空・parse 可能・正)
-        → source = "rest_official"      fidelity = "exact_rest"
+        → source = "binance_funding_rest"            fidelity = "exact_rest"
   2. REST markPrice が **有効でない**(空 / parse 不能 / 非正)場合に限り、
      floor_5m(s) のバーの mark_open
      ただし mark 経路の状態が observed / verified_repair のときのみ
-        → source = "kline_open_proxy"   fidelity = "official_kline_proxy"
+        → source = "binance_mark_price_kline_open"   fidelity = "official_kline_proxy"
   3. それ以外
         → source = None                 fidelity = "unavailable"
 ```
@@ -292,9 +292,9 @@ funding_mark:
 | 区分 | 定義 | 用途 |
 |---|---|---|
 | **primary** | §4 の選択規則(REST → `mark_open`) | **判定はこれだけで行う** |
-| **sensitivity** | **REST が空の決済に限り**、`mark_open` の代わりに**直前バーの `mark_close`** | **報告のみ。primary にしない** |
+| **sensitivity** | **REST が有効でない決済に限り**(空 / parse 不能 / 非正)、`mark_open` の代わりに**直前バーの `mark_close`** | **報告のみ。primary にしない** |
 
-- sensitivity でも **REST がある決済は REST のまま**である(そこは動かさない)。
+- sensitivity でも **REST が有効な決済は REST のまま**である(そこは動かさない)。
 - **イベントごとに `open` / 直前 `close` の近い方を選ばない。**
 - **OR 規則を使わない。**
 - sensitivity は **§15.1 の family に入らない**(多重比較補正の対象外)。
@@ -340,7 +340,7 @@ sensitivity は **REST が有効でない決済でしか primary と違わない
 ```python
 # --- v1.8.6: funding 決済 mark の source 選択(§4)---------------------------
 # **exact ではない。** proxy を proxy として明示的に採用する。
-FUNDING_MARK_SOURCE_ORDER: Final = ("rest_official", "kline_open_proxy")
+FUNDING_MARK_SOURCE_ORDER: Final = ("binance_funding_rest", "binance_mark_price_kline_open")
 FUNDING_MARK_PROXY_FIELD: Final = "mark_open"
 FUNDING_MARK_PROXY_BAR_RULE: Final = "floor_5m(funding_time)"
 FUNDING_MARK_PROXY_USABLE_STATUSES: Final = MARK_PATH_ACCEPTABLE  # observed / verified_repair
@@ -368,7 +368,8 @@ FUNDING_MARK_REST_INVALID_REASONS: Final = (
 
 # --- sensitivity(§8)---------------------------------------------------------
 FUNDING_MARK_SENSITIVITY: Final = "previous_bar_mark_close"
-FUNDING_MARK_SENSITIVITY_SOURCE_LABEL: Final = "kline_previous_close_sensitivity"
+FUNDING_MARK_SENSITIVITY_SOURCE: Final = "binance_mark_price_kline_previous_close"
+FUNDING_MARK_SENSITIVITY_FIDELITY_LABEL: Final = "kline_previous_close_sensitivity"
 # **「空」ではなく「有効でない」** が発動条件である(§4)
 FUNDING_MARK_SENSITIVITY_APPLIES_WHEN: Final = "rest_mark_price_invalid"
 FUNDING_MARK_SENSITIVITY_IN_FAMILY: Final = False
@@ -392,7 +393,7 @@ FUNDING_MARK_ZERO_SUBSTITUTION_ALLOWED: Final = False
 | ファイル | 変更 | 新規/変更 |
 |---|---|---|
 | `src/mce/phase8_prereg.py` | §9 の定数を追加 | 変更(**凍結対象。再凍結が要る**) |
-| `src/mce/funding_mark.py` | **funding mark resolver**: 決済 → (value, source, fidelity)。§4 の順序を実装し、`unavailable` を返す経路を持つ | **新規** |
+| `src/mce/funding_mark_resolver.py` | **funding mark resolver**: 決済 → (value, source, fidelity)。§4 の順序、§8 の sensitivity、§6 の layer 区分(**規則から導出**)を実装し、`unavailable` を返す経路を持つ | **新規。実装済み**(純粋関数のみ。適合テスト `tests/test_funding_mark_resolver.py`) |
 | `src/mce/features_carry.py` | `funding_mark_price` / `funding_mark_source` / `funding_mark_fidelity` 列と availability 宣言 | **新規**(未実装) |
 | `src/mce/carry_quality.py` | fidelity 別件数・構成比、`unavailable` の停止判定を品質 gate に入れる | **新規**(未実装) |
 | `src/mce/carry_runner.py` | **primary と previous-close sensitivity の二経路**を回し、判定が割れたら `funding_mark_source_sensitive` | **新規**(未実装) |
