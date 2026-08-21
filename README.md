@@ -56,7 +56,9 @@ uv run python -m mce.features
 uv run python -m mce.labels
 
 # dataset manifest 生成(sha256・行数・期間・欠損数。git 管理)
-uv run python -m mce.manifest
+#   **対象の明示が必須**(引数なしは何も書かずに失敗する。commit 済みの指紋を守るため)
+uv run python -m mce.manifest --all
+uv run python -m mce.manifest --datasets ohlcv features labels   # 一部だけ
 
 # baseline backtest(signal at close[t] → fill at open[t+1]。artifact を experiments/runs/ へ保存)
 uv run python -m mce.backtest --strategy buy_and_hold --split research --cost base_taker

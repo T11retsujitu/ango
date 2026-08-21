@@ -173,8 +173,9 @@ uv run python -m mce.normalize_binance
 # 3. observable features(ラベルは作らない)
 uv run python -m mce.features_tier0
 
-# 4. 指紋
-uv run python -m mce.manifest
+# 4. 指紋(**対象の明示が必須**。引数なしは何も書かずに失敗する)
+uv run python -m mce.manifest --datasets \
+    binance_klines binance_metrics binance_premium_index binance_features
 
 # 5. 品質レポート(ゲート不通過なら非ゼロ終了)
 uv run python -m mce.tier0_quality --json experiments/phase7/tier0_quality_v1.json

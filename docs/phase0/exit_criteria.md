@@ -29,7 +29,7 @@ Phase 0 完了の判定基準。
 ```sh
 uv run python -m mce.features     # observable 再生成(fwd_* が消える)
 uv run python -m mce.labels       # data/labels/ へラベル分離出力
-uv run python -m mce.manifest     # data/manifests/*.json 生成(git 管理)
+uv run python -m mce.manifest --all   # data/manifests/*.json 生成(git 管理。対象の明示が必須)
 uv run python -m mce.backtest --strategy buy_and_hold --split research --cost base_taker
 uv run python -m mce.backtest --strategy random --seed 42 --split research --cost base_taker
 ```
